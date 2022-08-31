@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Support.Exceptions
+namespace Core.Common.Mappings
 {
     internal class Class1
     {

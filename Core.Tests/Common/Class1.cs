@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Tests.Support
+namespace Core.Tests.Common
 {
     internal class Class1
     {
