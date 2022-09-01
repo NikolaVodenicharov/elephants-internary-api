@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI", "WebAPI\WebAPI.csproj", "{67A15463-C916-4936-B07A-7CB21AC916A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAPI", "WebAPI\WebAPI.csproj", "{67A15463-C916-4936-B07A-7CB21AC916A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{901BD133-0FDE-494E-B8E7-D025BECE68EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "Core\Core.csproj", "{901BD133-0FDE-494E-B8E7-D025BECE68EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{8A885D47-F683-4DAD-B639-E30094606874}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{8A885D47-F683-4DAD-B639-E30094606874}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Tests", "Core.Tests\Core.Tests.csproj", "{788B3B37-9D4A-4229-971F-969C9B03EAAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Tests", "Core.Tests\Core.Tests.csproj", "{788B3B37-9D4A-4229-971F-969C9B03EAAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI.Tests", "WebAPI.Tests\WebAPI.Tests.csproj", "{CF808C4A-A7F4-4587-A605-0E8E68DFDA48}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{788B3B37-9D4A-4229-971F-969C9B03EAAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{788B3B37-9D4A-4229-971F-969C9B03EAAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{788B3B37-9D4A-4229-971F-969C9B03EAAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF808C4A-A7F4-4587-A605-0E8E68DFDA48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF808C4A-A7F4-4587-A605-0E8E68DFDA48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF808C4A-A7F4-4587-A605-0E8E68DFDA48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF808C4A-A7F4-4587-A605-0E8E68DFDA48}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

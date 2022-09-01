@@ -6,7 +6,5 @@ using System.Threading.Tasks;
 
 namespace Core.Features.Campaigns.ResponseModels
 {
-    internal class Class1
-    {
-    }
+    public record CampaignSummary(Guid Id, string Name, DateTime StartDate, DateTime EndDate, bool IsActive);
 }

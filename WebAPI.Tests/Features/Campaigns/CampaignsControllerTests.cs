@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Features.Campaigns.Entities
+namespace WebAPI.Tests.Features.Campaigns
 {
-    internal class Class1
+    public class CampaignsControllerTests
     {
     }
 }
