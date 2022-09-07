@@ -1,5 +1,4 @@
 ﻿namespace WebAPI.Common.Extensions.Middlewares;
-
 public static class ConfigureLoggerMiddleware
 {
     public static void SetupLogger(this WebApplicationBuilder builder)

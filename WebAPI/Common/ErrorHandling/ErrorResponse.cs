@@ -1,4 +1,4 @@
-﻿namespace WebAPI.Common.ExceptionHandling
+﻿namespace WebAPI.Common.ErrorHandling
 {
-    public record ErrorResponse(string Title, string Message);
+    public record ErrorResponse(string errorName, string message);
 }

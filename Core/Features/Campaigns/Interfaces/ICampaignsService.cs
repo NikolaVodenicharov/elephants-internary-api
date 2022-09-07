@@ -10,8 +10,14 @@ namespace Core.Features.Campaigns.Interfaces
 {
     public interface ICampaignsService
     {
-        Task<CampaignSummary> CreateAsync(CreateCampaign model);
+        Task<CampaignSummaryResponse> CreateAsync(CreateCampaign model);
 
-        Task<CampaignSummary> UpdateAsync(UpdateCampaign model);
+        Task<CampaignSummaryResponse> UpdateAsync(UpdateCampaign model);
+
+        Task<CampaignSummaryResponse?> GetByIdAsync(Guid campaignId);
+
+        Task<IEnumerable<CampaignSummaryResponse>> GetAllAsync(PaginationFilterRequest filter);
+
+        Task<int> GetCountAsync();
     }
 }

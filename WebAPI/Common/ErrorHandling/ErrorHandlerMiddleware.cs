@@ -2,17 +2,18 @@
 using FluentValidation;
 using System.Net;
 using System.Text.Json;
-using WebAPI.Common.ExceptionHandling;
 
 namespace WebAPI.Common.ErrorHandling
 {
     internal sealed class ErrorHandlerMiddleware
     {
         private readonly RequestDelegate next;
+        private readonly ILogger<ErrorHandlerMiddleware> logger;
 
-        public ErrorHandlerMiddleware(RequestDelegate next)
+        public ErrorHandlerMiddleware(RequestDelegate next, ILogger<ErrorHandlerMiddleware> logger)
         {
             this.next = next;
+            this.logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -42,6 +43,8 @@ namespace WebAPI.Common.ErrorHandling
 
                 var errorResponse = CreateErrorResponse(ex);
                 var json = JsonSerializer.Serialize(errorResponse);
+
+                logger.LogError(json);
 
                 await context.Response.WriteAsync(json);
             }

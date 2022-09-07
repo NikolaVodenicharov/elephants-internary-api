@@ -5,10 +5,11 @@ using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.Support;
 using FluentValidation;
-using Moq;
 using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -21,8 +22,9 @@ namespace Core.Tests.Features.Campaigns
         private DateTime startDate = DateTime.UtcNow.AddDays(5);
         private DateTime endDate = DateTime.UtcNow.AddDays(50);
         private bool isActive = false;
+        private Mock<ICampaignsRepository> campaignsRepositoryMock;
+        private CampaignsService campaignsServiceMock;
         private Campaign returnCampaign;
-
         public static IEnumerable<object[]> endDateTestData =>
             new List<object[]>
             {
@@ -36,13 +38,20 @@ namespace Core.Tests.Features.Campaigns
                 new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMinLength - 1) },
                 new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMaxLength + 1) },
             };
-        
-        private Mock<ICampaignsRepository> campaignsRepositoryMock;
-        private Mock<ILogger<CampaignsService>> campaignsServiceLoggerMock;
-        private CampaignsService campaignsService;
 
         public CampaignsServiceTests()
         {
+            var createCampaignValidator = new CreateCampaignValidator();
+            var updateCampaignValidator = new UpdateCampaignValidator();
+            var filterCampaignsRequestValidator = new PaginationFilterRequestValidator();
+
+            campaignsRepositoryMock = new Mock<ICampaignsRepository>();
+
+            var mockLogger = new Mock<ILogger<CampaignsService>>();
+
+            campaignsServiceMock = new CampaignsService(campaignsRepositoryMock.Object, mockLogger.Object,
+                createCampaignValidator, updateCampaignValidator, filterCampaignsRequestValidator);
+
             returnCampaign = new Campaign
             {
                 Id = id,
@@ -52,28 +61,24 @@ namespace Core.Tests.Features.Campaigns
                 IsActive = isActive
             };
 
-            campaignsRepositoryMock = new Mock<ICampaignsRepository>();
-            campaignsServiceLoggerMock = new Mock<ILogger<CampaignsService>>();
-            
-            campaignsService = new CampaignsService(campaignsRepositoryMock.Object, campaignsServiceLoggerMock.Object);
         }
 
-        #region CreateAsync
+        #region CreateAsyncTests
 
         [Fact]
         public async Task CreateAsync_CallCorrectRepositoryMethod()
         {
-            // Arrange
+            //Arrange
             CreateCampaign createCampaign = CreateValidCreateCampaign();
-            
+
             campaignsRepositoryMock
                 .Setup(x => x.AddAsync(It.IsAny<Campaign>()))
                 .ReturnsAsync(returnCampaign);
 
-            // Act
-            await campaignsService.CreateAsync(createCampaign);
+            //Act
+            await campaignsServiceMock.CreateAsync(createCampaign);
 
-            // Assert
+            //Assert
             campaignsRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Campaign>()), Times.Once());
         }
 
@@ -87,10 +92,10 @@ namespace Core.Tests.Features.Campaigns
                 .Setup(x => x.AddAsync(It.IsAny<Campaign>()))
                 .ReturnsAsync(returnCampaign);
 
-            // Act
-            var campaignSummary = await campaignsService.CreateAsync(createCampaign);
+            //Act
+            var campaignSummary = await campaignsServiceMock.CreateAsync(createCampaign);
 
-            // Assert
+            //Arrange
             Assert.Equal(campaignName, campaignSummary.Name);
             Assert.Equal(startDate, campaignSummary.StartDate);
             Assert.Equal(endDate, campaignSummary.EndDate);
@@ -108,7 +113,7 @@ namespace Core.Tests.Features.Campaigns
                 .ReturnsAsync(true);
 
             //Act
-            var action = async () => await campaignsService.CreateAsync(createCampaign);
+            var action = async () => await campaignsServiceMock.CreateAsync(createCampaign);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -122,7 +127,7 @@ namespace Core.Tests.Features.Campaigns
             var createCampaign = new CreateCampaign(invalidCampaignName, startDate, endDate, isActive);
 
             // Act
-            var action = async () => await campaignsService.CreateAsync(createCampaign);
+            var action = async () => await campaignsServiceMock.CreateAsync(createCampaign);
 
             // Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -136,16 +141,10 @@ namespace Core.Tests.Features.Campaigns
             var createCampaign = new CreateCampaign(campaignName, testStartDate, invalidEndDate, isActive);
 
             // Act
-            var action = async () => await campaignsService.CreateAsync(createCampaign);
+            var action = async () => await campaignsServiceMock.CreateAsync(createCampaign);
 
             // Assert
             await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        private CreateCampaign CreateValidCreateCampaign()
-        {
-            //Arrange
-            return new CreateCampaign(campaignName, startDate, endDate, isActive);
         }
 
         #endregion
@@ -166,7 +165,7 @@ namespace Core.Tests.Features.Campaigns
                 .ReturnsAsync(returnCampaign);
         
             // Act
-            var actualModel = await campaignsService.UpdateAsync(updateCampaign);
+            var actualModel = await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             // Assert
             Assert.NotNull(actualModel);
@@ -184,7 +183,7 @@ namespace Core.Tests.Features.Campaigns
             var updateCampaign = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
 
             // Act    
-            var action = async() => await campaignsService.UpdateAsync(updateCampaign);
+            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
             
             // Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -206,7 +205,7 @@ namespace Core.Tests.Features.Campaigns
             var updateCampaign = new UpdateCampaign(id, updatedName, startDate, endDate, isActive);
 
             // Act
-            var action = async() => await campaignsService.UpdateAsync(updateCampaign);
+            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             // Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -220,7 +219,7 @@ namespace Core.Tests.Features.Campaigns
             var updateCampaign = new UpdateCampaign(id, invalidCampaignName, startDate, endDate, isActive);
 
             //Act
-            var action = async() => await campaignsService.UpdateAsync(updateCampaign);
+            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -234,12 +233,132 @@ namespace Core.Tests.Features.Campaigns
             var updateCampaign = new UpdateCampaign(id, campaignName, testStartDate, invalidEndDate, isActive);
             
             // Act
-            var action = async() => await campaignsService.UpdateAsync(updateCampaign);
+            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             // Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
-        
+
         #endregion
+
+        #region GetByIdAsyncTests
+
+        [Fact]
+        public async Task GetByIdAsync_WhenIdExists_ShouldReturnCorrectData()
+        {
+            //Arrange
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(returnCampaign);
+
+            //Act
+            var campaignSummary = await campaignsServiceMock.GetByIdAsync(id);
+
+            //Assert
+            Assert.NotNull(campaignSummary);
+            Assert.Equal(id, campaignSummary.Id);
+            Assert.Equal(campaignName, campaignSummary.Name);
+            Assert.Equal(startDate, campaignSummary.StartDate);
+            Assert.Equal(endDate, campaignSummary.EndDate);
+            Assert.Equal(isActive, campaignSummary.IsActive);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WhenIdNotFound_ShouldThrowException()
+        {
+            //Arrange
+            var campaignId = Guid.NewGuid();
+
+            //Act
+            var action = async () => await campaignsServiceMock.GetByIdAsync(campaignId);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        #endregion
+
+        #region GetAllAsyncTests
+
+        [Theory]
+        [InlineData(0, 5, 15)]
+        [InlineData(5, 5, 15)]
+        [InlineData(10, 5, 15)]
+        [InlineData(0, 20, 5)]
+        [InlineData(1, 1, 10)]
+        public async Task GetAllAsync_WhenFilterIsCorrect_ShouldGetData(int skip, int take, int count)
+        {
+            //Arrange
+            var campaignList = new List<Campaign>()
+            {
+                returnCampaign
+            };
+
+            var filter = new PaginationFilterRequest()
+            {
+                Skip = skip,
+                Take = take,
+                Count = count
+            };
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationFilterRequest>()))
+                .ReturnsAsync(campaignList);
+
+            //Act
+            var campaigns = (await campaignsServiceMock.GetAllAsync(filter)).ToList();
+
+            //Assert
+            Assert.Equal(campaignList.Count, campaigns.Count());
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(10)]
+        [InlineData(20)]
+        public async Task GetAllAsync_WhenSkipIsInvalid_ShouldThrowException(int invalidSkip)
+        {
+            //Arrange
+            var filter = new PaginationFilterRequest()
+            {
+                Skip = invalidSkip,
+                Take = 10,
+                Count = 10
+            };
+
+            //Act
+            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public async Task GetAllAsync_WhenTakeIsLessThanOne_ShouldThrowException(int invalidTake)
+        {
+            //Arrange
+            var filter = new PaginationFilterRequest()
+            {
+                Skip = 0,
+                Take = invalidTake,
+                Count = 10
+            };
+
+            //Act
+            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        #endregion
+
+        private CreateCampaign CreateValidCreateCampaign()
+        {
+            //Arrange
+            return new CreateCampaign(campaignName, startDate, endDate, isActive);
+        }
     }
 }

@@ -1,9 +1,5 @@
 ﻿using Core.Features.Campaigns.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Core.Features.Campaigns.RequestModels;
 
 namespace Core.Features.Campaigns.Interfaces
 {
@@ -16,5 +12,9 @@ namespace Core.Features.Campaigns.Interfaces
         Task<Campaign> UpdateAsync(Campaign model);
 
         Task<Campaign?> GetByIdAsync(Guid campaignId);
+
+        Task<IEnumerable<Campaign>> GetAllAsync(PaginationFilterRequest filter);
+
+        Task<int> GetCountAsync();
     }
 }

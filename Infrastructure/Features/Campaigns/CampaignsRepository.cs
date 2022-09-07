@@ -1,6 +1,8 @@
 ﻿using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
+using Core.Features.Campaigns.RequestModels;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace Infrastructure.Features.Campaigns
 {
@@ -36,11 +38,33 @@ namespace Infrastructure.Features.Campaigns
             return model;
         }
 
+        public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationFilterRequest filter)
+        {
+            var sqlQuery =
+                $"SELECT [Id], [Name], [StartDate], [EndDate], [IsActive] " +
+                $"FROM [Campaigns] " +
+                $"ORDER BY [IsActive] DESC, [EndDate], [Id] " +
+                $"OFFSET {filter.Skip} ROWS FETCH NEXT {filter.Take} ROWS ONLY";
+
+            var campaigns = await context.Campaigns
+                .FromSqlRaw(sqlQuery)
+                .ToListAsync();
+
+            return campaigns;
+        }
+
         public async Task<Campaign?> GetByIdAsync(Guid campaignId)
         {
             var campaign = await context.Campaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
 
             return campaign;
+        }
+
+        public async Task<int> GetCountAsync()
+        {
+            var campaignCount = await context.Campaigns.CountAsync();
+
+            return campaignCount;
         }
     }
 }

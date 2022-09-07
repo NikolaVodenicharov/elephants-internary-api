@@ -17,12 +17,10 @@ namespace WebAPI.Common.Extensions.Middlewares
         private static void RegisterCampaignDependencies(IServiceCollection services)
         {
             services.AddTransient<ICampaignsService, CampaignsService>();
-
             services.AddTransient<ICampaignsRepository, CampaignsRepository>();
-
             services.AddTransient<IValidator<CreateCampaign>, CreateCampaignValidator>();
-
             services.AddTransient<IValidator<UpdateCampaign>, UpdateCampaignValidator>();
+            services.AddTransient<IValidator<PaginationFilterRequest>, PaginationFilterRequestValidator>();
         }
     }
 }

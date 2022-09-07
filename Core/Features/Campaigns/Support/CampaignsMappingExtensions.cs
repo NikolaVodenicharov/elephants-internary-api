@@ -1,6 +1,11 @@
 ﻿using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Core.Features.Campaigns.Support
 {
@@ -19,9 +24,9 @@ namespace Core.Features.Campaigns.Support
             return campaign;
         }
 
-        public static CampaignSummary ToCampaignSummary(this Campaign entity)
+        public static CampaignSummaryResponse ToCampaignSummary(this Campaign entity)
         {
-            var summary = new CampaignSummary(
+            var summary = new CampaignSummaryResponse(
                 entity.Id,
                 entity.Name,
                 entity.StartDate,
@@ -43,6 +48,11 @@ namespace Core.Features.Campaigns.Support
             };
 
             return campaign;
+        }
+
+        public static IEnumerable<CampaignSummaryResponse> ToCampaignSummaries(this IEnumerable<Campaign> campaigns)
+        {
+            return campaigns.Select(c => c.ToCampaignSummary());
         }
     }
 }
