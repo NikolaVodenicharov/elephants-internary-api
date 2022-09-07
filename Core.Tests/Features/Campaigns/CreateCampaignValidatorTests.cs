@@ -1,9 +1,9 @@
-using FluentValidation.TestHelper;
-using Xunit;
 using Core.Features.Campaigns.RequestModels;
-using System;
 using Core.Features.Campaigns.Support;
-using System.Text;
+using FluentValidation.TestHelper;
+using System;
+using System.Collections.Generic;
+using Xunit;
 
 namespace Core.Tests.Features.Campaigns
 {
@@ -15,143 +15,74 @@ namespace Core.Tests.Features.Campaigns
         private readonly DateTime startDate = DateTime.UtcNow.AddDays(5);
         private readonly DateTime endDate = DateTime.UtcNow.AddDays(50);
 
-        [Fact]
-        public void Validator_WhenNameIsNull_ShouldHaveError()
+        public static IEnumerable<object[]> invalidCampaignNameData =>
+            new List<object[]>
+            {
+                new object[] { null },
+                new object[] { string.Empty },
+                new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMinLength - 1) },
+                new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMaxLength + 1) },
+                new object[] { "Intern Campaign 2000@#$%^&*" }
+            };
+
+        public static IEnumerable<object[]> validCampaignNameData =>
+            new List<object[]>
+            {
+                new object[] { "Intern Campaign 2000" },
+                new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMinLength) },
+                new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMaxLength) },
+            };
+        
+        public static IEnumerable<object[]> startDateTestData =>
+            new List<object[]>
+            {
+                new object[] { DateTime.UtcNow.AddDays(-3), DateTime.UtcNow.AddDays(1) },
+                new object[] { DateTime.UtcNow.AddDays(5), DateTime.UtcNow.AddDays(3) }
+            };
+
+        [Theory]
+        [MemberData(nameof(invalidCampaignNameData))]
+        public void Validator_WhenNameIsInvalidLength_ShouldHaveError(string invalidCampaignName)
         {
-            var createCampaing = new CreateCampaign(
-                null,
+            var createCampaign = new CreateCampaign(
+                invalidCampaignName,
                 startDate,
                 endDate,
                 false);
 
             validator
-                .TestValidate(createCampaing)
+                .TestValidate(createCampaign)
                 .ShouldHaveValidationErrorFor(c => c.Name);
         }
 
-        [Fact]
-        public void Validator_WhenNameIsEmpty_ShouldHaveError()
+        [Theory]
+        [MemberData(nameof(validCampaignNameData))]
+        public void Validator_WhenNameIsValidLength_ShouldNotHaveError(string validCampaignName)
         {
-            var createCampaing = new CreateCampaign(
-                string.Empty,
+            var createCampaign = new CreateCampaign(
+                validCampaignName,
                 startDate,
                 endDate,
                 false);
 
             validator
-                .TestValidate(createCampaing)
-                .ShouldHaveValidationErrorFor(c => c.Name);
-        }
-
-        [Fact]
-        public void Validator_WhenNameIsLessThanMinLength_ShouldHaveError()
-        {
-            var nameLessThanMinlength = TestHelper.GenerateString(CampaignValidationConstants.NameMinLength - 1);
-
-            var createCampaing = new CreateCampaign(
-                nameLessThanMinlength,
-                startDate,
-                endDate,
-                false);
-
-            validator
-                .TestValidate(createCampaing)
-                .ShouldHaveValidationErrorFor(c => c.Name);
-        }
-
-        [Fact]
-        public void Validator_WhenNameIsWithMinAllowLength_ShouldNotHaveError()
-        {
-            var nameWithMinimalAllowLength = TestHelper.GenerateString(CampaignValidationConstants.NameMinLength);
-
-            var createCampaing = new CreateCampaign(
-                nameWithMinimalAllowLength,
-                startDate,
-                endDate,
-                false);
-
-            validator
-                .TestValidate(createCampaing)
+                .TestValidate(createCampaign)
                 .ShouldNotHaveValidationErrorFor(c => c.Name);
         }
 
-        [Fact]
-        public void Validator_WhenNameIsMoreThanMaxLength_ShouldHaveError()
+        [Theory]
+        [MemberData(nameof(startDateTestData))]
+        public void Validator_WhenStartDateIsInvalid_ShouldHaveError(DateTime testStartDate, DateTime testEndDate)
         {
-            var nameLongerThanMaxlength = TestHelper.GenerateString(CampaignValidationConstants.NameMaxLength + 1);
-
-            var nameLength = nameLongerThanMaxlength.Length;
-
-            var createCampaing = new CreateCampaign(
-                nameLongerThanMaxlength,
-                startDate,
-                endDate,
-                false);
-
-            validator
-                .TestValidate(createCampaing)
-                .ShouldHaveValidationErrorFor(c => c.Name);
-        }
-
-        [Fact]
-        public void Validator_WhenNameIsWithMaxAllowLength_ShouldNotHaveError()
-        {
-            var nameWithMaxAllowLength = TestHelper.GenerateString(CampaignValidationConstants.NameMaxLength);
-
-            var createCampaing = new CreateCampaign(
-                nameWithMaxAllowLength,
-                startDate,
-                endDate,
-                false);
-
-            validator
-                .TestValidate(createCampaing)
-                .ShouldNotHaveValidationErrorFor(c => c.Name);
-        }
-
-        [Fact]
-        public void Validator_WhenNameIsLengthRange_ShouldNotHaveError()
-        {
-            var createCampaing = new CreateCampaign(
+            var createCampaign = new CreateCampaign(
                 nameInLengthRange,
-                startDate,
-                endDate,
-                false);
+                testStartDate,
+                testEndDate,
+                false
+            );
 
             validator
-                .TestValidate(createCampaing)
-                .ShouldNotHaveValidationErrorFor(c => c.Name);
-        }
-
-        [Fact]
-        public void Validator_WhenEndDateIsBeforeStartDate_ShouldHaveError()
-        {
-            var startDateBiggerThanEndDate = endDate.AddDays(5);
-
-            var createCampaing = new CreateCampaign(
-                nameInLengthRange,
-                startDateBiggerThanEndDate,
-                endDate,
-                false);
-
-            validator
-                .TestValidate(createCampaing)
-                .ShouldHaveValidationErrorFor(c => c.StartDate);
-        }
-
-        [Fact]
-        public void Validator_WhenStartDateIsInThePast_ShouldHaveError()
-        {
-            var startDateInThePast = DateTime.UtcNow.AddDays(-5);
-
-            var createCampaing = new CreateCampaign(
-                nameInLengthRange,
-                startDateInThePast,
-                endDate,
-                false);
-
-            validator
-                .TestValidate(createCampaing)
+                .TestValidate(createCampaign)
                 .ShouldHaveValidationErrorFor(c => c.StartDate);
         }
 
@@ -160,14 +91,14 @@ namespace Core.Tests.Features.Campaigns
         {         
             var endDateInThePast = DateTime.UtcNow.AddDays(-5);
 
-            var createCampaing = new CreateCampaign(
+            var createCampaign = new CreateCampaign(
                 nameInLengthRange,
                 startDate,
                 endDateInThePast,
                 false);
 
             validator
-                .TestValidate(createCampaing)
+                .TestValidate(createCampaign)
                 .ShouldHaveValidationErrorFor(c => c.EndDate);
         }
     }

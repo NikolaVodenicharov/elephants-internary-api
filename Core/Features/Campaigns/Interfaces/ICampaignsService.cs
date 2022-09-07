@@ -11,5 +11,7 @@ namespace Core.Features.Campaigns.Interfaces
     public interface ICampaignsService
     {
         Task<CampaignSummary> CreateAsync(CreateCampaign model);
+
+        Task<CampaignSummary> UpdateAsync(UpdateCampaign model);
     }
 }

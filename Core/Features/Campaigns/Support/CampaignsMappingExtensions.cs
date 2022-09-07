@@ -30,5 +30,19 @@ namespace Core.Features.Campaigns.Support
 
             return summary;
         }
+
+        public static Campaign ToCampaign(this UpdateCampaign model)
+        {
+            var campaign = new Campaign()
+            {
+                Id = model.Id,
+                Name = model.Name,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
+                IsActive = model.IsActive
+            };
+
+            return campaign;
+        }
     }
 }

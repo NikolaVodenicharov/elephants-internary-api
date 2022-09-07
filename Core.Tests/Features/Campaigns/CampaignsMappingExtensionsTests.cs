@@ -8,9 +8,10 @@ namespace Core.Tests.Features.Campaigns
 {
     public class CampaignsMappingExtensionsTests
     {
+        private Guid id = Guid.NewGuid();
         private string campaignName = "CampaignTestName";
-        private DateTime startDate = new DateTime(2000, 10, 30);
-        private DateTime endDate = new DateTime(2001, 1, 20);
+        private DateTime startDate = DateTime.UtcNow.AddDays(5);
+        private DateTime endDate = DateTime.UtcNow.AddDays(50);
         private bool isActive = false;
 
         [Fact]
@@ -50,6 +51,23 @@ namespace Core.Tests.Features.Campaigns
             Assert.Equal(startDate, campaingSummary.StartDate);
             Assert.Equal(endDate, campaingSummary.EndDate);
             Assert.Equal(isActive, campaingSummary.IsActive);
+        }
+
+        [Fact]
+        public void ToCampaign_WithUpdateCampaignModel_ShouldReturnCorrectObject()
+        {
+            // Arrange
+            var expectedModel = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
+            
+            // Act
+            var actualModel = expectedModel.ToCampaign();
+
+            // Assert
+            Assert.NotNull(actualModel);
+            Assert.Equal(expectedModel.Id, actualModel.Id);
+            Assert.Equal(expectedModel.StartDate, actualModel.StartDate);
+            Assert.Equal(expectedModel.EndDate, actualModel.EndDate);
+            Assert.Equal(expectedModel.IsActive, actualModel.IsActive);
         }
     }
 }

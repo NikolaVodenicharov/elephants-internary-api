@@ -21,6 +21,8 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ICampaignsRepository, CampaignsRepository>();
 
             services.AddTransient<IValidator<CreateCampaign>, CreateCampaignValidator>();
+
+            services.AddTransient<IValidator<UpdateCampaign>, UpdateCampaignValidator>();
         }
     }
 }

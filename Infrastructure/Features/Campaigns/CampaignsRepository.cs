@@ -1,11 +1,6 @@
 ﻿using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Features.Campaigns
 {
@@ -30,6 +25,22 @@ namespace Infrastructure.Features.Campaigns
         public async Task<bool> ExistsByNameAsync(string name)
         {
             return await context.Campaigns.AnyAsync(campaign => campaign.Name.Equals(name));
+        }
+        
+        public async Task<Campaign> UpdateAsync(Campaign model)
+        {
+            context.Campaigns.Update(model);
+
+            await context.SaveChangesAsync();
+
+            return model;
+        }
+
+        public async Task<Campaign?> GetByIdAsync(Guid campaignId)
+        {
+            var campaign = await context.Campaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
+
+            return campaign;
         }
     }
 }

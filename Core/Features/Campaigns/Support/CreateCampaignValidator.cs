@@ -1,4 +1,5 @@
 ﻿using Core.Features.Campaigns.RequestModels;
+using Core.Common;
 using FluentValidation;
 
 namespace Core.Features.Campaigns.Support
@@ -9,6 +10,7 @@ namespace Core.Features.Campaigns.Support
         {
             RuleFor(c => c.Name)
                 .NotNull()
+                .Matches(RegularExpressionPatterns.WordsDigidsDashesAndWhiteSpacePattern)
                 .MinimumLength(CampaignValidationConstants.NameMinLength)
                 .MaximumLength(CampaignValidationConstants.NameMaxLength);
 

@@ -12,5 +12,9 @@ namespace Core.Features.Campaigns.Interfaces
         Task<Campaign> AddAsync(Campaign model);
 
         Task<bool> ExistsByNameAsync(string name);
+
+        Task<Campaign> UpdateAsync(Campaign model);
+
+        Task<Campaign?> GetByIdAsync(Guid campaignId);
     }
 }
