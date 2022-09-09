@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Core.Tests
 {
-    internal sealed class TestHelper
+    public sealed class TestHelper
     {
         public static string GenerateString(int length)
         {
