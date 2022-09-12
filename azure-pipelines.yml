@@ -2,9 +2,7 @@ trigger:
 - main
 
 pool:
-#  vmImage: 'ubuntu-latest'
-  name: 'SHA'
-  vmImage: 'JackSHA'
+  vmImage: 'ubuntu-latest'
 
 variables:
   buildConfiguration: 'Release'
