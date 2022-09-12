@@ -12,6 +12,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContextPool<InternaryContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("InternaryDatabaseConnection")));
 
+builder.Services.CustomizeCorsPolicy(builder.Configuration);
 builder.Services.CustomizeDependencies();
 builder.Services.CustomizeRouting();
 builder.SetupLogger();
@@ -25,6 +26,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 app.UseAuthorization();
 
