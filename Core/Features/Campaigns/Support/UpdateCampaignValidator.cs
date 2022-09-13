@@ -9,8 +9,8 @@ namespace Core.Features.Campaigns.Support
         public UpdateCampaignValidator()
         {
             RuleFor(a => a.Id)
-                .NotEmpty();
-            
+                .NotEqual(Guid.Empty);
+
             RuleFor(a => a.Name)
                 .NotNull()
                 .Matches(RegularExpressionPatterns.CampaignNamePattern)
@@ -23,7 +23,7 @@ namespace Core.Features.Campaigns.Support
             RuleFor(a => a.EndDate)
                 .NotNull()
                 .GreaterThan(a => a.StartDate)
-                .GreaterThanOrEqualTo(DateTime.UtcNow);
+                .GreaterThanOrEqualTo(DateTime.Today);
         }
     }
 }

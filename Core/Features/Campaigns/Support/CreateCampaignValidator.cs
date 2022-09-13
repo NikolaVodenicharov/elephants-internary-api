@@ -16,12 +16,11 @@ namespace Core.Features.Campaigns.Support
 
             RuleFor(c => c.StartDate)
                 .NotNull()
-                .GreaterThan(DateTime.UtcNow)
                 .LessThan(c => c.EndDate);
 
             RuleFor(c => c.EndDate)
                 .NotNull()
-                .GreaterThan(DateTime.UtcNow);
+                .GreaterThanOrEqualTo(DateTime.Today);
         }
     }
 }

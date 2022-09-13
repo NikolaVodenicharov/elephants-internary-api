@@ -69,12 +69,12 @@ namespace Core.Features.Campaigns
                 throw new CoreException("Requested campaign couldn't be found.", HttpStatusCode.NotFound);
             }
 
-            if (existingCampaign.EndDate < DateTime.UtcNow)
+            if (!existingCampaign.IsActive)
             {
-                campaignsServiceLogger.LogError($"[CampaignsService] Cannot update Campaign with Id {existingCampaign.Id} " +
-                    $"because it has already ended.");
+                campaignsServiceLogger.LogError($"[CampaignsService] Campaign with Id {model.Id} is inactive " +
+                    $"and only active campaigns can be updated");
 
-                throw new CoreException("Cannot update Campaign that has already ended.", HttpStatusCode.BadRequest);
+                throw new CoreException("Only active campaigns can be updated.", HttpStatusCode.BadRequest);
             }
 
             var hasNameChange = !existingCampaign.Name.Equals(model.Name);
