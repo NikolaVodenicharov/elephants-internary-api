@@ -13,7 +13,7 @@ namespace Core.Features.Campaigns.Support
             
             RuleFor(a => a.Name)
                 .NotNull()
-                .Matches(RegularExpressionPatterns.WordsDigidsDashesAndWhiteSpacePattern)
+                .Matches(RegularExpressionPatterns.CampaignNamePattern)
                 .MinimumLength(CampaignValidationConstants.NameMinLength)
                 .MaximumLength(CampaignValidationConstants.NameMaxLength);
             

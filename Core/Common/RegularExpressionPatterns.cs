@@ -6,6 +6,6 @@
         public const string LettersDotsNumberSignsAndExclamationMarks = "^[a-zA-Z.!#]+$";
 
         // Some9 0-
-        public const string WordsDigidsDashesAndWhiteSpacePattern = $"^[A-Za-z0-9-\\s]+$";
+        public const string CampaignNamePattern = $"^[a-zA-Z0-9]+([-][a-zA-Z0-9]+|[ ][a-zA-Z0-9]+)*$";
     }
 }
