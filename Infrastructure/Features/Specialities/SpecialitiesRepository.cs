@@ -65,5 +65,14 @@ namespace Infrastructure.Features.Specialities
 
             return isNameTakenByOther;
         }
+
+        public async Task<ICollection<Speciality>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            var specialities = await context.Specialties
+                .Where(s => ids.Contains(s.Id))
+                .ToListAsync();
+
+            return specialities;
+        }
     }
 }

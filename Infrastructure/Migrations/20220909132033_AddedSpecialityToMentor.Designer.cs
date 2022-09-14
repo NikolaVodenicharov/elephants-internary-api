@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(InternaryContext))]
-    partial class InternaryContextModelSnapshot : ModelSnapshot
+    [Migration("20220909132033_AddedSpecialityToMentor")]
+    partial class AddedSpecialityToMentor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,21 +23,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
-
-            modelBuilder.Entity("CampaignMentors", b =>
-                {
-                    b.Property<Guid>("CampaignId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("MentorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("CampaignId", "MentorId");
-
-                    b.HasIndex("MentorId");
-
-                    b.ToTable("CampaignMentors");
-                });
 
             modelBuilder.Entity("Core.Features.Campaigns.Entities.Campaign", b =>
                 {
@@ -82,7 +69,12 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(125)
                         .HasColumnType("nvarchar(125)");
 
+                    b.Property<Guid>("SpecialityId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("SpecialityId");
 
                     b.ToTable("Mentors");
                 });
@@ -103,53 +95,20 @@ namespace Infrastructure.Migrations
                     b.ToTable("Specialties");
                 });
 
-            modelBuilder.Entity("MentorSpecialties", b =>
+            modelBuilder.Entity("Core.Features.Mentors.Entities.Mentor", b =>
                 {
-                    b.Property<Guid>("MentorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SpecialityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("MentorId", "SpecialityId");
-
-                    b.HasIndex("SpecialityId");
-
-                    b.ToTable("MentorSpecialties");
-                });
-
-            modelBuilder.Entity("CampaignMentors", b =>
-                {
-                    b.HasOne("Core.Features.Campaigns.Entities.Campaign", null)
-                        .WithMany()
-                        .HasForeignKey("CampaignId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("CampaignId");
-
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", null)
-                        .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("MentorId");
-                });
-
-            modelBuilder.Entity("MentorSpecialties", b =>
-                {
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", null)
-                        .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_MentorId");
-
-                    b.HasOne("Core.Features.Specialties.Entities.Speciality", null)
-                        .WithMany()
+                    b.HasOne("Core.Features.Specialties.Entities.Speciality", "Speciality")
+                        .WithMany("Mentors")
                         .HasForeignKey("SpecialityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_SpecialityId");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Speciality");
+                });
+
+            modelBuilder.Entity("Core.Features.Specialties.Entities.Speciality", b =>
+                {
+                    b.Navigation("Mentors");
                 });
 #pragma warning restore 612, 618
         }

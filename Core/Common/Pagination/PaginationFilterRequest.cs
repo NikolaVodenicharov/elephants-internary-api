@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Campaigns.RequestModels
+﻿namespace Core.Common.Pagination
 {
     public class PaginationFilterRequest
     {

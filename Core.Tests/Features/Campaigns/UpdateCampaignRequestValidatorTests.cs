@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using Xunit;
 namespace Core.Tests.Features.Campaigns
 {
-    public class UpdateCampaignValidatorTests
+    public class UpdateCampaignRequestValidatorTests
     {
-        private readonly UpdateCampaignValidator validator = new UpdateCampaignValidator();
+        private readonly UpdateCampaignRequestValidator validator = new UpdateCampaignRequestValidator();
 
         private Guid id = Guid.NewGuid();
         private string campaignName = "CampaignTestName";
@@ -44,7 +44,7 @@ namespace Core.Tests.Features.Campaigns
         [Fact]
         public void Validator_WhenIdIsEmpty_ShouldHaveError()
         {
-            var updateCampaign = new UpdateCampaign(Guid.Empty, campaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(Guid.Empty, campaignName, startDate, endDate, isActive);
 
             validator
                 .TestValidate(updateCampaign)
@@ -55,7 +55,7 @@ namespace Core.Tests.Features.Campaigns
         [MemberData(nameof(validCampaignNameData))]
         public void Validator_WhenNameLengthIsValid_ShouldNotHaveError(string validCampaignName)
         {
-            var updateCampaign = new UpdateCampaign(id, validCampaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, validCampaignName, startDate, endDate, isActive);
 
             validator
                 .TestValidate(updateCampaign)
@@ -66,7 +66,7 @@ namespace Core.Tests.Features.Campaigns
         [MemberData(nameof(invalidCampaignNameData))]
         public void Validator_WhenInvalidNameLength_ShouldHaveError(string invalidCampaignName)
         {
-            var updateCampaign = new UpdateCampaign(id, invalidCampaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, invalidCampaignName, startDate, endDate, isActive);
 
             validator
                 .TestValidate(updateCampaign)
@@ -76,7 +76,7 @@ namespace Core.Tests.Features.Campaigns
         [Fact]
         public void Validator_StartDateIsValid_ShouldNotHaveError()
         {
-            var updateCampaign = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, campaignName, startDate, endDate, isActive);
 
             validator
                 .TestValidate(updateCampaign)
@@ -86,7 +86,7 @@ namespace Core.Tests.Features.Campaigns
         [Fact]
         public void Validator_EndDateIsValid_ShouldNotHaveError()
         {
-            var updateCampaign = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, campaignName, startDate, endDate, isActive);
 
             validator
                 .TestValidate(updateCampaign)
@@ -97,7 +97,7 @@ namespace Core.Tests.Features.Campaigns
         [MemberData(nameof(endDateTestData))]
         public void Validator_EndDateIsInvalid_ShouldHaveError(DateTime testStartDate, DateTime invalidEndDate)
         {
-            var updateCampaign = new UpdateCampaign(id, campaignName, testStartDate, invalidEndDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, campaignName, testStartDate, invalidEndDate, isActive);
 
             validator
                 .TestValidate(updateCampaign)

@@ -1,8 +1,7 @@
-﻿using Core.Features.Campaigns.Entities;
+﻿using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
-using Core.Features.Campaigns.RequestModels;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
 
 namespace Infrastructure.Features.Campaigns
 {
@@ -31,8 +30,6 @@ namespace Infrastructure.Features.Campaigns
         
         public async Task<Campaign> UpdateAsync(Campaign model)
         {
-            context.Campaigns.Update(model);
-
             await context.SaveChangesAsync();
 
             return model;

@@ -1,4 +1,5 @@
 ﻿using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
@@ -13,14 +14,14 @@ namespace Core.Features.Campaigns
     {
         private readonly ICampaignsRepository campaignsRepository;
         private readonly ILogger<CampaignsService> campaignsServiceLogger;
-        private readonly IValidator<CreateCampaign> createCampaignValidator;
-        private readonly IValidator<UpdateCampaign> updateCampaignValidator;
+        private readonly IValidator<CreateCampaignRequest> createCampaignValidator;
+        private readonly IValidator<UpdateCampaignRequest> updateCampaignValidator;
         private readonly IValidator<PaginationFilterRequest> paginationFilterRequestValidator;
 
         public CampaignsService(ICampaignsRepository campaignsRepository, 
             ILogger<CampaignsService> campaignsServiceLogger,
-            IValidator<CreateCampaign> createCampaignValidator, 
-            IValidator<UpdateCampaign> updateCampaignValidator,
+            IValidator<CreateCampaignRequest> createCampaignValidator, 
+            IValidator<UpdateCampaignRequest> updateCampaignValidator,
             IValidator<PaginationFilterRequest> paginationFilterRequestValidator)
         {
             this.campaignsRepository = campaignsRepository;
@@ -30,7 +31,7 @@ namespace Core.Features.Campaigns
             this.paginationFilterRequestValidator = paginationFilterRequestValidator;
         }
 
-        public async Task<CampaignSummaryResponse> CreateAsync(CreateCampaign model)
+        public async Task<CampaignSummaryResponse> CreateAsync(CreateCampaignRequest model)
         {
             await createCampaignValidator.ValidateAndThrowAsync(model);
 
@@ -54,7 +55,7 @@ namespace Core.Features.Campaigns
             return createdCampaign.ToCampaignSummary();
         }
 
-        public async Task<CampaignSummaryResponse> UpdateAsync(UpdateCampaign model)
+        public async Task<CampaignSummaryResponse> UpdateAsync(UpdateCampaignRequest model)
         {
             campaignsServiceLogger.LogInformation($"[CampaignsService] Executing update of campaign with Id {model.Id}.");
 

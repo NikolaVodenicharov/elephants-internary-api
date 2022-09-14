@@ -4,12 +4,12 @@ using FluentValidation;
 
 namespace Core.Features.Campaigns.Support
 {
-    public class CreateCampaignValidator : AbstractValidator<CreateCampaign>
+    public class CreateCampaignRequestValidator : AbstractValidator<CreateCampaignRequest>
     {
-        public CreateCampaignValidator()
+        public CreateCampaignRequestValidator()
         {
             RuleFor(c => c.Name)
-                .NotNull()
+                .NotEmpty()
                 .Matches(RegularExpressionPatterns.CampaignNamePattern)
                 .MinimumLength(CampaignValidationConstants.NameMinLength)
                 .MaximumLength(CampaignValidationConstants.NameMaxLength);

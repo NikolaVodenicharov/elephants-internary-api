@@ -33,5 +33,12 @@ namespace Core.Features.Specialities.Support
 
             return specialitySummary;
         }
+
+        public static IEnumerable<SpecialitySummaryResponse> ToSpecialitySummaryResponses(this IEnumerable<Speciality> specialities)
+        {
+            var specialtySummaries = specialities.Select(s => s.ToSpecialitySummaryResponse());
+
+            return specialtySummaries;
+        }
     }
 }

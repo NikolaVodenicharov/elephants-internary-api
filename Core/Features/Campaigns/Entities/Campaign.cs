@@ -1,4 +1,6 @@
-﻿namespace Core.Features.Campaigns.Entities
+﻿using Core.Features.Mentors.Entities;
+
+namespace Core.Features.Campaigns.Entities
 {
     public class Campaign
     {
@@ -11,5 +13,7 @@
         public DateTime EndDate { get; set; }
 
         public bool IsActive { get; set; }
+
+        public ICollection<Mentor> Mentors { get; set; }
     }
 }

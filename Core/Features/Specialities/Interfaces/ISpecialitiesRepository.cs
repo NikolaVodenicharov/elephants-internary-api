@@ -16,5 +16,7 @@ namespace Core.Features.Specialities.Interfaces
         Task<bool> ExistsByNameAsync(string name);
 
         Task<bool> IsNameTakenByOtherAsync(string name, Guid updatedCampaignId);
+
+        Task<ICollection<Speciality>> GetByIdsAsync(IEnumerable<Guid> ids);
     }
 }

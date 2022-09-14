@@ -1,7 +1,6 @@
-﻿using Core.Features.Campaigns.RequestModels;
-using FluentValidation;
+﻿using FluentValidation;
 
-namespace Core.Features.Campaigns.Support
+namespace Core.Common.Pagination
 {
     public class PaginationFilterRequestValidator : AbstractValidator<PaginationFilterRequest>
     {

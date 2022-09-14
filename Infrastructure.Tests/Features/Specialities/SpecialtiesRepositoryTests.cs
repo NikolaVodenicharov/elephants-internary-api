@@ -3,6 +3,7 @@ using Core.Features.Specialties.Entities;
 using Infrastructure.Features.Specialities;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -186,6 +187,48 @@ namespace Infrastructure.Tests.Features.Specialities
             //Assert
             Assert.Equal(specialtyMock1.Id, specialtySummary.Id);
             Assert.Equal(specialtyMock1.Name, specialtySummary.Name);
+        }
+
+        [Fact]
+        public async Task GetByIdsAsync_WhenAllIdsFound_ShouldReturnCorrectCount()
+        {
+            //Arrange
+            var specialtyMock1 = new Speciality() { Name = name };
+            var specialtyMock2 = new Speciality() { Name = name + "2" };
+
+            var createdSpeciality1 = await specialtiesRepository.AddAsync(specialtyMock1);
+            var createdSpeciality2 = await specialtiesRepository.AddAsync(specialtyMock2);
+
+            var specialityIds = new List<Guid>()
+            {
+                createdSpeciality1.Id, createdSpeciality2.Id
+            };
+
+            //Act
+            var response = await specialtiesRepository.GetByIdsAsync(specialityIds);
+
+            //Assert
+            Assert.Equal(specialityIds.Count, response.Count);
+        }
+
+        [Fact]
+        public async Task GetByIdsAsync_WhenNotAllIdsFound_ShouldReturnDifferentCount()
+        {
+            //Arrange
+            var specialtyMock1 = new Speciality() { Name = name };
+
+            var createdSpeciality1 = await specialtiesRepository.AddAsync(specialtyMock1);
+
+            var specialityIds = new List<Guid>()
+            {
+                createdSpeciality1.Id, Guid.NewGuid(), Guid.NewGuid()
+            };
+
+            //Act
+            var response = await specialtiesRepository.GetByIdsAsync(specialityIds);
+
+            //Assert
+            Assert.NotEqual(specialityIds.Count, response.Count);
         }
     }
 }

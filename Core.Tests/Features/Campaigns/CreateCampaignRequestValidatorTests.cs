@@ -7,9 +7,9 @@ using Xunit;
 
 namespace Core.Tests.Features.Campaigns
 {
-    public class CreateCampaignValidatorTests
+    public class CreateCampaignRequestValidatorTests
     {
-        private readonly CreateCampaignValidator validator = new();
+        private readonly CreateCampaignRequestValidator validator = new();
 
         private readonly string nameInLengthRange = "InternCampaign2000";
         private readonly DateTime startDate = DateTime.UtcNow.AddDays(5);
@@ -44,7 +44,7 @@ namespace Core.Tests.Features.Campaigns
         [MemberData(nameof(invalidCampaignNameData))]
         public void Validator_WhenNameIsInvalidLength_ShouldHaveError(string invalidCampaignName)
         {
-            var createCampaign = new CreateCampaign(
+            var createCampaign = new CreateCampaignRequest(
                 invalidCampaignName,
                 startDate,
                 endDate,
@@ -59,7 +59,7 @@ namespace Core.Tests.Features.Campaigns
         [MemberData(nameof(validCampaignNameData))]
         public void Validator_WhenNameIsValidLength_ShouldNotHaveError(string validCampaignName)
         {
-            var createCampaign = new CreateCampaign(
+            var createCampaign = new CreateCampaignRequest(
                 validCampaignName,
                 startDate,
                 endDate,
@@ -72,9 +72,9 @@ namespace Core.Tests.Features.Campaigns
 
         [Theory]
         [MemberData(nameof(startDateTestData))]
-        public void Validator_WhenStartDateIsInvalid_ShouldHaveError(DateTime testStartDate, DateTime testEndDate)
+        public void Validator_WhenStartDateIsAfterEndDate_ShouldHaveError(DateTime testStartDate, DateTime testEndDate)
         {
-            var createCampaign = new CreateCampaign(
+            var createCampaign = new CreateCampaignRequest(
                 nameInLengthRange,
                 testStartDate,
                 testEndDate,
@@ -91,7 +91,7 @@ namespace Core.Tests.Features.Campaigns
         {         
             var endDateInThePast = DateTime.UtcNow.AddDays(-5);
 
-            var createCampaign = new CreateCampaign(
+            var createCampaign = new CreateCampaignRequest(
                 nameInLengthRange,
                 startDate,
                 endDateInThePast,

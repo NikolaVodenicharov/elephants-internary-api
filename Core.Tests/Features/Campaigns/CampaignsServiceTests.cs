@@ -1,4 +1,5 @@
 ﻿using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.Campaigns;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
@@ -41,8 +42,8 @@ namespace Core.Tests.Features.Campaigns
 
         public CampaignsServiceTests()
         {
-            var createCampaignValidator = new CreateCampaignValidator();
-            var updateCampaignValidator = new UpdateCampaignValidator();
+            var createCampaignValidator = new CreateCampaignRequestValidator();
+            var updateCampaignValidator = new UpdateCampaignRequestValidator();
             var filterCampaignsRequestValidator = new PaginationFilterRequestValidator();
 
             campaignsRepositoryMock = new Mock<ICampaignsRepository>();
@@ -69,7 +70,7 @@ namespace Core.Tests.Features.Campaigns
         public async Task CreateAsync_CallCorrectRepositoryMethod()
         {
             //Arrange
-            CreateCampaign createCampaign = CreateValidCreateCampaign();
+            CreateCampaignRequest createCampaign = CreateValidCreateCampaign();
 
             campaignsRepositoryMock
                 .Setup(x => x.AddAsync(It.IsAny<Campaign>()))
@@ -118,13 +119,13 @@ namespace Core.Tests.Features.Campaigns
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
-        
+
         [Theory]
         [MemberData(nameof(campaignNameTestData))]
         public async Task CreateAsync_WhenNameIsInvalidLength_ShouldThrowException(string invalidCampaignName)
         {
             // Arrange
-            var createCampaign = new CreateCampaign(invalidCampaignName, startDate, endDate, isActive);
+            var createCampaign = new CreateCampaignRequest(invalidCampaignName, startDate, endDate, isActive);
 
             // Act
             var action = async () => await campaignsServiceMock.CreateAsync(createCampaign);
@@ -138,7 +139,7 @@ namespace Core.Tests.Features.Campaigns
         public async Task CreateAsync_WhenEndDateIsInvalid_ShouldThrowException(DateTime testStartDate, DateTime invalidEndDate)
         {
             // Arrange
-            var createCampaign = new CreateCampaign(campaignName, testStartDate, invalidEndDate, isActive);
+            var createCampaign = new CreateCampaignRequest(campaignName, testStartDate, invalidEndDate, isActive);
 
             // Act
             var action = async () => await campaignsServiceMock.CreateAsync(createCampaign);
@@ -155,7 +156,7 @@ namespace Core.Tests.Features.Campaigns
         public async Task UpdateAsync_WithValidData_ShouldUpdateSuccessfully()
         {
             // Arrange
-            var updateCampaign = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, campaignName, startDate, endDate, isActive);
 
             campaignsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
@@ -163,7 +164,7 @@ namespace Core.Tests.Features.Campaigns
             campaignsRepositoryMock
                 .Setup(x => x.UpdateAsync(It.IsAny<Campaign>()))
                 .ReturnsAsync(returnCampaign);
-        
+
             // Act
             var actualModel = await campaignsServiceMock.UpdateAsync(updateCampaign);
 
@@ -180,11 +181,11 @@ namespace Core.Tests.Features.Campaigns
         public async Task UpdateAsync_WhenIdNotExist_ShouldThrowException()
         {
             // Arrange
-            var updateCampaign = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, campaignName, startDate, endDate, isActive);
 
             // Act    
-            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
-            
+            var action = async () => await campaignsServiceMock.UpdateAsync(updateCampaign);
+
             // Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
@@ -196,16 +197,16 @@ namespace Core.Tests.Features.Campaigns
             campaignsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(returnCampaign);
-            
+
             campaignsRepositoryMock
                 .Setup(x => x.ExistsByNameAsync(It.IsAny<string>()))
                 .ReturnsAsync(true);
 
             var updatedName = campaignName + "-Updated";
-            var updateCampaign = new UpdateCampaign(id, updatedName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, updatedName, startDate, endDate, isActive);
 
             // Act
-            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
+            var action = async () => await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             // Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -216,10 +217,10 @@ namespace Core.Tests.Features.Campaigns
         public async Task UpdateAsync_WhenNameHasInvalidLength_ShouldThrowException(string invalidCampaignName)
         {
             // Arrange
-            var updateCampaign = new UpdateCampaign(id, invalidCampaignName, startDate, endDate, isActive);
+            var updateCampaign = new UpdateCampaignRequest(id, invalidCampaignName, startDate, endDate, isActive);
 
             //Act
-            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
+            var action = async () => await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -230,10 +231,10 @@ namespace Core.Tests.Features.Campaigns
         public async Task UpdateAsync_WhenEndDateIsInvalid_ShouldThrowException(DateTime testStartDate, DateTime invalidEndDate)
         {
             // Arrange
-            var updateCampaign = new UpdateCampaign(id, campaignName, testStartDate, invalidEndDate, isActive);
-            
+            var updateCampaign = new UpdateCampaignRequest(id, campaignName, testStartDate, invalidEndDate, isActive);
+
             // Act
-            var action = async() => await campaignsServiceMock.UpdateAsync(updateCampaign);
+            var action = async () => await campaignsServiceMock.UpdateAsync(updateCampaign);
 
             // Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -355,10 +356,10 @@ namespace Core.Tests.Features.Campaigns
 
         #endregion
 
-        private CreateCampaign CreateValidCreateCampaign()
+        private CreateCampaignRequest CreateValidCreateCampaign()
         {
             //Arrange
-            return new CreateCampaign(campaignName, startDate, endDate, isActive);
+            return new CreateCampaignRequest(campaignName, startDate, endDate, isActive);
         }
     }
 }

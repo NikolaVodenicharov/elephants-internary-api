@@ -18,7 +18,7 @@ namespace Core.Tests.Features.Campaigns
         public void CreateCampaign_ToCampaign_CreateCorrectObject()
         {
             //Arrange
-            var systemUnderTest = new CreateCampaign(campaignName, startDate, endDate, isActive);
+            var systemUnderTest = new CreateCampaignRequest(campaignName, startDate, endDate, isActive);
 
             //Act
             var campaing = systemUnderTest.ToCampaign();
@@ -57,7 +57,7 @@ namespace Core.Tests.Features.Campaigns
         public void ToCampaign_WithUpdateCampaignModel_ShouldReturnCorrectObject()
         {
             // Arrange
-            var expectedModel = new UpdateCampaign(id, campaignName, startDate, endDate, isActive);
+            var expectedModel = new UpdateCampaignRequest(id, campaignName, startDate, endDate, isActive);
             
             // Act
             var actualModel = expectedModel.ToCampaign();

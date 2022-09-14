@@ -11,7 +11,7 @@ namespace Core.Features.Campaigns.Support
 {
     public static class CampaignsMappingExtensions
     {
-        public static Campaign ToCampaign(this CreateCampaign model)
+        public static Campaign ToCampaign(this CreateCampaignRequest model)
         {
             var campaign = new Campaign()
             {
@@ -36,7 +36,7 @@ namespace Core.Features.Campaigns.Support
             return summary;
         }
 
-        public static Campaign ToCampaign(this UpdateCampaign model)
+        public static Campaign ToCampaign(this UpdateCampaignRequest model)
         {
             var campaign = new Campaign()
             {

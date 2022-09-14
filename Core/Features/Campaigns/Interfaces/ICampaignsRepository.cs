@@ -1,4 +1,5 @@
-﻿using Core.Features.Campaigns.Entities;
+﻿using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.RequestModels;
 
 namespace Core.Features.Campaigns.Interfaces

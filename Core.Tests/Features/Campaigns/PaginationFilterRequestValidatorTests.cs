@@ -1,7 +1,5 @@
-﻿using Core.Features.Campaigns.RequestModels;
-using Core.Features.Campaigns.Support;
+﻿using Core.Common.Pagination;
 using FluentValidation.TestHelper;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
