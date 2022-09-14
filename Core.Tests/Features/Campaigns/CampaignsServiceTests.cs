@@ -21,7 +21,7 @@ namespace Core.Tests.Features.Campaigns
         private readonly string campaignName = "CampaignTestName";
         private DateTime startDate = DateTime.UtcNow.AddDays(5);
         private DateTime endDate = DateTime.UtcNow.AddDays(50);
-        private bool isActive = false;
+        private bool isActive = true;
         private Mock<ICampaignsRepository> campaignsRepositoryMock;
         private CampaignsService campaignsServiceMock;
         private Campaign returnCampaign;

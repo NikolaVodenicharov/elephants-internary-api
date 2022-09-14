@@ -36,7 +36,7 @@ namespace Core.Tests.Features.Campaigns
         public static IEnumerable<object[]> startDateTestData =>
             new List<object[]>
             {
-                new object[] { DateTime.UtcNow.AddDays(-3), DateTime.UtcNow.AddDays(1) },
+                new object[] { DateTime.UtcNow.AddDays(2), DateTime.UtcNow.AddDays(1) },
                 new object[] { DateTime.UtcNow.AddDays(5), DateTime.UtcNow.AddDays(3) }
             };
 
