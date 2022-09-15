@@ -3,6 +3,7 @@ using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
 using Core.Common.Exceptions;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -15,6 +16,7 @@ using Core.Common.Pagination;
 
 namespace WebAPI.Features.Campaigns
 {
+    [Authorize]
     public class CampaignsController : ApiControllerBase
     {
         private readonly ICampaignsService campaignsService;
