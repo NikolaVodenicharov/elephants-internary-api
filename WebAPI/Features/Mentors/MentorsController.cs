@@ -5,6 +5,7 @@ using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
@@ -13,6 +14,7 @@ using WebAPI.Common.ErrorHandling;
 
 namespace WebAPI.Features.Mentors
 {
+    [Authorize]
     public class MentorsController : ApiControllerBase
     {
         private readonly IMentorsService mentorsService;

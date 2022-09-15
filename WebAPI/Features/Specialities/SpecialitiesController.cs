@@ -4,6 +4,7 @@ using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using WebAPI.Common.Abstractions;
@@ -11,6 +12,7 @@ using WebAPI.Common.ErrorHandling;
 
 namespace WebAPI.Features.Specialities
 {
+    [Authorize]
     public class SpecialitiesController : ApiControllerBase
     {
         private readonly ISpecialitiesService specialitiesService;
