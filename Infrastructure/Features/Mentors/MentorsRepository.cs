@@ -56,11 +56,9 @@ namespace Infrastructure.Features.Mentors
             return await context.Mentors.AnyAsync(mentor => mentor.Email.Equals(email));
         }
 
-        public async Task<Mentor> UpdateAsync(Mentor mentor)
+        public async Task SaveTrackingChangesAsync()
         {
             await context.SaveChangesAsync();
-
-            return mentor;
         }
 
         public async Task<IEnumerable<Mentor>> GetMentorsByCampaignIdAsync(Guid campaignId, PaginationFilterRequest filter)

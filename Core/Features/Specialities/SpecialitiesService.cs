@@ -55,11 +55,11 @@ namespace Core.Features.Specialities
 
             speciality!.Name = updateSpecialityRequest.Name;
 
-            var specialitySummaryResponse = await specialitiesRepository.UpdateAync(speciality);
+            await specialitiesRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(UpdateAsync), specialitySummaryResponse.Id);
+            LogInformation(nameof(UpdateAsync), speciality.Id);
 
-            return specialitySummaryResponse;
+            return speciality.ToSpecialitySummaryResponse();
         }
 
         public async Task<SpecialitySummaryResponse> GetByIdAsync(Guid id)

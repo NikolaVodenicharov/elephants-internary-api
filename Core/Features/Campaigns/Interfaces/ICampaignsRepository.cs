@@ -1,16 +1,14 @@
-﻿using Core.Common.Pagination;
+﻿using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
-using Core.Features.Campaigns.RequestModels;
 
 namespace Core.Features.Campaigns.Interfaces
 {
-    public interface ICampaignsRepository
+    public interface ICampaignsRepository : IRepositoryBase
     {
         Task<Campaign> AddAsync(Campaign model);
 
         Task<bool> ExistsByNameAsync(string name);
-
-        Task<Campaign> UpdateAsync(Campaign model);
 
         Task<Campaign?> GetByIdAsync(Guid campaignId);
 

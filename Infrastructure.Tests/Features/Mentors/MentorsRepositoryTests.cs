@@ -79,12 +79,11 @@ namespace Infrastructure.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task UpdateAsync_UpdateMentor_ShouldBeUpdated()
+        public async Task SaveTrackingChangesAsync_UpdateMentor_ShouldBeUpdated()
         {
             //Arrange
             var mentorToUpdate = new Mentor()
             {
-                Id = Guid.NewGuid(),
                 FirstName = firstName,
                 LastName = lastName,
                 Email = email
@@ -95,9 +94,12 @@ namespace Infrastructure.Tests.Features.Mentors
 
             mentorToUpdate.LastName = "Newman";
 
-            var updatedMentor = await mentorsRepository.UpdateAsync(mentorToUpdate);
+            await mentorsRepository.SaveTrackingChangesAsync();
+
+            var updatedMentor = await mentorsRepository.GetByIdAsync(mentorToUpdate.Id);
 
             //Assert
+            Assert.NotNull(updatedMentor);
             Assert.Equal(mentorToUpdate.Id, updatedMentor.Id);
             Assert.Equal(mentorToUpdate.FirstName, updatedMentor.FirstName);
             Assert.Equal(mentorToUpdate.LastName, updatedMentor.LastName);

@@ -143,11 +143,11 @@ namespace Core.Features.Mentors
             existingMentor.Email = request.Email;
             existingMentor.Specialities = mentorSpecialities;
 
-            var result = await mentorsRepository.UpdateAsync(existingMentor);
+            await mentorsRepository.SaveTrackingChangesAsync();
 
             mentorsServiceLogger.LogInformation($"[MentorsService] Mentor with Id {request.Id} updated successfully");
 
-            return result.ToMentorSummaryResponse();
+            return existingMentor.ToMentorSummaryResponse();
         }
 
         public async Task<IEnumerable<MentorSummaryResponse>> GetMentorsByCampaignIdAsync(Guid campaignId, PaginationFilterRequest filter)

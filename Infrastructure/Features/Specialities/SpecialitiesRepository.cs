@@ -24,11 +24,9 @@ namespace Infrastructure.Features.Specialities
             return speciality.ToSpecialitySummaryResponse();
         }
 
-        public async Task<SpecialitySummaryResponse> UpdateAync(Speciality speciality)
+        public async Task SaveTrackingChangesAsync()
         {
             await context.SaveChangesAsync();
-
-            return speciality.ToSpecialitySummaryResponse();
         }
 
         public async Task<bool> ExistsByNameAsync(string name)
