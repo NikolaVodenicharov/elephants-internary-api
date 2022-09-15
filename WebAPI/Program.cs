@@ -1,6 +1,5 @@
-using Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using WebAPI.Common.ErrorHandling;
+using WebAPI.Common.Extensions;
 using WebAPI.Common.Extensions.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,13 +8,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContextPool<InternaryContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("InternaryDatabaseConnection")));
+builder.Services.ConfigureAndMigrateDatabase(builder.Configuration);
 
 builder.Services.CustomizeCorsPolicy(builder.Configuration);
 builder.Services.CustomizeDependencies();
 builder.Services.CustomizeRouting();
 builder.SetupLogger();
+
 
 var app = builder.Build();
 
