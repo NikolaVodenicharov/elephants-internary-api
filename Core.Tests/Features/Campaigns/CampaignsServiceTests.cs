@@ -150,7 +150,7 @@ namespace Core.Tests.Features.Campaigns
 
         #endregion
 
-        #region UpdateAsync
+        #region UpdateAsyncTests
 
         [Fact]
         public async Task UpdateAsync_WithValidData_ShouldUpdateSuccessfully()
@@ -160,9 +160,6 @@ namespace Core.Tests.Features.Campaigns
 
             campaignsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnCampaign);
-            campaignsRepositoryMock
-                .Setup(x => x.UpdateAsync(It.IsAny<Campaign>()))
                 .ReturnsAsync(returnCampaign);
 
             // Act

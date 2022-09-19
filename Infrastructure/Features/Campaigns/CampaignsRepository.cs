@@ -27,13 +27,6 @@ namespace Infrastructure.Features.Campaigns
         {
             return await context.Campaigns.AnyAsync(campaign => campaign.Name.Equals(name));
         }
-        
-        public async Task<Campaign> UpdateAsync(Campaign model)
-        {
-            await context.SaveChangesAsync();
-
-            return model;
-        }
 
         public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationFilterRequest filter)
         {
@@ -62,6 +55,11 @@ namespace Infrastructure.Features.Campaigns
             var campaignCount = await context.Campaigns.CountAsync();
 
             return campaignCount;
+        }
+
+        public async Task SaveTrackingChangesAsync()
+        {
+            await context.SaveChangesAsync();
         }
     }
 }
