@@ -22,13 +22,6 @@ namespace Infrastructure.Features.LearningTopics
             return learningTopic;
         }
 
-        public async Task<LearningTopic> UpdateAsync(LearningTopic learningTopic)
-        {
-            await context.SaveChangesAsync();
-
-            return learningTopic;
-        }
-
         public async Task<LearningTopic?> GetByIdAsync(Guid id)
         {
             var learningTopic = await context.LearningTopics
@@ -52,6 +45,11 @@ namespace Infrastructure.Features.LearningTopics
             var existsByName = await context.LearningTopics.AnyAsync(t => t.Name.Equals(name));
 
             return existsByName;
+        }
+
+        public async Task SaveTrackingChangesAsync()
+        {
+            await context.SaveChangesAsync();
         }
     }
 }

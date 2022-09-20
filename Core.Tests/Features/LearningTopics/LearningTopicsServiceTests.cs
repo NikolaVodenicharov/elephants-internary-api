@@ -211,10 +211,6 @@ namespace Core.Tests.Features.LearningTopics
             learningTopicRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(learningTopic);
-            
-            learningTopicRepositoryMock
-                .Setup(x => x.UpdateAsync(It.IsAny<LearningTopic>()))
-                .ReturnsAsync(learningTopic);
 
             // Act
             var learningTopicReponse = await learningTopicsService.UpdateAsync(updateLearningTopicRequest);

@@ -74,11 +74,11 @@ namespace Core.Features.LearningTopics
             existingLearningTopic.Name = request.Name;
             existingLearningTopic.Specialities = specialities;
 
-            var learningTopicResponse = await learningTopicsRepository.UpdateAsync(existingLearningTopic);
+            await learningTopicsRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(UpdateAsync), learningTopicResponse.Id);
+            LogInformation(nameof(UpdateAsync), existingLearningTopic.Id);
 
-            return learningTopicResponse.ToLearningTopicSummary();
+            return existingLearningTopic.ToLearningTopicSummary();
         }
 
         public async Task<LearningTopicSummaryResponse> GetByIdAsync(Guid id)

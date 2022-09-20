@@ -97,7 +97,9 @@ namespace Infrastructure.Features.LearningTopics
             learningTopic.Name = updatedName;
             
             // Act
-            var learningTopicResult = await learningTopicsRepository.UpdateAsync(learningTopic);
+            await learningTopicsRepository.SaveTrackingChangesAsync();
+
+            var learningTopicResult = await learningTopicsRepository.GetByIdAsync(learningTopic.Id);
 
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());
@@ -120,7 +122,9 @@ namespace Infrastructure.Features.LearningTopics
             var expectedSpecialitiesCount = learningTopic.Specialities.Count();
             
             // Act
-            var learningTopicResult = await learningTopicsRepository.UpdateAsync(learningTopic);
+            await learningTopicsRepository.SaveTrackingChangesAsync();
+
+            var learningTopicResult = await learningTopicsRepository.GetByIdAsync(learningTopic.Id);
 
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());
@@ -145,7 +149,9 @@ namespace Infrastructure.Features.LearningTopics
             var expectedSpecialitiesCount = learningTopic.Specialities.Count();
 
             // Act
-            var learningTopicResult = await learningTopicsRepository.UpdateAsync(learningTopic);
+            await learningTopicsRepository.SaveTrackingChangesAsync();
+
+            var learningTopicResult = await learningTopicsRepository.GetByIdAsync(learningTopic.Id);
 
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());

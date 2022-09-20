@@ -1,4 +1,3 @@
-using Core.Common.Pagination;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.ResponseModels;
 namespace Core.Features.LearningTopics.Interfaces
