@@ -1,9 +1,11 @@
 ﻿using Core.Features.Campaigns.Entities;
 using Core.Features.Mentors.Entities;
 using Core.Features.Specialties.Entities;
+using Core.Features.LearningTopics.Entities;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
+using Infrastructure.Features.LearningTopics;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure
@@ -16,6 +18,8 @@ namespace Infrastructure
 
         public DbSet<Speciality> Specialties { get; set; }
 
+        public DbSet<LearningTopic> LearningTopics { get; set; }
+
         public InternaryContext(DbContextOptions<InternaryContext> options)
             : base(options)
         {
@@ -27,6 +31,7 @@ namespace Infrastructure
             modelBuilder.ApplyConfiguration(new CampaignEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new SpecialityEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new MentorEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new LearningTopicEntityTypeConfiguration());
         }
     }
 }

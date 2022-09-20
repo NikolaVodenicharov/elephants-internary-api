@@ -1,8 +1,8 @@
+using Core.Common.Pagination;
 using Core.Features.LearningTopics.Entities;
-
 namespace Core.Features.LearningTopics.Interfaces
 {
-    public interface ILearningTopicRepository
+    public interface ILearningTopicsRepository
     {
         Task<LearningTopic> AddAsync(LearningTopic learningTopic);
 

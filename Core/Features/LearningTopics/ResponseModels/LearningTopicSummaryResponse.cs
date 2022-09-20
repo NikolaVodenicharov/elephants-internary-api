@@ -1,4 +1,6 @@
+using Core.Features.Specialities.ResponseModels;
+
 namespace Core.Features.LearningTopics.ResponseModels
 {
-    public record LearningTopicSummaryReponse(Guid Id, string Name);
+    public record LearningTopicSummaryResponse(Guid Id, string Name, ICollection<SpecialitySummaryResponse> Specialities);
 }

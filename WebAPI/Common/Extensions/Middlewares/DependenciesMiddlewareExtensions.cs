@@ -11,10 +11,15 @@ using Core.Features.Specialities;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.Support;
+using Core.Features.LearningTopics;
+using Core.Features.LearningTopics.Interfaces;
+using Core.Features.LearningTopics.RequestModels;
+using Core.Features.LearningTopics.Support;
 using FluentValidation;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
+using Infrastructure.Features.LearningTopics;
 
 namespace WebAPI.Common.Extensions.Middlewares
 {
@@ -25,6 +30,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             RegisterCampaignDependencies(services);
             RegisterMentorDependencies(services);
             RegisterSpecialityDependencies(services);
+            RegisterLearningTopicsDependencies(services);
         }
 
         private static void RegisterCampaignDependencies(IServiceCollection services)
@@ -51,6 +57,14 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ISpecialitiesRepository, SpecialitiesRepository>();
             services.AddTransient<IValidator<CreateSpecialityRequest>, CreateSpecialityValidator>();
             services.AddTransient<IValidator<UpdateSpecialityRequest>, UpdateSpecialityValidator>();
+        }
+
+        private static void RegisterLearningTopicsDependencies(IServiceCollection services)
+        {
+            services.AddTransient<ILearningTopicsService, LearningTopicsService>();
+            services.AddTransient<ILearningTopicsRepository, LearningTopicsRepository>();
+            services.AddTransient<IValidator<CreateLearningTopicRequest>, CreateLearningTopicRequestValidator>();
+            services.AddTransient<IValidator<UpdateLearningTopicRequest>, UpdateLearningTopicRequestValidator>();
         }
     }
 }

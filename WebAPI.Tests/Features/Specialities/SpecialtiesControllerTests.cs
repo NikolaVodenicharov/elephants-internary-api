@@ -3,7 +3,6 @@ using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialities.Support;
-using Core.Tests;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -11,6 +10,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using WebAPI.Tests.Common;
 using WebAPI.Features.Specialities;
 using Xunit;
 
