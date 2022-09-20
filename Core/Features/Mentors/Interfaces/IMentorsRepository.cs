@@ -1,13 +1,12 @@
-﻿using Core.Common.Pagination;
+﻿using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Mentors.Entities;
 
 namespace Core.Features.Mentors.Interfaces
 {
-    public interface IMentorsRepository
+    public interface IMentorsRepository : IRepositoryBase
     {
         public Task<Mentor> AddAsync(Mentor mentor);
-
-        public Task<Mentor> UpdateAsync(Mentor mentor);
 
         public Task<Mentor?> GetByIdAsync(Guid id);
 

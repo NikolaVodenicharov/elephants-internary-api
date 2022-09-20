@@ -288,10 +288,6 @@ namespace Core.Tests.Features.Mentors
                 .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
                 .ReturnsAsync(false);
 
-            mentorsRepositoryMock
-                .Setup(x => x.UpdateAsync(It.IsAny<Mentor>()))
-                .ReturnsAsync(returnMentor);
-
             //Act
             var response = await mentorsServiceMock.UpdateAsync(request);
 
@@ -335,10 +331,6 @@ namespace Core.Tests.Features.Mentors
             mentorsRepositoryMock
                 .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
                 .ReturnsAsync(false);
-
-            mentorsRepositoryMock
-                .Setup(x => x.UpdateAsync(It.IsAny<Mentor>()))
-                .ReturnsAsync(returnMentor);
 
             //Act
             var response = await mentorsServiceMock.UpdateAsync(request);
@@ -408,10 +400,6 @@ namespace Core.Tests.Features.Mentors
             mentorsRepositoryMock
                 .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
                 .ReturnsAsync(false);
-
-            mentorsRepositoryMock
-                .Setup(x => x.UpdateAsync(It.IsAny<Mentor>()))
-                .ReturnsAsync(updatedMentor);
 
             //Act
             var response = await mentorsServiceMock.UpdateAsync(request);

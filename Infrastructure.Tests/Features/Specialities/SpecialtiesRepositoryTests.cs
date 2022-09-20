@@ -60,7 +60,7 @@ namespace Infrastructure.Tests.Features.Specialities
         }
 
         [Fact]
-        public async Task Update_UpdateSpecialty_ShouldSaveNewDataToDatabase()
+        public async Task SaveTrackingChangesAsync_UpdateSpecialty_ShouldSaveNewDataToDatabase()
         {
             //Arrange
             var specialtyMock = new Speciality() { Name = name };
@@ -70,11 +70,14 @@ namespace Infrastructure.Tests.Features.Specialities
             specialtyMock.Name = "Updated";
 
             //Act
-            var speciialtySummaryActual = await specialtiesRepository.UpdateAync(specialtyMock);
+            await specialtiesRepository.SaveTrackingChangesAsync();
+
+            var updatedSpecialty = await specialtiesRepository.GetByIdAsync(specialtyMock.Id);
 
             //Assert
-            Assert.Equal(specialtyMock.Id, speciialtySummaryActual.Id);
-            Assert.Equal(specialtyMock.Name, speciialtySummaryActual.Name);
+            Assert.NotNull(updatedSpecialty);
+            Assert.Equal(specialtyMock.Id, updatedSpecialty.Id);
+            Assert.Equal(specialtyMock.Name, updatedSpecialty.Name);
         }
 
         [Fact]

@@ -154,26 +154,24 @@ namespace Core.Tests.Features.Specialities
             //Arrange
             var nameInAllowLength = TestHelper.GenerateString(nameLength);
 
-            var specialtSumamryResponseyMock = new SpecialitySummaryResponse(id, nameInAllowLength);
-
-            specialtiesRepositoryMock
-                .Setup(x => x.UpdateAync(It.IsAny<Speciality>()))
-                .ReturnsAsync(specialtSumamryResponseyMock);
-
-            var specialityMock = new Speciality();
+            var specialityMock = new Speciality()
+            {
+                Id = Guid.NewGuid(),
+                Name = nameInAllowLength
+            };
 
             specialtiesRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(specialityMock);
 
-            var updateSpecialityRequest = new UpdateSpecialityRequest(id, nameInAllowLength);
+            var updateSpecialityRequest = new UpdateSpecialityRequest(specialityMock.Id, specialityMock.Name);
 
             //Act
             var specialitySummaryResponse = await specialtiesService.UpdateAsync(updateSpecialityRequest);
 
             //Assert
-            Assert.Equal(id, specialitySummaryResponse.Id);
-            Assert.Equal(nameInAllowLength, specialitySummaryResponse.Name);
+            Assert.Equal(updateSpecialityRequest.Id, specialitySummaryResponse.Id);
+            Assert.Equal(updateSpecialityRequest.Name, specialitySummaryResponse.Name);
         }
 
         [Theory]

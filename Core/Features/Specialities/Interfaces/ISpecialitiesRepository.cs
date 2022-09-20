@@ -1,13 +1,12 @@
-﻿using Core.Features.Specialities.ResponseModels;
+﻿using Core.Common;
+using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
 
 namespace Core.Features.Specialities.Interfaces
 {
-    public interface ISpecialitiesRepository
+    public interface ISpecialitiesRepository : IRepositoryBase
     {
         Task<SpecialitySummaryResponse> AddAsync(Speciality specialty);
-
-        Task<SpecialitySummaryResponse> UpdateAync(Speciality specialty);
 
         Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync();
 

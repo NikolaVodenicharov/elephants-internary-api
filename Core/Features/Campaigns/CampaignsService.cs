@@ -99,11 +99,11 @@ namespace Core.Features.Campaigns
             existingCampaign.EndDate = model.EndDate;
             existingCampaign.IsActive = model.IsActive;
 
-            var result = await campaignsRepository.UpdateAsync(existingCampaign);
+            await campaignsRepository.SaveTrackingChangesAsync();
             
             campaignsServiceLogger.LogInformation($"[CampaignsService] Update of campaign with {model.Id} complete.");
 
-            return result.ToCampaignSummary();
+            return existingCampaign.ToCampaignSummary();
         }
 
         public async Task<IEnumerable<CampaignSummaryResponse>> GetAllAsync(PaginationFilterRequest filter)

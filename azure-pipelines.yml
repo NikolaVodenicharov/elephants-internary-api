@@ -14,6 +14,14 @@ steps:
   inputs:
     version: '6.0.x'
 
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: 'SonarCloudSC'
+    organization: 'endavasfd'
+    scannerMode: 'MSBuild'
+    projectKey: 'EndavaSfd_elephants-internary-api'
+    projectName: 'elephants-internary-api'
+
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
@@ -23,14 +31,13 @@ steps:
       !**/*.Tests.csproj
     arguments: '--configuration $(buildConfiguration)'
 
-
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
   inputs:
     command: 'test'
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
     publishTestResults: true
-    projects: '**/*Tests/*.csproj'
+    projects: '**/*.Tests/*.csproj'
   
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish code coverage report'
@@ -45,6 +52,12 @@ steps:
     publishWebProjects: True
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: True
+
+- task: SonarCloudAnalyze@1
+
+- task: SonarCloudPublish@1
+  inputs:
+    pollingTimeoutSec: '300'
 
 - task: PublishBuildArtifacts@1
   displayName: 'publishing artifact'
