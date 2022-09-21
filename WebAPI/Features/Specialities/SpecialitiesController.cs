@@ -7,6 +7,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using WebAPI.Common;
 using WebAPI.Common.Abstractions;
 using WebAPI.Common.ErrorHandling;
 
@@ -33,8 +34,8 @@ namespace WebAPI.Features.Specialities
         }
 
         [HttpPost]
-        [ProducesResponseType(typeof(SpecialitySummaryResponse), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(CoreResponse<SpecialitySummaryResponse>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> CreateAsync(CreateSpecialityRequest createSpecialityRequest)
         {
             LogInformation(nameof(CreateAsync));
@@ -43,13 +44,13 @@ namespace WebAPI.Features.Specialities
 
             var specialitySummaryResponse = await specialitiesService.CreateAsync(createSpecialityRequest);
 
-            return Ok(specialitySummaryResponse);
+            return CoreResult.Success(specialitySummaryResponse);
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(SpecialitySummaryResponse), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(CoreResponse<SpecialitySummaryResponse>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateSpecialityRequest updateSpecialityRequest)
         {
             LogInformation(nameof(UpdateAsync), id);
@@ -65,31 +66,31 @@ namespace WebAPI.Features.Specialities
 
             var specialitySummaryResponse = await specialitiesService.UpdateAsync(updateSpecialityRequest);
 
-            return Ok(specialitySummaryResponse);
+            return CoreResult.Success(specialitySummaryResponse);
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<SpecialitySummaryResponse>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(CoreResponse<IEnumerable<SpecialitySummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync()
         {
             LogInformation(nameof(GetAllAsync));
 
             var specialitySummaries = await specialitiesService.GetAllAsync();
 
-            return Ok(specialitySummaries);
+            return CoreResult.Success(specialitySummaries);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(IEnumerable<SpecialitySummaryResponse>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(CoreResponse<SpecialitySummaryResponse>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             LogInformation(nameof(GetByIdAsync), id);
 
             var specialitySummaryResponse = await specialitiesService.GetByIdAsync(id);
 
-            return Ok(specialitySummaryResponse);
+            return CoreResult.Success(specialitySummaryResponse);
         }
 
         private void LogInformation(string methodName)

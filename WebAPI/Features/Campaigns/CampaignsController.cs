@@ -8,11 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using WebAPI.Common.Abstractions;
-using WebAPI.Common.ErrorHandling;
 using System.Text.Json;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.ResponseModels;
 using Core.Common.Pagination;
+using WebAPI.Common;
 
 namespace WebAPI.Features.Campaigns
 {
@@ -43,9 +43,9 @@ namespace WebAPI.Features.Campaigns
         }
 
         [HttpPost]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CampaignSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
-        public async Task<ActionResult> CreateAsync(CreateCampaignRequest model)
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<CampaignSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        public async Task<IActionResult> CreateAsync(CreateCampaignRequest model)
         {
             campaignsControllerLogger.LogInformation($"[CampaignsController] Create campaign: {JsonSerializer.Serialize(model)}");
 
@@ -53,14 +53,14 @@ namespace WebAPI.Features.Campaigns
 
             var result = await campaignsService.CreateAsync(model);
 
-            return Ok(result);
+            return CoreResult.Success(result);
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CampaignSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
-        public async Task<ActionResult> UpdateAsync(Guid id, UpdateCampaignRequest model)
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<CampaignSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
+        public async Task<IActionResult> UpdateAsync(Guid id, UpdateCampaignRequest model)
         {
             if (id != model.Id)
             {
@@ -73,25 +73,25 @@ namespace WebAPI.Features.Campaigns
 
             var result = await campaignsService.UpdateAsync(model);
 
-            return Ok(result);
+            return CoreResult.Success(result);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CampaignSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<CampaignSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
         {
             campaignsControllerLogger.LogInformation($"[CampaignsController] Get campaign with Id {id}");
 
             var campaign = await campaignsService.GetByIdAsync(id);
 
-            return Ok(campaign);
+            return CoreResult.Success(campaign);
         }
 
         [HttpGet]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(PaginationResponse<CampaignSummaryResponse>))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<CampaignSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetPageAsync([Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)
         {
@@ -123,13 +123,13 @@ namespace WebAPI.Features.Campaigns
 
             var paginationReponse = new PaginationResponse<CampaignSummaryResponse>(campaigns, pageNum, pageCount);
 
-            return Ok(paginationReponse);
+            return CoreResult.Success(paginationReponse);
         }
 
         [HttpGet("{id}/mentors")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(PaginationResponse<MentorSummaryResponse>))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<MentorSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetMentorsByCampaignIdAsync(Guid id, [Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)
         {
@@ -164,7 +164,7 @@ namespace WebAPI.Features.Campaigns
 
             var paginationReponse = new PaginationResponse<MentorSummaryResponse>(mentors, pageNum, pageCount);
 
-            return Ok(paginationReponse);
+            return CoreResult.Success(paginationReponse);
         }
     }
 }

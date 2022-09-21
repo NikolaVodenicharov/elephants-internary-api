@@ -10,7 +10,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using WebAPI.Common;
 using WebAPI.Features.Specialities;
 using Xunit;
 
@@ -57,16 +59,16 @@ namespace WebAPI.Tests.Features.Specialities
             var actionResult = await specialtiesController.CreateAsync(createSpeciality);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var specialitySummaryResult = okObjectResult!.Value as SpecialitySummaryResponse;
+            var specialitySummaryResult = jsonResult!.Value as CoreResponse<SpecialitySummaryResponse>;
 
-            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Id);
-            Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Name);
+            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data.Id);
+            Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Data.Name);
         }
 
         [Theory]
@@ -107,16 +109,16 @@ namespace WebAPI.Tests.Features.Specialities
             var actionResult = await specialtiesController.UpdateAsync(id, updateSpeciality);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var specialitySummaryResult = okObjectResult!.Value as SpecialitySummaryResponse;
+            var specialitySummaryResult = jsonResult!.Value as CoreResponse<SpecialitySummaryResponse>;
 
-            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Id);
-            Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Name);
+            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data.Id);
+            Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Data.Name);
         }
 
         [Theory]
@@ -168,16 +170,16 @@ namespace WebAPI.Tests.Features.Specialities
             var actionResult = await specialtiesController.GetByIdAsync(id);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var specialitySummaryResult = okObjectResult!.Value as SpecialitySummaryResponse;
+            var specialitySummaryResult = jsonResult!.Value as CoreResponse<SpecialitySummaryResponse>;
 
-            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Id);
-            Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Name);
+            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data.Id);
+            Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Data.Name);
         }
 
         [Fact]
@@ -199,15 +201,15 @@ namespace WebAPI.Tests.Features.Specialities
             var actionResult = await specialtiesController.GetAllAsync();
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var specialitySummaryList = okObjectResult!.Value as List<SpecialitySummaryResponse>;
+            var specialitySummaryList = jsonResult!.Value as CoreResponse<IEnumerable<SpecialitySummaryResponse>>;
 
-            Assert.Equal(2, specialitySummaryList!.Count);
+            Assert.Equal(2, specialitySummaryList!.Data.Count());
         }
 
         [Fact]
@@ -222,15 +224,15 @@ namespace WebAPI.Tests.Features.Specialities
             var actionResult = await specialtiesController.GetAllAsync();
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var specialitySummaryList = okObjectResult!.Value as List<SpecialitySummaryResponse>;
+            var specialitySummaryList = jsonResult!.Value as CoreResponse<IEnumerable<SpecialitySummaryResponse>>;
 
-            Assert.Empty(specialitySummaryList);
+            Assert.Empty(specialitySummaryList.Data);
         }
     }
 }
