@@ -34,8 +34,7 @@ namespace WebAPI.Tests.Features.LearningTopics
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
-            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace },
-            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
+            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace }
         };
 
         public static IEnumerable<object[]> invalidNames = new List<object[]>
@@ -47,11 +46,9 @@ namespace WebAPI.Tests.Features.LearningTopics
             new object[] { NameEdgeCaseTestHelper.NameWithDash },
             new object[] { NameEdgeCaseTestHelper.NameWithDot },
             new object[] { NameEdgeCaseTestHelper.NameWithExclamationMark },
-            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign }
+            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign },
+            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
         };
-
-        private int validPageNum = 1;
-        private int validPageSize = 10;
 
         public LearningTopicsControllerTests()
         {

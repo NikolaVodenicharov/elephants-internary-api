@@ -125,7 +125,7 @@ namespace Core.Features.LearningTopics
             
             if(specialities.Count() != specialityIds.Count())
             {
-                ThrowExceptionSpecialitiesNotFound(specialityIds);
+                ThrowExceptionSpecialitiesNotExist(specialityIds);
             }
 
             return specialities;
@@ -150,7 +150,7 @@ namespace Core.Features.LearningTopics
             throw new CoreException(duplicateSpecialitiesMessage, HttpStatusCode.BadRequest);
         }
 
-        private void ThrowExceptionSpecialitiesNotFound(ICollection<Guid> specialityIds)
+        private void ThrowExceptionSpecialitiesNotExist(ICollection<Guid> specialityIds)
         {
             var specialitiesNotFoundMessage = "Not all selected specialities are found.";
 

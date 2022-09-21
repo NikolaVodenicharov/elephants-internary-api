@@ -69,7 +69,6 @@ namespace WebAPI.Features.LearningTopics
         
         [HttpGet("{id}")]
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(LearningTopicSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {

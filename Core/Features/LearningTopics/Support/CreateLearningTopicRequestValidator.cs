@@ -9,10 +9,13 @@ namespace Core.Features.LearningTopics.Support
         public CreateLearningTopicRequestValidator()
         {
             RuleFor(t => t.Name)
-                .NotNull()
+                .NotEmpty()
                 .MinimumLength(LearniningTopicValidationConstants.NameMinLength)
                 .MaximumLength(LearniningTopicValidationConstants.NameMaxLength)
                 .Matches(RegularExpressionPatterns.LearningTopicNamePattern);
+
+            RuleFor(t => t.SpecialityIds)
+                .NotEmpty();
         }
     }
 }

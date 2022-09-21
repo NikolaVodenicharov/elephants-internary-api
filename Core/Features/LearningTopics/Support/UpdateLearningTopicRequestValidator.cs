@@ -12,10 +12,13 @@ namespace Core.Features.LearningTopics.Support
                 .NotEqual(Guid.Empty);
                 
             RuleFor(t => t.Name)
-                .NotNull()
+                .NotEmpty()
                 .MinimumLength(LearniningTopicValidationConstants.NameMinLength)
                 .MaximumLength(LearniningTopicValidationConstants.NameMaxLength)
                 .Matches(RegularExpressionPatterns.LearningTopicNamePattern);
+            
+            RuleFor(t => t.SpecialityIds)
+                .NotEmpty();
         }
     }
 }

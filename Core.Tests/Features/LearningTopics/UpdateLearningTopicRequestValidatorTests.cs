@@ -18,8 +18,7 @@ namespace Core.Tests.Features.LearningTopics
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
-            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace },
-            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
+            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace }
         };
 
         public static IEnumerable<object[]> invalidNames = new List<object[]>
@@ -31,7 +30,8 @@ namespace Core.Tests.Features.LearningTopics
             new object[] { NameEdgeCaseTestHelper.NameWithDash },
             new object[] { NameEdgeCaseTestHelper.NameWithDot },
             new object[] { NameEdgeCaseTestHelper.NameWithExclamationMark },
-            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign }
+            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign },
+            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
         };
 
         [Fact]
@@ -74,6 +74,27 @@ namespace Core.Tests.Features.LearningTopics
             updateLearningTopicValidator
                 .TestValidate(updateLearningTopicRequest)
                 .ShouldHaveValidationErrorFor(t => t.Name);
+        }
+
+        [Fact]
+        public void Validator_WhenSpecialityIdsAreNotEmpty_ShouldNotHaveError()
+        {
+            var updateLearningTopicRequest = new UpdateLearningTopicRequest(id, name, specialityIds);
+
+            updateLearningTopicValidator
+                .TestValidate(updateLearningTopicRequest)
+                .ShouldNotHaveValidationErrorFor(t => t.SpecialityIds);
+        }
+
+        [Fact]
+        public void Validator_WhenSpecialityIdsAreEmpty_ShouldHaveError()
+        {
+            var emptySpecialityIds = new List<Guid>();
+            var updateLearningTopicRequest = new UpdateLearningTopicRequest(id, name, emptySpecialityIds);
+
+            updateLearningTopicValidator
+                .TestValidate(updateLearningTopicRequest)
+                .ShouldHaveValidationErrorFor(t => t.SpecialityIds);
         }
     }
 }

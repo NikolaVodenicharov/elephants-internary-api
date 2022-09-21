@@ -10,14 +10,14 @@ namespace Core.Tests.Features.LearningTopics
     public class CreateLearningTopicRequestValidatorTests
     {
         private readonly CreateLearningTopicRequestValidator createLearningTopicValidator = new();
+        private readonly string learningTopicName = "Test Learning Topic";
         private readonly List<Guid> specialityIds = new List<Guid>() { Guid.NewGuid() };
 
         public static IEnumerable<object[]> validNames = new List<object[]>
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
-            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace },
-            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
+            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace }
         };
 
         public static IEnumerable<object[]> invalidNames = new List<object[]>
@@ -29,7 +29,8 @@ namespace Core.Tests.Features.LearningTopics
             new object[] { NameEdgeCaseTestHelper.NameWithDash },
             new object[] { NameEdgeCaseTestHelper.NameWithDot },
             new object[] { NameEdgeCaseTestHelper.NameWithExclamationMark },
-            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign }
+            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign },
+            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
         };
 
         [Theory]
@@ -52,6 +53,27 @@ namespace Core.Tests.Features.LearningTopics
             createLearningTopicValidator
                 .TestValidate(createLearningTopicRequest)
                 .ShouldHaveValidationErrorFor(t => t.Name);
+        }
+
+        [Fact]
+        public void Validator_WhenSpecialityIdsAreNotEmpty_ShouldNotHaveError()
+        {
+            var createLearningTopicRequest = new CreateLearningTopicRequest(learningTopicName, specialityIds);
+
+            createLearningTopicValidator
+                .TestValidate(createLearningTopicRequest)
+                .ShouldNotHaveValidationErrorFor(t => t.SpecialityIds);
+        }
+
+        [Fact]
+        public void Validator_WhenSpecialityIdsAreEmpty_ShouldHaveError()
+        {
+            var emptySpecialityIds = new List<Guid>();
+            var createLearningTopicRequest = new CreateLearningTopicRequest(learningTopicName, emptySpecialityIds);
+
+            createLearningTopicValidator
+                .TestValidate(createLearningTopicRequest)
+                .ShouldHaveValidationErrorFor(t => t.SpecialityIds);
         }
     }
 }
