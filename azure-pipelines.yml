@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'windows-latest'
 
 variables:
   buildConfiguration: 'Release'
@@ -13,6 +13,11 @@ steps:
   displayName: 'Fetch SDK 6.0.x'
   inputs:
     version: '6.0.x'
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: '**/*.csproj'
 
 - task: SonarCloudPrepare@1
   inputs:
@@ -32,18 +37,25 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
-  displayName: 'dotnet test'
+  displayName: 'Test'
   inputs:
-    command: 'test'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
-    publishTestResults: true
+    command: test
     projects: '**/*.Tests/*.csproj'
-  
-- task: PublishCodeCoverageResults@1
-  displayName: 'Publish code coverage report'
+    publishTestResults: false
+    arguments: '--configuration $(buildConfiguration) --logger trx --results-directory "$(Agent.TempDirectory)" --collect "Code coverage"'
+
+- task: SonarCloudAnalyze@1
+
+- task: SonarCloudPublish@1
   inputs:
-    codeCoverageTool: 'Cobertura'
-    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    pollingTimeoutSec: '300'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '*.trx'
+    searchFolder: '$(Agent.TempDirectory)'
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish'
@@ -52,12 +64,6 @@ steps:
     publishWebProjects: True
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: True
-
-- task: SonarCloudAnalyze@1
-
-- task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'
 
 - task: PublishBuildArtifacts@1
   displayName: 'publishing artifact'
