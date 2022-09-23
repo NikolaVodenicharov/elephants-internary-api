@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
+using WebAPI.Common;
 using WebAPI.Common.Abstractions;
-using WebAPI.Common.ErrorHandling;
 
 namespace WebAPI.Features.Mentors
 {
@@ -38,8 +38,8 @@ namespace WebAPI.Features.Mentors
         }
 
         [HttpPost]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(MentorSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> CreateAsync(CreateMentorRequest request)
         {
             mentorsControllerLogger.LogInformation($"[MentorsController] Create mentor with data: {JsonSerializer.Serialize(request)}");
@@ -48,14 +48,14 @@ namespace WebAPI.Features.Mentors
 
             var mentor = await mentorsService.CreateAsync(request);
 
-            return Ok(mentor);
+            return CoreResult.Success(mentor);
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(MentorSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
-        public async Task<ActionResult> UpdateAsync(Guid id, UpdateMentorRequest request)
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
+        public async Task<IActionResult> UpdateAsync(Guid id, UpdateMentorRequest request)
         {
             mentorsControllerLogger.LogInformation($"[MentorsController] Update mentor with Id {request.Id} with data: " +
                 $"{JsonSerializer.Serialize(request)}");
@@ -71,24 +71,24 @@ namespace WebAPI.Features.Mentors
 
             var result = await mentorsService.UpdateAsync(request);
 
-            return Ok(result);
+            return CoreResult.Success(result);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(MentorSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
         {
             mentorsControllerLogger.LogInformation($"[MentorsController] Get mentor with Id {id}");
 
             var mentor = await mentorsService.GetByIdAsync(id);
 
-            return Ok(mentor);
+            return CoreResult.Success(mentor);
         }
 
         [HttpGet]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(PaginationResponse<MentorSummaryResponse>))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<MentorSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetPageAsync([Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)
         {
@@ -120,7 +120,7 @@ namespace WebAPI.Features.Mentors
 
             var paginationReponse = new PaginationResponse<MentorSummaryResponse>(mentors, pageNum, pageCount);
 
-            return Ok(paginationReponse);
+            return CoreResult.Success(paginationReponse);
         }
     }
 }

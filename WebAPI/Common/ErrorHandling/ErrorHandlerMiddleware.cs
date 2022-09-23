@@ -41,12 +41,15 @@ namespace WebAPI.Common.ErrorHandling
 
                 context.Response.Headers.Add("content-type", "application/json");
 
-                var errorResponse = CreateErrorResponse(ex);
-                var json = JsonSerializer.Serialize(errorResponse);
+                var errorMessage = ex.Message ?? string.Empty;
 
-                logger.LogError(json);
+                var error = new Error(errorMessage);
 
-                await context.Response.WriteAsync(json);
+                var coreResponse = CoreResult.Error(error, context.Response.StatusCode);
+
+                logger.LogError(coreResponse);
+
+                await context.Response.WriteAsync(coreResponse);
             }
         }
 

@@ -85,19 +85,19 @@ namespace WebAPI.Tests.Features.Mentors
             var actionResult = await mentorsController.CreateAsync(request);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var createdResponse = okObjectResult!.Value as MentorSummaryResponse;
+            var createdResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
-            Assert.Equal(mentorSummary.Id, createdResponse.Id);
-            Assert.Equal(mentorSummary.FirstName, createdResponse.FirstName);
-            Assert.Equal(mentorSummary.LastName, createdResponse.LastName);
-            Assert.Equal(mentorSummary.Email, createdResponse.Email);
-            Assert.Equal(mentorSummary.Specialities, createdResponse.Specialities);
+            Assert.Equal(mentorSummary.Id, createdResponse.Data.Id);
+            Assert.Equal(mentorSummary.FirstName, createdResponse.Data.FirstName);
+            Assert.Equal(mentorSummary.LastName, createdResponse.Data.LastName);
+            Assert.Equal(mentorSummary.Email, createdResponse.Data.Email);
+            Assert.Equal(mentorSummary.Specialities, createdResponse.Data.Specialities);
         }
 
         [Theory]
@@ -150,19 +150,19 @@ namespace WebAPI.Tests.Features.Mentors
             var actionResult = await mentorsController.UpdateAsync(id, request);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var updatedResponse = okObjectResult!.Value as MentorSummaryResponse;
+            var updatedResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
-            Assert.Equal(mentorSummary.Id, updatedResponse.Id);
-            Assert.Equal(mentorSummary.FirstName, updatedResponse.FirstName);
-            Assert.Equal(mentorSummary.LastName, updatedResponse.LastName);
-            Assert.Equal(mentorSummary.Email, updatedResponse.Email);
-            Assert.Equal(mentorSummary.Specialities, updatedResponse.Specialities);
+            Assert.Equal(mentorSummary.Id, updatedResponse.Data.Id);
+            Assert.Equal(mentorSummary.FirstName, updatedResponse.Data.FirstName);
+            Assert.Equal(mentorSummary.LastName, updatedResponse.Data.LastName);
+            Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
+            Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
         }
 
         [Theory]
@@ -185,19 +185,19 @@ namespace WebAPI.Tests.Features.Mentors
             var actionResult = await mentorsController.UpdateAsync(id, request);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var updatedResponse = okObjectResult!.Value as MentorSummaryResponse;
+            var updatedResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
-            Assert.Equal(mentorSummary.Id, updatedResponse.Id);
-            Assert.Equal(mentorSummary.FirstName, updatedResponse.FirstName);
-            Assert.Equal(mentorSummary.LastName, updatedResponse.LastName);
-            Assert.Equal(mentorSummary.Email, updatedResponse.Email);
-            Assert.Equal(mentorSummary.Specialities, updatedResponse.Specialities);
+            Assert.Equal(mentorSummary.Id, updatedResponse.Data.Id);
+            Assert.Equal(mentorSummary.FirstName, updatedResponse.Data.FirstName);
+            Assert.Equal(mentorSummary.LastName, updatedResponse.Data.LastName);
+            Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
+            Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
         }
 
         [Theory]
@@ -278,19 +278,19 @@ namespace WebAPI.Tests.Features.Mentors
             var actionResult = await mentorsController.GetByIdAsync(id);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var actualResponse = okObjectResult!.Value as MentorSummaryResponse;
+            var actualResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
-            Assert.Equal(expectedResponse.Id, actualResponse.Id);
-            Assert.Equal(expectedResponse.FirstName, actualResponse.FirstName);
-            Assert.Equal(expectedResponse.LastName, actualResponse.LastName);
-            Assert.Equal(expectedResponse.Email, actualResponse.Email);
-            Assert.Equal(expectedResponse.Specialities, actualResponse.Specialities);
+            Assert.Equal(expectedResponse.Id, actualResponse.Data.Id);
+            Assert.Equal(expectedResponse.FirstName, actualResponse.Data.FirstName);
+            Assert.Equal(expectedResponse.LastName, actualResponse.Data.LastName);
+            Assert.Equal(expectedResponse.Email, actualResponse.Data.Email);
+            Assert.Equal(expectedResponse.Specialities, actualResponse.Data.Specialities);
         }
 
         [Fact]
@@ -375,15 +375,15 @@ namespace WebAPI.Tests.Features.Mentors
             var actionResult = await mentorsController.GetPageAsync(validPageNum, validPageSize);
 
             //Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var paginationResponse = okObjectResult!.Value as PaginationResponse<MentorSummaryResponse>;
+            var paginationResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
 
-            Assert.Equal(expectedResponseList.Count, paginationResponse.Content.ToList().Count);
+            Assert.Equal(expectedResponseList.Count, paginationResponse.Data.Content.Count());
         }
 
         [Fact]
