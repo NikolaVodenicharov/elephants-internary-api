@@ -11,7 +11,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using WebAPI.Common;
 using WebAPI.Features.LearningTopics;
 using WebAPI.Tests.Common;
 using Xunit;
@@ -93,17 +95,17 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.CreateAsync(learningTopicRequest);
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
             
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learningTopicResponse = okObjectResult!.Value as LearningTopicSummaryResponse;
+            var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Id);
-            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Name);
-            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Specialities);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
+            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
 
         }
 
@@ -137,17 +139,17 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.CreateAsync(learningTopicRequest);
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
             
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learningTopicResponse = okObjectResult!.Value as LearningTopicSummaryResponse;
+            var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Id);
-            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Name);
-            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Specialities);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
+            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
 
         [Fact]
@@ -165,17 +167,17 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.UpdateAsync(id, learningTopicRequest);
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
             
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learningTopicResponse = okObjectResult!.Value as LearningTopicSummaryResponse;
+            var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Id);
-            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Name);
-            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Specialities);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
+            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
 
         [Fact]
@@ -222,17 +224,17 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.UpdateAsync(id, learningTopicRequest);
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
             
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learningTopicResponse = okObjectResult!.Value as LearningTopicSummaryResponse;
+            var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Id);
-            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Name);
-            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Specialities);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
+            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
 
         [Fact]
@@ -262,17 +264,17 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.GetByIdAsync(id);
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
             
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learningTopicResponse = okObjectResult!.Value as LearningTopicSummaryResponse;
+            var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Id);
-            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Name);
-            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Specialities);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
+            Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
         
         [Fact]
@@ -309,15 +311,15 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.GetAllAsync();
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learningTopicsResponse = okObjectResult!.Value as List<LearningTopicSummaryResponse>;
+            var learningTopicsResponse = jsonResult!.Value as CoreResponse<IEnumerable<LearningTopicSummaryResponse>>;
 
-            Assert.Equal(learningTopicSummaries.Count, learningTopicsResponse!.Count);
+            Assert.Equal(learningTopicSummaries.Count, learningTopicsResponse!.Data.Count());
         }
 
         [Fact]
@@ -332,15 +334,15 @@ namespace WebAPI.Tests.Features.LearningTopics
             var actionResult = await learningTopicsController.GetAllAsync();
 
             // Assert
-            Assert.IsType<OkObjectResult>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
 
-            var okObjectResult = actionResult as OkObjectResult;
+            var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(okObjectResult);
+            Assert.NotNull(jsonResult);
 
-            var learingTopicsResponse = okObjectResult!.Value as List<LearningTopicSummaryResponse>;
+            var learingTopicsResponse = jsonResult!.Value as CoreResponse<IEnumerable<LearningTopicSummaryResponse>>;
 
-            Assert.Empty(learingTopicsResponse);
+            Assert.Empty(learingTopicsResponse.Data);
         }
     }
 }

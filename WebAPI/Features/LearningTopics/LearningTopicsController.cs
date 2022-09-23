@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Net;
+using WebAPI.Common;
 using WebAPI.Common.Abstractions;
 using WebAPI.Common.ErrorHandling;
 
@@ -32,8 +33,8 @@ namespace WebAPI.Features.LearningTopics
         }
 
         [HttpPost]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(LearningTopicSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<LearningTopicSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> CreateAsync(CreateLearningTopicRequest request)
         {
             LogInformation(nameof(CreateAsync));
@@ -42,13 +43,13 @@ namespace WebAPI.Features.LearningTopics
 
             var learningTopicResponse = await learningTopicsService.CreateAsync(request);
 
-            return Ok(learningTopicResponse);
+            return CoreResult.Success(learningTopicResponse);
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(LearningTopicSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<LearningTopicSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateLearningTopicRequest request)
         {
             LogInformation(nameof(UpdateAsync), request.Id);
@@ -64,31 +65,31 @@ namespace WebAPI.Features.LearningTopics
 
             var learningTopicResult = await learningTopicsService.UpdateAsync(request);
 
-            return Ok(learningTopicResult);
+            return CoreResult.Success(learningTopicResult);
         }
         
         [HttpGet("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(LearningTopicSummaryResponse))]
-        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<LearningTopicSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             LogInformation(nameof(GetByIdAsync), id);
 
             var learningTopicResult = await learningTopicsService.GetByIdAsync(id);
 
-            return Ok(learningTopicResult);
+            return CoreResult.Success(learningTopicResult);
         }
 
         [HttpGet]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(IEnumerable<LearningTopicSummaryResponse>))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(ErrorResponse))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<IEnumerable<LearningTopicSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetAllAsync()
         {
             LogInformation(nameof(GetAllAsync));
 
             var learningTopicsResult = await learningTopicsService.GetAllAsync();
 
-            return Ok(learningTopicsResult);
+            return CoreResult.Success(learningTopicsResult);
         }
         
         private void LogInformation(string methodName, Guid id)

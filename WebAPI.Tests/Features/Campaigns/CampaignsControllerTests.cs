@@ -7,7 +7,6 @@ using Core.Features.Campaigns.Support;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.ResponseModels;
 using Core.Features.Specialities.ResponseModels;
-using Core.Tests;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -17,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebAPI.Common;
+using WebAPI.Tests.Common;
 using WebAPI.Features.Campaigns;
 using Xunit;
 
