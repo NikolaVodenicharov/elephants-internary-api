@@ -23,7 +23,7 @@ namespace WebAPI.Features.Campaigns
         private readonly IMentorsService mentorsService;
         private readonly IValidator<CreateCampaignRequest> createCampaingValidator;
         private readonly IValidator<UpdateCampaignRequest> updateCampaignValidator;
-        private readonly IValidator<PaginationFilterRequest> paginationFilterRequestValidator;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly ILogger<CampaignsController> campaignsControllerLogger;
 
         public CampaignsController(
@@ -31,14 +31,14 @@ namespace WebAPI.Features.Campaigns
             IMentorsService mentorsService,
             IValidator<CreateCampaignRequest> createCampaingValidator, 
             IValidator<UpdateCampaignRequest> updateCampaignValidator,
-            IValidator<PaginationFilterRequest> paginationFilterRequestValidator,
+            IValidator<PaginationRequest> paginationRequestValidator,
             ILogger<CampaignsController> campaignsControllerLogger)
         {
             this.campaignsService = campaignsService;
             this.mentorsService = mentorsService;
             this.createCampaingValidator = createCampaingValidator;
             this.updateCampaignValidator = updateCampaignValidator;
-            this.paginationFilterRequestValidator = paginationFilterRequestValidator;
+            this.paginationRequestValidator = paginationRequestValidator;
             this.campaignsControllerLogger = campaignsControllerLogger;
         }
 
@@ -92,36 +92,16 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<CampaignSummaryResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetPageAsync([Required][FromQuery] int pageNum,
+        public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)
         {
             campaignsControllerLogger.LogInformation($"[CampaignsController] Get {pageSize} campaigns from page {pageNum}");
 
-            var campaignCount = await campaignsService.GetCountAsync();
+            var filter = new PaginationRequest(pageNum, pageSize);
 
-            if (campaignCount == 0)
-            {
-                campaignsControllerLogger.LogError("[CampaignsController] No campaigns found");
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-                throw new CoreException("No campaigns found.", HttpStatusCode.NotFound);
-            }
-
-            var toSkip = (pageNum - 1) * pageSize;
-
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = toSkip,
-                Take = pageSize,
-                Count = campaignCount
-            };
-
-            await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
-
-            var campaigns = await campaignsService.GetAllAsync(filter);
-
-            var pageCount = (campaignCount + pageSize - 1) / pageSize;
-
-            var paginationReponse = new PaginationResponse<CampaignSummaryResponse>(campaigns, pageNum, pageCount);
+            var paginationReponse = await campaignsService.GetAllAsync(filter);
 
             return CoreResult.Success(paginationReponse);
         }
@@ -138,33 +118,13 @@ namespace WebAPI.Features.Campaigns
 
             await campaignsService.GetByIdAsync(id);
 
-            var mentorCount = await mentorsService.GetCountByCampaignIdAsync(id);
+            var filter = new PaginationRequest(pageNum, pageSize);
 
-            if (mentorCount == 0)
-            {
-                campaignsControllerLogger.LogError($"[CampaignsController] No mentors found for campaign with Id {id}");
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-                throw new CoreException("No mentors found for selected campaign.", HttpStatusCode.NotFound);
-            }
+            var paginationResponse = await mentorsService.GetAllAsync(filter, id);
 
-            var toSkip = (pageNum - 1) * pageSize;
-
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = toSkip,
-                Take = pageSize,
-                Count = mentorCount
-            };
-
-            await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
-
-            var mentors = await mentorsService.GetMentorsByCampaignIdAsync(id, filter);
-
-            var pageCount = (mentorCount + pageSize - 1) / pageSize;
-
-            var paginationReponse = new PaginationResponse<MentorSummaryResponse>(mentors, pageNum, pageCount);
-
-            return CoreResult.Success(paginationReponse);
+            return CoreResult.Success(paginationResponse);
         }
     }
 }

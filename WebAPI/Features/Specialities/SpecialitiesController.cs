@@ -1,4 +1,5 @@
 ﻿using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
-using WebAPI.Common.ErrorHandling;
 
 namespace WebAPI.Features.Specialities
 {
@@ -18,19 +18,22 @@ namespace WebAPI.Features.Specialities
     {
         private readonly ISpecialitiesService specialitiesService;
         private readonly ILogger<SpecialitiesController> specialitiesControllerLogger;
-        public readonly IValidator<CreateSpecialityRequest> createSpecialityValidator;
-        public readonly IValidator<UpdateSpecialityRequest> updateSpecialityValidator;
+        private readonly IValidator<CreateSpecialityRequest> createSpecialityValidator;
+        private readonly IValidator<UpdateSpecialityRequest> updateSpecialityValidator;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public SpecialitiesController(
             ISpecialitiesService specialitiesService,
             ILogger<SpecialitiesController> specialitiesControllerLogger,
             IValidator<CreateSpecialityRequest> createSpecialityValidator,
-            IValidator<UpdateSpecialityRequest> updateSpecialityValidator)
+            IValidator<UpdateSpecialityRequest> updateSpecialityValidator,
+            IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.specialitiesService = specialitiesService;
             this.specialitiesControllerLogger = specialitiesControllerLogger;
             this.createSpecialityValidator = createSpecialityValidator;
             this.updateSpecialityValidator = updateSpecialityValidator;
+            this.paginationRequestValidator = paginationRequestValidator;
         }
 
         [HttpPost]
@@ -57,7 +60,8 @@ namespace WebAPI.Features.Specialities
 
             if (id != updateSpecialityRequest.Id)
             {
-                specialitiesControllerLogger.LogError($"[{nameof(SpecialitiesController)}] Invalid {nameof(Speciality)} Id ({id}) in {nameof(UpdateAsync)} method.");
+                specialitiesControllerLogger.LogError($"[{nameof(SpecialitiesController)}] Invalid {nameof(Speciality)} Id ({id}) " +
+                    $"in {nameof(UpdateAsync)} method.");
 
                 throw new CoreException($"Invalid {nameof(id)}.", HttpStatusCode.BadRequest);
             }
@@ -71,14 +75,29 @@ namespace WebAPI.Features.Specialities
 
         [HttpGet]
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<SpecialitySummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<SpecialitySummaryResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetAllAsync()
+        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
-            LogInformation(nameof(GetAllAsync));
+            if (pageNum == null && pageSize == null)
+            {
+                LogInformation(nameof(GetAllAsync));
 
-            var specialitySummaries = await specialitiesService.GetAllAsync();
+                var specialitySummaries = await specialitiesService.GetAllAsync();
 
-            return CoreResult.Success(specialitySummaries);
+                return CoreResult.Success(specialitySummaries);
+            }
+
+            var filter = new PaginationRequest(pageNum, pageSize);
+
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
+
+            specialitiesControllerLogger.LogInformation($"[{nameof(SpecialitiesController)}] Get {pageSize} " +
+                $"specialties from page {pageNum}");
+
+            var paginationResponse  = await specialitiesService.GetPaginationAsync(filter);
+
+            return CoreResult.Success(paginationResponse);
         }
 
         [HttpGet("{id}")]

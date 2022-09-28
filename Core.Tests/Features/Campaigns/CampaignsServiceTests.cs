@@ -4,6 +4,7 @@ using Core.Features.Campaigns;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
+using Core.Features.Campaigns.ResponseModels;
 using Core.Features.Campaigns.Support;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -44,7 +45,7 @@ namespace Core.Tests.Features.Campaigns
         {
             var createCampaignValidator = new CreateCampaignRequestValidator();
             var updateCampaignValidator = new UpdateCampaignRequestValidator();
-            var filterCampaignsRequestValidator = new PaginationFilterRequestValidator();
+            var filterCampaignsRequestValidator = new PaginationRequestValidator();
 
             campaignsRepositoryMock = new Mock<ICampaignsRepository>();
 
@@ -279,12 +280,11 @@ namespace Core.Tests.Features.Campaigns
         #region GetAllAsyncTests
 
         [Theory]
-        [InlineData(0, 5, 15)]
-        [InlineData(5, 5, 15)]
-        [InlineData(10, 5, 15)]
-        [InlineData(0, 20, 5)]
-        [InlineData(1, 1, 10)]
-        public async Task GetAllAsync_WhenFilterIsCorrect_ShouldGetData(int skip, int take, int count)
+        [InlineData(1, 5)]
+        [InlineData(3, 5)]
+        [InlineData(2, 10)]
+        [InlineData(1, 100)]
+        public async Task GetAllAsync_WhenFilterIsCorrect_ShouldGetData(int pageNum, int pageSize)
         {
             //Arrange
             var campaignList = new List<Campaign>()
@@ -292,37 +292,30 @@ namespace Core.Tests.Features.Campaigns
                 returnCampaign
             };
 
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = skip,
-                Take = take,
-                Count = count
-            };
+            var filter = new PaginationRequest(pageNum, pageSize);
 
             campaignsRepositoryMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationFilterRequest>()))
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(campaignList);
 
+            campaignsRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(15);
+
             //Act
-            var campaigns = (await campaignsServiceMock.GetAllAsync(filter)).ToList();
+            var response = await campaignsServiceMock.GetAllAsync(filter);
 
             //Assert
-            Assert.Equal(campaignList.Count, campaigns.Count());
+            Assert.Equal(campaignList.Count(), response.Content.Count());
         }
 
         [Theory]
         [InlineData(-1)]
-        [InlineData(10)]
-        [InlineData(20)]
-        public async Task GetAllAsync_WhenSkipIsInvalid_ShouldThrowException(int invalidSkip)
+        [InlineData(0)]
+        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
         {
             //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = invalidSkip,
-                Take = 10,
-                Count = 10
-            };
+            var filter = new PaginationRequest(pageNum, 10);
 
             //Act
             var action = async () => await campaignsServiceMock.GetAllAsync(filter);
@@ -334,15 +327,10 @@ namespace Core.Tests.Features.Campaigns
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public async Task GetAllAsync_WhenTakeIsLessThanOne_ShouldThrowException(int invalidTake)
+        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
         {
             //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = invalidTake,
-                Count = 10
-            };
+            var filter = new PaginationRequest(1, pageSize);
 
             //Act
             var action = async () => await campaignsServiceMock.GetAllAsync(filter);

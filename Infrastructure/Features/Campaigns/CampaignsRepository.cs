@@ -28,16 +28,17 @@ namespace Infrastructure.Features.Campaigns
             return await context.Campaigns.AnyAsync(campaign => campaign.Name.Equals(name));
         }
 
-        public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationFilterRequest filter)
+        public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest filter)
         {
-            var sqlQuery =
-                $"SELECT [Id], [Name], [StartDate], [EndDate], [IsActive] " +
-                $"FROM [Campaigns] " +
-                $"ORDER BY [IsActive] DESC, [EndDate], [Id] " +
-                $"OFFSET {filter.Skip} ROWS FETCH NEXT {filter.Take} ROWS ONLY";
+            var skip = (filter.PageNum.Value - 1) * filter.PageSize.Value;
 
             var campaigns = await context.Campaigns
-                .FromSqlRaw(sqlQuery)
+                .AsNoTracking()
+                .OrderByDescending(c => c.IsActive)
+                .ThenBy(c => c.EndDate)
+                .ThenBy(c => c.Id)
+                .Skip(skip)
+                .Take(filter.PageSize.Value)
                 .ToListAsync();
 
             return campaigns;
@@ -45,7 +46,9 @@ namespace Infrastructure.Features.Campaigns
 
         public async Task<Campaign?> GetByIdAsync(Guid campaignId)
         {
-            var campaign = await context.Campaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
+            var campaign = await context.Campaigns
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == campaignId);
 
             return campaign;
         }

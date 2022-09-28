@@ -28,22 +28,26 @@ namespace WebAPI.Tests.Features.Mentors
         private readonly string firstName = "First";
         private readonly string lastName = "Last";
         private readonly string email = "first.last@example.bg";
+
+        private readonly int validPageNum = 1;
+        private readonly int invalidPageNum = -1;
+        private readonly int validPageSize = 10;
+        private readonly int invalidPageSize = 0;
+
         private readonly Mock<IMentorsService> mentorsServiceMock;
-        private readonly Mock<ISpecialitiesRepository> specialitiesRespositoryMock;
         private readonly MentorsController mentorsController;
+
         private readonly SpecialitySummaryResponse specialitySummaryResponse;
         private Speciality speciality;
         private List<SpecialitySummaryResponse> specialitySummaries;
-        private List<Speciality> specialities;
         private List<Guid> specialityIds;
 
         public MentorsControllerTests()
         {
             var createMentorRequestValidator = new CreateMentorRequestValidator();
             var updateMentorRequestValidator = new UpdateMentorRequestValidator();
-            var paginationFilterRequestValidator = new PaginationFilterRequestValidator();
+            var paginationRequestValidator = new PaginationRequestValidator();
 
-            specialitiesRespositoryMock = new Mock<ISpecialitiesRepository>();
             mentorsServiceMock = new Mock<IMentorsService>();
 
             var loggerMock = new Mock<ILogger<MentorsController>>();
@@ -53,7 +57,7 @@ namespace WebAPI.Tests.Features.Mentors
                 loggerMock.Object,
                 createMentorRequestValidator,
                 updateMentorRequestValidator,
-                paginationFilterRequestValidator);
+                paginationRequestValidator);
 
             speciality = new Speciality()
             {
@@ -62,8 +66,6 @@ namespace WebAPI.Tests.Features.Mentors
             };
 
             specialityIds = new List<Guid>() { speciality.Id };
-
-            specialities = new List<Speciality>() { speciality };
 
             specialitySummaryResponse = new SpecialitySummaryResponse(speciality.Id, speciality.Name);
 
@@ -295,61 +297,27 @@ namespace WebAPI.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task GetPageAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
         {
-            //Arrange
-            var invalidPageNum = 0;
-            var validPageSize = 10;
-
-            mentorsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(10);
-
             //Act
-            var action = async () => await mentorsController.GetPageAsync(invalidPageNum, validPageSize);
+            var action = async () => await mentorsController.GetAllAsync(invalidPageNum, validPageSize);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Fact]
-        public async Task GetPageAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
+        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
         {
-            //Arrange
-            var validPageNum = 1;
-            var invalidPageSize = 0;
-
-            mentorsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(10);
-
             //Act
-            var action = async () => await mentorsController.GetPageAsync(validPageNum, invalidPageSize);
+            var action = async () => await mentorsController.GetAllAsync(validPageNum, invalidPageSize);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Fact]
-        public async Task GetPageAsync_WhenPageNumIsBiggerThanTotalCount_ShouldThrowException()
-        {
-            //Arrange
-            var invalidPageNum = 5;
-            var validPageSize = 10;
-
-            mentorsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(20);
-
-            //Act
-            var action = async () => await mentorsController.GetPageAsync(invalidPageNum, validPageSize);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetPageAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenCampaignIdNullAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
             var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
@@ -361,19 +329,14 @@ namespace WebAPI.Tests.Features.Mentors
                 expectedResponse1, expectedResponse2
             };
 
-            var validPageNum = 1;
-            var validPageSize = 10;
+            var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(expectedResponseList, 1, 2);
 
             mentorsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(expectedResponseList.Count);
-
-            mentorsServiceMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationFilterRequest>()))
-                .ReturnsAsync(expectedResponseList as IEnumerable<MentorSummaryResponse>);
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
+                .ReturnsAsync(expectedPaginationResponse);
 
             //Act
-            var actionResult = await mentorsController.GetPageAsync(validPageNum, validPageSize);
+            var actionResult = await mentorsController.GetAllAsync(validPageNum, validPageSize);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -388,17 +351,28 @@ namespace WebAPI.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task GetPageAsync_WhenEmpty_ShouldThrowException()
+        public async Task GetAllAsync_WhenCampaignIdNullAndEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var validPageNum = 1;
-            var validPageSize = 10;
+            var emptyList = new List<MentorSummaryResponse>();
+
+            mentorsServiceMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
+                .ReturnsAsync(new PaginationResponse<MentorSummaryResponse>(emptyList, 1, 1));
 
             //Act
-            var actionResult = async() => await mentorsController.GetPageAsync(validPageNum, validPageSize);
+            var actionResult = await mentorsController.GetAllAsync(validPageNum, validPageSize);
 
             //Assert
-            await Assert.ThrowsAsync<CoreException>(actionResult);
+            Assert.IsType<JsonResult>(actionResult);
+
+            var okObjectResult = actionResult as JsonResult;
+
+            Assert.NotNull(okObjectResult);
+
+            var paginationResponse = okObjectResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
+
+            Assert.Empty(paginationResponse.Data.Content);
         }
     }
 }

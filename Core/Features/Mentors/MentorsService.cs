@@ -11,6 +11,11 @@ using System.Net;
 
 namespace Core.Features.Mentors
 {
+    internal class Counter
+    {
+        public static int mentorCount = -1;
+        public static Dictionary<Guid, int> countByCampaign = new();
+    }
     public class MentorsService : IMentorsService
     {
         private readonly IMentorsRepository mentorsRepository;
@@ -18,7 +23,9 @@ namespace Core.Features.Mentors
         private readonly ILogger<MentorsService> mentorsServiceLogger;
         private readonly IValidator<CreateMentorRequest> createMentorRequestValidator;
         private readonly IValidator<UpdateMentorRequest> updateMentorRequestValidator;
-        private readonly IValidator<PaginationFilterRequest> paginationFilterRequestValidator;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
+
+        
 
         public MentorsService(
             IMentorsRepository mentorsRepository,
@@ -26,14 +33,14 @@ namespace Core.Features.Mentors
             ILogger<MentorsService> mentorsServiceLogger,
             IValidator<CreateMentorRequest> createMentorRequestValidator,
             IValidator<UpdateMentorRequest> updateMentorRequestValidator,
-            IValidator<PaginationFilterRequest> paginationFilterRequestValidator)
+            IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.mentorsRepository = mentorsRepository;
             this.specialitiesRepository = specialitiesRepository;
             this.mentorsServiceLogger = mentorsServiceLogger;
             this.createMentorRequestValidator = createMentorRequestValidator;
             this.updateMentorRequestValidator = updateMentorRequestValidator;
-            this.paginationFilterRequestValidator = paginationFilterRequestValidator;
+            this.paginationRequestValidator = paginationRequestValidator;
         }
 
         public async Task<MentorSummaryResponse> CreateAsync(CreateMentorRequest request)
@@ -68,13 +75,68 @@ namespace Core.Features.Mentors
             return createdMentor.ToMentorSummaryResponse();
         }
 
-        public async Task<IEnumerable<MentorSummaryResponse>> GetAllAsync(PaginationFilterRequest filter)
+        public async Task<PaginationResponse<MentorSummaryResponse>> GetAllAsync(PaginationRequest filter, Guid? campaignId = null)
         {
-            await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            var mentors = await mentorsRepository.GetAllAsync(filter);
+            if (campaignId != null)
+            {
+                if (!Counter.countByCampaign.ContainsKey(campaignId.Value) || filter.PageNum == 1)
+                {
+                    Counter.countByCampaign[campaignId.Value] = await GetCountByCampaignIdAsync(campaignId.Value);
+                }
 
-            return mentors.ToMentorSummaryResponses();
+                if (Counter.countByCampaign[campaignId.Value] == 0)
+                {
+                    if (filter.PageNum > PaginationConstants.DefaultPageCount)
+                    {
+                        LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                    }
+
+                    var emptyPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
+                        new List<MentorSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                    return emptyPaginationResponse;
+                }
+            }
+            else
+            {
+                if (Counter.mentorCount == -1 || filter.PageNum == 1)
+                {
+                    Counter.mentorCount = await GetCountAsync();
+                }
+
+                if (Counter.mentorCount == 0)
+                {
+                    if (filter.PageNum > PaginationConstants.DefaultPageCount)
+                    {
+                        LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                    }
+
+                    var emptyPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
+                        new List<MentorSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                    return emptyPaginationResponse;
+                }
+            }
+
+            var elementCount = campaignId != null ? Counter.countByCampaign[campaignId.Value] : Counter.mentorCount;
+
+            var totalPages = (elementCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+
+            if (filter.PageNum > totalPages)
+            {
+                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+            }
+
+            var mentors = campaignId != null ? 
+                await mentorsRepository.GetAllAsync(filter, campaignId) : 
+                await mentorsRepository.GetAllAsync(filter);
+
+            var paginationResponse = new PaginationResponse<MentorSummaryResponse>(
+                mentors.ToMentorSummaryResponses(), filter.PageNum.Value, totalPages);
+
+            return paginationResponse;
         }
 
         public async Task<MentorSummaryResponse> GetByIdAsync(Guid id)
@@ -148,16 +210,7 @@ namespace Core.Features.Mentors
             mentorsServiceLogger.LogInformation($"[MentorsService] Mentor with Id {request.Id} updated successfully");
 
             return existingMentor.ToMentorSummaryResponse();
-        }
-
-        public async Task<IEnumerable<MentorSummaryResponse>> GetMentorsByCampaignIdAsync(Guid campaignId, PaginationFilterRequest filter)
-        {
-            await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
-
-            var mentors = await mentorsRepository.GetMentorsByCampaignIdAsync(campaignId, filter);
-
-            return mentors.ToMentorSummaryResponses();
-        }
+        }  
 
         public async Task<int> GetCountByCampaignIdAsync(Guid campaignId)
         {
@@ -178,6 +231,15 @@ namespace Core.Features.Mentors
 
                 throw new CoreException($"{message}. Please choose a new one.", HttpStatusCode.BadRequest);
             }
+        }
+
+        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
+        {
+            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
+
+            mentorsServiceLogger.LogError($"[{nameof(MentorsService)}] {message}");
+
+            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }

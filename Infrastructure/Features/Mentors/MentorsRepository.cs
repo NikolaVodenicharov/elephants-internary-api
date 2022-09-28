@@ -23,21 +23,10 @@ namespace Infrastructure.Features.Mentors
             return mentor;
         }
 
-        public async Task<IEnumerable<Mentor>> GetAllAsync(PaginationFilterRequest filter)
-        {
-            var mentors = await context.Mentors
-                .Include(m => m.Specialities)
-                .OrderBy(m => m.Id)
-                .Skip(filter.Skip)
-                .Take(filter.Take)
-                .ToListAsync();
-
-            return mentors;
-        }
-
         public async Task<Mentor?> GetByIdAsync(Guid id)
         {
             var mentor = await context.Mentors
+                .AsNoTracking()
                 .Include(m => m.Specialities)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -61,14 +50,17 @@ namespace Infrastructure.Features.Mentors
             await context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Mentor>> GetMentorsByCampaignIdAsync(Guid campaignId, PaginationFilterRequest filter)
+        public async Task<IEnumerable<Mentor>> GetAllAsync(PaginationRequest filter, Guid? campaignId)
         {
+            var skip = (filter.PageNum.Value - 1) * filter.PageSize.Value;
+
             var mentors = await context.Mentors
-                .Where(m => m.Campaigns.Any(c => c.Id == campaignId))
+                .AsNoTracking()
+                .Where(m => campaignId != null ? m.Campaigns.Any(c => c.Id == campaignId) : true)
                 .Include(m => m.Specialities)
                 .OrderBy(m => m.Id)
-                .Skip(filter.Skip)
-                .Take(filter.Take)
+                .Skip(skip)
+                .Take(filter.PageSize.Value)
                 .ToListAsync();
 
             return mentors;

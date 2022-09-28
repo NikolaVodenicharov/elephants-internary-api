@@ -1,8 +1,13 @@
 ﻿using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
+using Core.Features.Campaigns.Interfaces;
 using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
+using Core.Features.Mentors.ResponseModels;
+using Core.Features.Mentors.Support;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
+using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
 using Microsoft.EntityFrameworkCore;
@@ -23,8 +28,8 @@ namespace Infrastructure.Tests.Features.Mentors
         private readonly string email = "first.last@email.com";
         private readonly InternaryContext context;
         private readonly IMentorsRepository mentorsRepository;
-        private readonly Mock<IMentorsRepository> mentorsRepositoryMock;
         private readonly ISpecialitiesRepository specialitiesRepository;
+        private readonly ICampaignsRepository campaignsRepository;
         private Mentor mentor;
         private Speciality speciality;
         private List<Speciality> specialities;
@@ -39,6 +44,7 @@ namespace Infrastructure.Tests.Features.Mentors
 
             mentorsRepository = new MentorsRepository(context);
             specialitiesRepository = new SpecialitiesRepository(context);
+            campaignsRepository = new CampaignsRepository(context);
 
             speciality = new Speciality()
             {
@@ -59,8 +65,6 @@ namespace Infrastructure.Tests.Features.Mentors
                 Email = email,
                 Specialities = specialities
             };
-
-            mentorsRepositoryMock = new Mock<IMentorsRepository>();
         }
 
         [Fact]
@@ -110,18 +114,13 @@ namespace Infrastructure.Tests.Features.Mentors
         public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 10,
-                Count = 8
-            };
+            var filter = new PaginationRequest(1, 10);
 
             //Act
-            var mentors = await mentorsRepository.GetAllAsync(filter);
+            var response = await mentorsRepository.GetAllAsync(filter);
 
             //Assert
-            Assert.Empty(mentors);
+            Assert.Empty(response);
         }
 
         [Fact]
@@ -136,23 +135,18 @@ namespace Infrastructure.Tests.Features.Mentors
                 Email = "john.doe@email.com"
             };
 
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 10,
-                Count = 8
-            };
+            var filter = new PaginationRequest(1, 3);
 
             await specialitiesRepository.AddAsync(speciality);
             await mentorsRepository.AddAsync(mentor);
             await mentorsRepository.AddAsync(mentor2);
 
             //Act
-            var mentors = await mentorsRepository.GetAllAsync(filter);
+            var response = await mentorsRepository.GetAllAsync(filter);
 
             //Assert
-            Assert.Equal(2, mentors.Count());
-            Assert.NotNull(mentors.First().Specialities);
+            Assert.Equal(2, response.Count());
+            Assert.NotNull(response.First().Specialities);
         }
 
         [Fact]
@@ -235,53 +229,51 @@ namespace Infrastructure.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task GetMentorsByCampaignIdAsync_WhenCampaignHasMentors_ReturnCorrectCount()
+        public async Task GetAllAsync_WhenCampaignIdNotNullAndCampaignHasMentors_ReturnCorrectCount()
         {
             //Arrange
-            var newId = Guid.NewGuid();
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 5,
-                Count = 10
-            };
+            var filter = new PaginationRequest(1, 10);
 
             var mentor2 = new Mentor()
             {
                 Id = Guid.NewGuid(),
                 FirstName = "John",
                 LastName = "Doe",
-                Email = "john.doe@email.com"
+                Email = "john.doe@email.com",
+                Specialities = new List<Speciality>()
+            };
+
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Campaign",
+                StartDate = DateTime.Today.AddDays(2),
+                EndDate = DateTime.Today.AddDays(5),
+                IsActive = true,
+                Mentors = new List<Mentor>() { mentor, mentor2 }
             };
 
             var mentorList = new List<Mentor>() { mentor, mentor2 };
 
-            mentorsRepositoryMock
-                .Setup(x => x.GetMentorsByCampaignIdAsync(It.IsAny<Guid>(), It.IsAny<PaginationFilterRequest>()))
-                .ReturnsAsync(mentorList);
+            await campaignsRepository.AddAsync(campaign);
 
             //Act
-            var response = await mentorsRepositoryMock.Object.GetMentorsByCampaignIdAsync(newId, filter);
+            var response = await mentorsRepository.GetAllAsync(filter, campaign.Id);
 
             //Assert
-            Assert.Equal(2, response.Count());
+            Assert.Equal(mentorList.Count(), response.Count());
         }
 
         [Fact]
-        public async Task GetMentorsByCampaignIdAsync_WhenCampaignHasNoMentors_ReturnEmptyCollection()
+        public async Task GetAllAsync_WhenCampaignIdNotNullAndCampaignHasNoMentors_ReturnEmptyCollection()
         {
             //Arrange
             var newId = Guid.NewGuid();
 
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 5,
-                Count = 10
-            };
+            var filter = new PaginationRequest(1, 20);
 
             //Act
-            var response = await mentorsRepository.GetMentorsByCampaignIdAsync(newId, filter);
+            var response = await mentorsRepository.GetAllAsync(filter, newId);
 
             //Assert
             Assert.Empty(response);
@@ -291,17 +283,23 @@ namespace Infrastructure.Tests.Features.Mentors
         public async Task GetCountByCampaignIdAsync_WhenCampaignHasMentors_ShouldReturnCorrectCount()
         {
             //Arrange
-            var newId = Guid.NewGuid();
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Campaign",
+                StartDate = DateTime.Today.AddDays(2),
+                EndDate = DateTime.Today.AddDays(5),
+                IsActive = true,
+                Mentors = new List<Mentor>() { mentor }
+            };
 
-            mentorsRepositoryMock
-                .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(2);
+            await campaignsRepository.AddAsync(campaign);
 
             //Act
-            var response = await mentorsRepositoryMock.Object.GetCountByCampaignIdAsync(newId); ;
+            var response = await mentorsRepository.GetCountByCampaignIdAsync(campaign.Id); ;
 
             //Assert
-            Assert.Equal(2, response);
+            Assert.Equal(1, response);
         }
 
         [Fact]

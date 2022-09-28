@@ -1,4 +1,5 @@
 ﻿using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
 
@@ -8,7 +9,7 @@ namespace Core.Features.Specialities.Interfaces
     {
         Task<SpecialitySummaryResponse> AddAsync(Speciality specialty);
 
-        Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync();
+        Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync(PaginationRequest? filter = null);
 
         Task<Speciality?> GetByIdAsync(Guid id);
 
@@ -17,5 +18,7 @@ namespace Core.Features.Specialities.Interfaces
         Task<bool> IsNameTakenByOtherAsync(string name, Guid updatedCampaignId);
 
         Task<ICollection<Speciality>> GetByIdsAsync(IEnumerable<Guid> ids);
+
+        Task<int> GetCountAsync();
     }
 }

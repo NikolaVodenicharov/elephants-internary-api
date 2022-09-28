@@ -1,4 +1,5 @@
-﻿using Core.Features.Specialities.Interfaces;
+﻿using Core.Common.Pagination;
+using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
 using Infrastructure.Features.Specialities;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,8 @@ namespace Infrastructure.Tests.Features.Specialities
         {
             DbContextOptionsBuilder<InternaryContext>? dbOptions = new DbContextOptionsBuilder<InternaryContext>()
                 .UseInMemoryDatabase(
-                    Guid.NewGuid().ToString());
+                    Guid.NewGuid().ToString())
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
             context = new InternaryContext(dbOptions.Options);
 
@@ -138,7 +140,7 @@ namespace Infrastructure.Tests.Features.Specialities
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenFilterNullAndEmpty_ShouldReturnEmptyCollection()
         {
             //Act
             var specialties = await specialtiesRepository.GetAllAsync();
@@ -148,7 +150,7 @@ namespace Infrastructure.Tests.Features.Specialities
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenFilterNullAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
             var specialtyMock1 = new Speciality() { Name = name };
@@ -162,6 +164,37 @@ namespace Infrastructure.Tests.Features.Specialities
 
             //Assert
             Assert.Equal(2, specialties.Count());
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenFilterNotNullAndEmpty_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var specialties = await specialtiesRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Empty(specialties);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenFilterNotNullAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 10);
+
+            var specialtyMock1 = new Speciality() { Name = name };
+
+            await specialtiesRepository.AddAsync(specialtyMock1);
+
+            //Act
+            var specialties = await specialtiesRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Equal(1, specialties.Count());
+
         }
 
         [Fact]

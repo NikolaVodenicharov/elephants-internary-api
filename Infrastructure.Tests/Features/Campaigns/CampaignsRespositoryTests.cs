@@ -95,12 +95,7 @@ namespace Infrastructure.Tests.Features.Campaigns
         public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 10,
-                Count = 0
-            };
+            var filter = new PaginationRequest(1, 10);
 
             //Act
             var campaigns = await campaignsRepository.GetAllAsync(filter);

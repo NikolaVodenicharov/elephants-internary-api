@@ -10,19 +10,24 @@ using System.Net;
 
 namespace Core.Features.Campaigns
 {
+    internal static class Counter
+    {
+        public static int campaignCount = -1;
+    }
+
     public class CampaignsService : ICampaignsService
     {
         private readonly ICampaignsRepository campaignsRepository;
         private readonly ILogger<CampaignsService> campaignsServiceLogger;
         private readonly IValidator<CreateCampaignRequest> createCampaignValidator;
         private readonly IValidator<UpdateCampaignRequest> updateCampaignValidator;
-        private readonly IValidator<PaginationFilterRequest> paginationFilterRequestValidator;
+        private readonly IValidator<PaginationRequest> paginationFilterRequestValidator;
 
         public CampaignsService(ICampaignsRepository campaignsRepository, 
             ILogger<CampaignsService> campaignsServiceLogger,
             IValidator<CreateCampaignRequest> createCampaignValidator, 
             IValidator<UpdateCampaignRequest> updateCampaignValidator,
-            IValidator<PaginationFilterRequest> paginationFilterRequestValidator)
+            IValidator<PaginationRequest> paginationFilterRequestValidator)
         {
             this.campaignsRepository = campaignsRepository;
             this.campaignsServiceLogger = campaignsServiceLogger;
@@ -106,13 +111,41 @@ namespace Core.Features.Campaigns
             return existingCampaign.ToCampaignSummary();
         }
 
-        public async Task<IEnumerable<CampaignSummaryResponse>> GetAllAsync(PaginationFilterRequest filter)
+        public async Task<PaginationResponse<CampaignSummaryResponse>> GetAllAsync(PaginationRequest filter)
         {
             await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
 
+            if (Counter.campaignCount == -1 || filter.PageNum == 1)
+            {
+                Counter.campaignCount = await GetCountAsync();
+            }
+
+            if (Counter.campaignCount == 0)
+            {
+                if (filter.PageNum > PaginationConstants.DefaultPageCount)
+                {
+                    LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                }
+
+                var emptyPaginationResponse = new PaginationResponse<CampaignSummaryResponse>(
+                    new List<CampaignSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                return emptyPaginationResponse;
+            }
+
+            var totalPages = (Counter.campaignCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+
+            if (filter.PageNum > totalPages)
+            {
+                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+            }
+
             var campaigns = await campaignsRepository.GetAllAsync(filter);
 
-            return campaigns.ToCampaignSummaries();
+            var paginationResponse = new PaginationResponse<CampaignSummaryResponse>(
+                campaigns.ToCampaignSummaries(), filter.PageNum.Value, totalPages);
+
+            return paginationResponse;
         }
 
         public async Task<CampaignSummaryResponse?> GetByIdAsync(Guid campaignId)
@@ -132,6 +165,15 @@ namespace Core.Features.Campaigns
         public async Task<int> GetCountAsync()
         {
             return await campaignsRepository.GetCountAsync();
+        }
+
+        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
+        {
+            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
+
+            campaignsServiceLogger.LogError($"[{nameof(CampaignsService)}] {message}");
+
+            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Core.Common;
 using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
+using Core.Features.Campaigns.ResponseModels;
 
 namespace Core.Features.Campaigns.Interfaces
 {
@@ -12,7 +13,7 @@ namespace Core.Features.Campaigns.Interfaces
 
         Task<Campaign?> GetByIdAsync(Guid campaignId);
 
-        Task<IEnumerable<Campaign>> GetAllAsync(PaginationFilterRequest filter);
+        Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest filter);
 
         Task<int> GetCountAsync();
     }

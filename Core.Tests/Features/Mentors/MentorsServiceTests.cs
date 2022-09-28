@@ -4,6 +4,7 @@ using Core.Features.Mentors;
 using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
+using Core.Features.Mentors.ResponseModels;
 using Core.Features.Mentors.Support;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
@@ -61,7 +62,7 @@ namespace Core.Tests.Features.Mentors
         {
             var createMentorRequestValidator = new CreateMentorRequestValidator();
             var updateMentorRequestValidator = new UpdateMentorRequestValidator();
-            var filterCampaignsRequestValidator = new PaginationFilterRequestValidator();
+            var paginationRequestValidator = new PaginationRequestValidator();
 
             mentorsRepositoryMock = new Mock<IMentorsRepository>();
             specialitiesRepositoryMock = new Mock<ISpecialitiesRepository>();
@@ -70,7 +71,7 @@ namespace Core.Tests.Features.Mentors
 
             mentorsServiceMock = new MentorsService(
                 mentorsRepositoryMock.Object, specialitiesRepositoryMock.Object, mockLogger.Object,
-                createMentorRequestValidator, updateMentorRequestValidator, filterCampaignsRequestValidator);
+                createMentorRequestValidator, updateMentorRequestValidator, paginationRequestValidator);
 
             speciality = new Speciality()
             {
@@ -496,12 +497,10 @@ namespace Core.Tests.Features.Mentors
         #region GetAllAsyncTests
 
         [Theory]
-        [InlineData(0, 5, 15)]
-        [InlineData(5, 5, 15)]
-        [InlineData(10, 5, 15)]
-        [InlineData(0, 20, 5)]
-        [InlineData(1, 1, 10)]
-        public async Task GetAllAsync_WhenFilterIsCorrect_ShouldGetData(int skip, int take, int count)
+        [InlineData(1, 5)]
+        [InlineData(2, 10)]
+        [InlineData(1, 100)]
+        public async Task GetAllAsync_WhenFilterIsCorrectAndCampaignIdIsNull_ShouldGetData(int pageNum, int pageSize)
         {
             //Arrange
             var mentorList = new List<Mentor>()
@@ -509,37 +508,30 @@ namespace Core.Tests.Features.Mentors
                 returnMentor
             };
 
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = skip,
-                Take = take,
-                Count = count
-            };
+            var filter = new PaginationRequest(pageNum, pageSize);
 
             mentorsRepositoryMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationFilterRequest>()))
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(15);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
                 .ReturnsAsync(mentorList);
 
             //Act
-            var mentors = (await mentorsServiceMock.GetAllAsync(filter)).ToList();
+            var response = await mentorsServiceMock.GetAllAsync(filter);
 
             //Assert
-            Assert.Equal(mentorList.Count, mentors.Count);
+            Assert.Equal(mentorList.Count(), response.Content.Count());
         }
 
         [Theory]
         [InlineData(-1)]
-        [InlineData(10)]
-        [InlineData(20)]
-        public async Task GetAllAsync_WhenSkipIsInvalid_ShouldThrowException(int invalidSkip)
+        [InlineData(0)]
+        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
         {
             //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = invalidSkip,
-                Take = 10,
-                Count = 10
-            };
+            var filter = new PaginationRequest(pageNum, 4);
 
             //Act
             var action = async () => await mentorsServiceMock.GetAllAsync(filter);
@@ -551,35 +543,10 @@ namespace Core.Tests.Features.Mentors
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public async Task GetAllAsync_WhenTakeIsLessThanOne_ShouldThrowException(int invalidTake)
+        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
         {
             //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = invalidTake,
-                Count = 10
-            };
-
-            //Act
-            var action = async () => await mentorsServiceMock.GetAllAsync(filter);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Theory]
-        [InlineData(10, 5, 10)]
-        [InlineData(15, 5, 10)]
-        public async Task GetAllAsync_WhenSkipIsGreaterThanOrEqualToCount_ShouldThrowException(int skip, int take, int count)
-        {
-            //Arrange
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = skip,
-                Take = take,
-                Count = count
-            };
+            var filter = new PaginationRequest(1, pageSize);
 
             //Act
             var action = async () => await mentorsServiceMock.GetAllAsync(filter);
@@ -593,49 +560,55 @@ namespace Core.Tests.Features.Mentors
         #region GetMentorsByCampaignIdAsyncTests
 
         [Fact]
-        public async Task GetMentorsByCampaignIdAsync_WhenCampaignHasMentors_ShouldReturnCorrectCount()
+        public async Task GetAllAsync_WhenCampaignIdIsSetAndCampaignHasMentors_ShouldReturnCorrectCount()
         {
             //Arrange
             var newId = Guid.NewGuid();
 
             var mentorList = new List<Mentor>() { returnMentor };
 
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 5,
-                Count = 10
-            };
+            var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
+                mentorList.ToMentorSummaryResponses(), 1, 4);
+
+            var filter = new PaginationRequest(1, 1);
 
             mentorsRepositoryMock
-                .Setup(x => x.GetMentorsByCampaignIdAsync(It.IsAny<Guid>(), It.IsAny<PaginationFilterRequest>()))
+                .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(mentorList.Count);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
                 .ReturnsAsync(mentorList);
 
             //Act
-            var mentors = await mentorsServiceMock.GetMentorsByCampaignIdAsync(newId, filter);
+            var actualPaginationResponse = await mentorsServiceMock.GetAllAsync(filter, newId);
 
             //Assert
-            Assert.Equal(mentorList.Count, mentors.Count());
+            Assert.Equal(expectedPaginationResponse.Content.Count(), actualPaginationResponse.Content.Count());
         }
 
         [Fact]
-        public async Task GetMentorsByCampaignIdAsync_WhenCampaignHasNoMentors_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenCampaignIdIsSetAndCampaignHasNoMentors_ShouldReturnEmptyCollection()
         {
             //Arrange
             var newId = Guid.NewGuid();
 
-            var filter = new PaginationFilterRequest()
-            {
-                Skip = 0,
-                Take = 5,
-                Count = 10
-            };
+            var filter = new PaginationRequest(1, 20);
+
+            var emptyList = new List<Mentor>();
+
+            var expectedResponse = new PaginationResponse<MentorSummaryResponse>(
+                emptyList.ToMentorSummaryResponses(), 1, 1);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
+                .ReturnsAsync(emptyList);
 
             //Act
-            var mentors = await mentorsServiceMock.GetMentorsByCampaignIdAsync(newId, filter);
+            var actualResponse = await mentorsServiceMock.GetAllAsync(filter, newId);
 
             //Assert
-            Assert.Empty(mentors);
+            Assert.Empty(actualResponse.Content);
         }
 
         #endregion

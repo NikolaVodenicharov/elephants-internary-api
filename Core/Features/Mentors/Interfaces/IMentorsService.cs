@@ -10,11 +10,9 @@ namespace Core.Features.Mentors.Interfaces
 
         public Task<MentorSummaryResponse> UpdateAsync(UpdateMentorRequest request);
 
-        public Task<IEnumerable<MentorSummaryResponse>> GetAllAsync(PaginationFilterRequest filter);
-
         public Task<MentorSummaryResponse> GetByIdAsync(Guid id);
 
-        public Task<IEnumerable<MentorSummaryResponse>> GetMentorsByCampaignIdAsync(Guid campaignId, PaginationFilterRequest filter);
+        public Task<PaginationResponse<MentorSummaryResponse>> GetAllAsync(PaginationRequest filter, Guid? campaignId = null);
 
         public Task<int> GetCountByCampaignIdAsync(Guid campaignId);
 

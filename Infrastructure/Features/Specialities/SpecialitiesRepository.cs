@@ -1,4 +1,5 @@
-﻿using Core.Features.Specialities.Interfaces;
+﻿using Core.Common.Pagination;
+using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialities.Support;
 using Core.Features.Specialties.Entities;
@@ -6,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.Specialities
 {
+    internal class Counter
+    {
+        public static int specialitiesCount = -1;
+    }
+
     public class SpecialitiesRepository : ISpecialitiesRepository
     {
         private readonly InternaryContext context;
@@ -33,24 +39,38 @@ namespace Infrastructure.Features.Specialities
         {
             var exist = await context
                 .Specialties
+                .AsNoTracking()
                 .AnyAsync(s => s.Name == name);
 
             return exist;
         }
 
-        public async Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync()
+        public async Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync(PaginationRequest? filter = null)
         {
-            var specialitySummaries = await context
+            if (Counter.specialitiesCount == -1 || filter?.PageNum == 1)
+            {
+               await GetCountAsync();
+            }
+
+            var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
+            var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
+
+            var specialities = await context
                 .Specialties
-                .Select(s => s.ToSpecialitySummaryResponse())
+                .AsNoTracking()
+                .OrderBy(s => s.Id)
+                .Skip(skip)
+                .Take(take)
                 .ToListAsync();
 
-            return specialitySummaries;
+            return specialities.ToSpecialitySummaryResponses();
         }
 
         public async Task<Speciality?> GetByIdAsync(Guid id)
         {
-            var speciality = await context.Specialties.FirstOrDefaultAsync(s => s.Id == id);
+            var speciality = await context.Specialties
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id);
 
             return speciality;
         }
@@ -71,6 +91,15 @@ namespace Infrastructure.Features.Specialities
                 .ToListAsync();
 
             return specialities;
+        }
+
+        public async Task<int> GetCountAsync()
+        {
+            var count = await context.Specialties.CountAsync();
+
+            Counter.specialitiesCount = count;
+
+            return count;
         }
     }
 }

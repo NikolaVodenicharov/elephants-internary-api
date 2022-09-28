@@ -1,4 +1,5 @@
 ﻿using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
@@ -28,6 +29,8 @@ namespace WebAPI.Tests.Features.Specialities
         {
             var createSpecialityValidator = new CreateSpecialityValidator();
             var updateSpecialityValidator = new UpdateSpecialityValidator();
+            var paginationRequestValidator = new PaginationRequestValidator();
+
             specialtiesServiceMock = new Mock<ISpecialitiesService>();
 
             var loggerMock = new Mock<ILogger<SpecialitiesController>>();
@@ -36,7 +39,8 @@ namespace WebAPI.Tests.Features.Specialities
                 specialtiesServiceMock.Object,
                 loggerMock.Object,
                 createSpecialityValidator,
-                updateSpecialityValidator);
+                updateSpecialityValidator,
+                paginationRequestValidator);
         }
 
         [Theory]
@@ -183,7 +187,7 @@ namespace WebAPI.Tests.Features.Specialities
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenNotEmptyAndNoPageParametersSet_ShouldReturnCorrectCountElements()
         {
             //Arrange
             var nameInAllowLength = TestHelper.GenerateString(SpecialityValidationConstants.NameMinLength);
@@ -213,7 +217,7 @@ namespace WebAPI.Tests.Features.Specialities
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmpty_ShouldReturEmptyCollection()
+        public async Task GetAllAsync_WhenEmptyAndNoPageParametersSet_ShouldReturEmptyCollection()
         {
             //Arrange
             specialtiesServiceMock
@@ -233,6 +237,83 @@ namespace WebAPI.Tests.Features.Specialities
             var specialitySummaryList = jsonResult!.Value as CoreResponse<IEnumerable<SpecialitySummaryResponse>>;
 
             Assert.Empty(specialitySummaryList.Data);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        {
+            //Arrange
+            var invalidPageNum = -1;
+            var validPageSize = 10;
+
+            //Act
+            var action = async () => await specialtiesController.GetAllAsync(invalidPageNum, validPageSize);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenOnlyPageNumIsSet_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await specialtiesController.GetAllAsync(1);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenOnlyPageSizeIsSet_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await specialtiesController.GetAllAsync(pageSize: 10);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await specialtiesController.GetAllAsync(1, -1);
+
+            //Arrange
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNotEmptyAndBothParametersAreValid_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var summary1 = new SpecialitySummaryResponse(Guid.NewGuid(), "Backend");
+            var summary2 = new SpecialitySummaryResponse(Guid.NewGuid(), "Frontend");
+
+            var specialityList = new List<SpecialitySummaryResponse>() { summary1, summary2 };
+
+            var pageNum = 1;
+            var pageSize = 10;
+
+            var expectedResponse = new PaginationResponse<SpecialitySummaryResponse>(specialityList, pageNum, 1);
+
+            specialtiesServiceMock
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>()))
+                .ReturnsAsync(expectedResponse);
+
+            //Act
+            var actionResult = await specialtiesController.GetAllAsync(pageNum, pageSize);
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<SpecialitySummaryResponse>>;
+
+            Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
         }
     }
 }

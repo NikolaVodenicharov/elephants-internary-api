@@ -1,4 +1,5 @@
 ﻿using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
@@ -10,23 +11,31 @@ using System.Net;
 
 namespace Core.Features.Specialities
 {
+    internal static class Counter
+    {
+        public static int specialitiesCount = -1;
+    }
+
     public class SpecialitiesService : ISpecialitiesService
     {
         private readonly ISpecialitiesRepository specialitiesRepository;
         private readonly ILogger<SpecialitiesService> specialitiesServiceLogger;
         private readonly IValidator<CreateSpecialityRequest> createSpecialityValidator;
         private readonly IValidator<UpdateSpecialityRequest> updateSpecialityValidator;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public SpecialitiesService(
             ISpecialitiesRepository specialitiesRepository,
             ILogger<SpecialitiesService> specialitiesServiceLogger,
             IValidator<CreateSpecialityRequest> createSpecialityValidator,
-            IValidator<UpdateSpecialityRequest> updateSpecialityValidator)
+            IValidator<UpdateSpecialityRequest> updateSpecialityValidator,
+            IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.specialitiesRepository = specialitiesRepository;
             this.specialitiesServiceLogger = specialitiesServiceLogger;
             this.createSpecialityValidator = createSpecialityValidator;
             this.updateSpecialityValidator = updateSpecialityValidator;
+            this.paginationRequestValidator = paginationRequestValidator;
         }
 
         public async Task<SpecialitySummaryResponse> CreateAsync(CreateSpecialityRequest createSpecialityRequest)
@@ -78,11 +87,50 @@ namespace Core.Features.Specialities
 
         public async Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync()
         {
-            var specialitySummaries = await specialitiesRepository.GetAllAsync();
+            var specialities = await specialitiesRepository.GetAllAsync();
 
             specialitiesServiceLogger.LogInformation($"[{nameof(SpecialitiesService)}] {nameof(GetAllAsync)} successfully executed.");
 
-            return specialitySummaries;
+            return specialities;
+        }
+
+        public async Task<PaginationResponse<SpecialitySummaryResponse>> GetPaginationAsync(PaginationRequest filter)
+        {
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
+
+            if (Counter.specialitiesCount == -1 || filter.PageNum == 1)
+            {
+                Counter.specialitiesCount = await specialitiesRepository.GetCountAsync();
+            }
+
+            if (Counter.specialitiesCount == 0)
+            {
+                if (filter.PageNum > PaginationConstants.DefaultPageCount)
+                {
+                    LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                }
+
+                var emptyPaginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
+                    new List<SpecialitySummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                return emptyPaginationResponse;
+            }
+
+            var totalPages = (Counter.specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+
+            if (filter.PageNum > totalPages)
+            {
+                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+            }
+
+            var specialities = await specialitiesRepository.GetAllAsync(filter);
+
+            var paginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
+                specialities, filter.PageNum.Value, totalPages);
+
+            specialitiesServiceLogger.LogInformation($"[{nameof(SpecialitiesService)}] {nameof(GetAllAsync)} successfully executed.");
+
+            return paginationResponse;
         }
 
         private async Task ValidateCreateSpecialityAsync(CreateSpecialityRequest createSpecialityRequest)
@@ -130,6 +178,15 @@ namespace Core.Features.Specialities
         private void LogInformation(string methodName, Guid id)
         {
             specialitiesServiceLogger.LogInformation($"[{nameof(SpecialitiesService)}] {methodName} successfully executed, entity id: {id}.");
+        }
+
+        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
+        {
+            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
+
+            specialitiesServiceLogger.LogError($"[{nameof(SpecialitiesService)}] {message}");
+
+            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }
