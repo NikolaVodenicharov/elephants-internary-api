@@ -69,7 +69,6 @@ namespace Infrastructure.Features.Specialities
         public async Task<Speciality?> GetByIdAsync(Guid id)
         {
             var speciality = await context.Specialties
-                .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             return speciality;

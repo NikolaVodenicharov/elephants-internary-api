@@ -26,7 +26,6 @@ namespace Infrastructure.Features.Mentors
         public async Task<Mentor?> GetByIdAsync(Guid id)
         {
             var mentor = await context.Mentors
-                .AsNoTracking()
                 .Include(m => m.Specialities)
                 .FirstOrDefaultAsync(m => m.Id == id);
 

@@ -25,7 +25,6 @@ namespace Infrastructure.Features.LearningTopics
         public async Task<LearningTopic?> GetByIdAsync(Guid id)
         {
             var learningTopic = await context.LearningTopics
-                .AsNoTracking()
                 .Include(t => t.Specialities)
                 .FirstOrDefaultAsync(t => t.Id == id);
 

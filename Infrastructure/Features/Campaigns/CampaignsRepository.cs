@@ -47,7 +47,6 @@ namespace Infrastructure.Features.Campaigns
         public async Task<Campaign?> GetByIdAsync(Guid campaignId)
         {
             var campaign = await context.Campaigns
-                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == campaignId);
 
             return campaign;
