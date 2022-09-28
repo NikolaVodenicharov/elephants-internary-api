@@ -15,11 +15,16 @@ using Core.Features.LearningTopics;
 using Core.Features.LearningTopics.Interfaces;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.Support;
+using Core.Features.Interns;
+using Core.Features.Interns.Interfaces;
+using Core.Features.Interns.RequestModels;
+using Core.Features.Interns.Support;
 using FluentValidation;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
 using Infrastructure.Features.LearningTopics;
+using Infrastructure.Features.Interns;
 
 namespace WebAPI.Common.Extensions.Middlewares
 {
@@ -27,10 +32,17 @@ namespace WebAPI.Common.Extensions.Middlewares
     {
         public static void CustomizeDependencies(this IServiceCollection services)
         {
+            RegisterCommonDependencies(services);
             RegisterCampaignDependencies(services);
             RegisterMentorDependencies(services);
             RegisterSpecialityDependencies(services);
             RegisterLearningTopicsDependencies(services);
+            RegisterInternDependencies(services);
+        }
+
+        private static void RegisterCommonDependencies(IServiceCollection services)
+        {
+            services.AddTransient<IValidator<PaginationRequest>, PaginationRequestValidator>();
         }
 
         private static void RegisterCampaignDependencies(IServiceCollection services)
@@ -65,6 +77,18 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ILearningTopicsRepository, LearningTopicsRepository>();
             services.AddTransient<IValidator<CreateLearningTopicRequest>, CreateLearningTopicRequestValidator>();
             services.AddTransient<IValidator<UpdateLearningTopicRequest>, UpdateLearningTopicRequestValidator>();
+        }
+
+        private static void RegisterInternDependencies(IServiceCollection services)
+        {
+            services.AddTransient<IInternCampaignsService, InternCampaignsService>();
+            services.AddTransient<IInternsService, InternsService>();
+            services.AddTransient<IInternsRepository, InternsRepository>();
+            services.AddTransient<IValidator<AddInternCampaignRequest>, AddInternCampaignRequestValidator>();
+            services.AddTransient<IValidator<UpdateInternCampaignRequest>, UpdateInternCampaignRequestValidator>();
+            services.AddTransient<IValidator<AddStateRequest>, AddStateRequestValidator>();
+            services.AddTransient<IValidator<CreateInternRequest>, CreateInternRequestValidator>();
+            services.AddTransient<IValidator<UpdateInternRequest>, UpdateInternRequestValidator>();
         }
     }
 }

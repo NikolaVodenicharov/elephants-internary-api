@@ -4,6 +4,7 @@ using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
 using Core.Features.Campaigns.Support;
+using Core.Features.Interns.Interfaces;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.ResponseModels;
 using Core.Features.Specialities.ResponseModels;
@@ -19,6 +20,7 @@ using WebAPI.Common;
 using WebAPI.Tests.Common;
 using WebAPI.Features.Campaigns;
 using Xunit;
+using Core.Features.Interns.ResponseModels;
 
 namespace WebAPI.Tests.Features.Campaigns
 {
@@ -41,6 +43,7 @@ namespace WebAPI.Tests.Features.Campaigns
 
         private readonly Mock<ICampaignsService> campaignsServiceMock;
         private readonly Mock<IMentorsService> mentorsServiceMock;
+        private readonly Mock<IInternsService> internsServiceMock;
         private readonly CampaignsController campaignsController;
 
         public static IEnumerable<object[]> invalidNames =>
@@ -64,19 +67,20 @@ namespace WebAPI.Tests.Features.Campaigns
         {
             var createCampaignRequestValidator = new CreateCampaignRequestValidator();
             var updateCampaignRequestValidator = new UpdateCampaignRequestValidator();
-            var paginationRequestValidator = new PaginationRequestValidator();
 
             var loggerMock = new Mock<ILogger<CampaignsController>>();
 
             campaignsServiceMock = new Mock<ICampaignsService>();
             mentorsServiceMock = new Mock<IMentorsService>();
+            internsServiceMock = new Mock<IInternsService>();
 
             campaignsController = new CampaignsController(
                     campaignsServiceMock.Object,
                     mentorsServiceMock.Object,
+                    internsServiceMock.Object,
+                    new PaginationRequestValidator(),
                     createCampaignRequestValidator,
                     updateCampaignRequestValidator,
-                    paginationRequestValidator,
                     loggerMock.Object
                 );
 
@@ -498,6 +502,53 @@ namespace WebAPI.Tests.Features.Campaigns
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        #endregion
+
+        #region GetAllInternsByCampaignIdAsync
+
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(0, 1)]
+        [InlineData(1, 0)]
+        [InlineData(-1, -1)]
+        public async Task GetAllInternsByCampaignIdAsync_WhenInvalidPage_ShouldThrowException(int pageNum, int pageSize)
+        {
+            //Act
+            var action = async () => await campaignsController.GetAllInternsByCampaignIdAsync(id, pageNum, pageSize);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllInternsByCampaignIdAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var internsByCampaignPaginationResponseMock = new PaginationResponse<InternByCampaignSummaryResponse>(
+                new List<InternByCampaignSummaryResponse>(),
+                1,
+                10);
+
+            internsServiceMock
+                .Setup(i => i.GetAllByCampaignIdAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
+                .ReturnsAsync(internsByCampaignPaginationResponseMock);
+
+            //Act
+            var actionResult = await campaignsController.GetAllInternsByCampaignIdAsync(id, 1, 10);
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<InternByCampaignSummaryResponse>>;
+
+            Assert.NotNull(coreResponse);
+            Assert.Empty(coreResponse!.Data!.Content);
         }
 
         #endregion

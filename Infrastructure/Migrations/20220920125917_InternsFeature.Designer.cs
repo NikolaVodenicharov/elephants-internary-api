@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(InternaryContext))]
-    partial class InternaryContextModelSnapshot : ModelSnapshot
+    [Migration("20220920125917_InternsFeature")]
+    partial class InternsFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,21 +23,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
-
-            modelBuilder.Entity("CampaignMentors", b =>
-                {
-                    b.Property<Guid>("CampaignId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("MentorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("CampaignId", "MentorId");
-
-                    b.HasIndex("MentorId");
-
-                    b.ToTable("CampaignMentors");
-                });
 
             modelBuilder.Entity("Core.Features.Campaigns.Entities.Campaign", b =>
                 {
@@ -180,47 +167,6 @@ namespace Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Core.Features.LearningTopics.Entities.LearningTopic", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("LearningTopics");
-                });
-
-            modelBuilder.Entity("Core.Features.Mentors.Entities.Mentor", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Mentors");
-                });
-
             modelBuilder.Entity("Core.Features.Specialties.Entities.Speciality", b =>
                 {
                     b.Property<Guid>("Id")
@@ -237,57 +183,10 @@ namespace Infrastructure.Migrations
                     b.ToTable("Specialties");
                 });
 
-            modelBuilder.Entity("LearningTopicSpecialities", b =>
-                {
-                    b.Property<Guid>("LearningTopicId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SpecialityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("LearningTopicId", "SpecialityId");
-
-                    b.HasIndex("SpecialityId");
-
-                    b.ToTable("LearningTopicSpecialities");
-                });
-
-            modelBuilder.Entity("MentorSpecialties", b =>
-                {
-                    b.Property<Guid>("MentorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SpecialityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("MentorId", "SpecialityId");
-
-                    b.HasIndex("SpecialityId");
-
-                    b.ToTable("MentorSpecialties");
-                });
-
-            modelBuilder.Entity("CampaignMentors", b =>
-                {
-                    b.HasOne("Core.Features.Campaigns.Entities.Campaign", null)
-                        .WithMany()
-                        .HasForeignKey("CampaignId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("CampaignId");
-
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", null)
-                        .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("MentorId");
-                });
-
             modelBuilder.Entity("Core.Features.Interns.Entities.InternCampaign", b =>
                 {
                     b.HasOne("Core.Features.Campaigns.Entities.Campaign", "Campaign")
-                        .WithMany("InternCampaigns")
+                        .WithMany("InternIntersections")
                         .HasForeignKey("CampaignId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -299,7 +198,7 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Core.Features.Specialties.Entities.Speciality", "Speciality")
-                        .WithMany("InternCampaigns")
+                        .WithMany("InternIntersections")
                         .HasForeignKey("SpecialityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -330,43 +229,9 @@ namespace Infrastructure.Migrations
                     b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("LearningTopicSpecialities", b =>
-                {
-                    b.HasOne("Core.Features.LearningTopics.Entities.LearningTopic", null)
-                        .WithMany()
-                        .HasForeignKey("LearningTopicId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_LearningTopicId");
-
-                    b.HasOne("Core.Features.Specialties.Entities.Speciality", null)
-                        .WithMany()
-                        .HasForeignKey("SpecialityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_LearningTopic_SpecialityId");
-                });
-
-            modelBuilder.Entity("MentorSpecialties", b =>
-                {
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", null)
-                        .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_MentorId");
-
-                    b.HasOne("Core.Features.Specialties.Entities.Speciality", null)
-                        .WithMany()
-                        .HasForeignKey("SpecialityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_SpecialityId");
-                });
-
             modelBuilder.Entity("Core.Features.Campaigns.Entities.Campaign", b =>
                 {
-                    b.Navigation("InternCampaigns");
+                    b.Navigation("InternIntersections");
                 });
 
             modelBuilder.Entity("Core.Features.Interns.Entities.Intern", b =>
@@ -381,7 +246,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Features.Specialties.Entities.Speciality", b =>
                 {
-                    b.Navigation("InternCampaigns");
+                    b.Navigation("InternIntersections");
                 });
 #pragma warning restore 612, 618
         }

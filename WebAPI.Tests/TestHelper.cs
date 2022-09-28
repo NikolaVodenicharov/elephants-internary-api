@@ -1,21 +1,22 @@
-﻿using System;
-using Core.Features.Interns.Support;
+﻿using Core.Features.Interns.Support;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace Core.Tests
+namespace WebAPI.Tests
 {
-    public class NameEdgeCaseTestHelper
+    internal class TestHelper
     {
-        public const string NameWithDigit = "NameWith1";
-        public const string NameWithDot = "NameWith.";
-        public const string NameWithDash = "NameWith-";
-        public const string NameWithNumberSign = "NameWith#";
-        public const string NameWithExclamationMark = "NameWith!";
-        public const string NameWithWhiteSpace = "Name with white space";
-        public const string NameWithAmpersand = "NameWith&";
+        public static string GenerateString(int length)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < length; i++)
+            {
+                sb.Append("a");
+            }
+
+            return sb.ToString();
+        }
 
         public const string FirstNameMock = "John";
         public const string LastNameMock = "Doe";

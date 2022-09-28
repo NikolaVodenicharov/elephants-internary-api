@@ -13,6 +13,9 @@ using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.ResponseModels;
 using Core.Common.Pagination;
 using WebAPI.Common;
+using Core.Features.Interns.Interfaces;
+using WebAPI.Common.ErrorHandling;
+using Core.Features.Interns.ResponseModels;
 
 namespace WebAPI.Features.Campaigns
 {
@@ -21,24 +24,27 @@ namespace WebAPI.Features.Campaigns
     {
         private readonly ICampaignsService campaignsService;
         private readonly IMentorsService mentorsService;
+        private readonly IInternsService internService;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly IValidator<CreateCampaignRequest> createCampaingValidator;
         private readonly IValidator<UpdateCampaignRequest> updateCampaignValidator;
-        private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly ILogger<CampaignsController> campaignsControllerLogger;
 
         public CampaignsController(
             ICampaignsService campaignsService,
             IMentorsService mentorsService,
+            IInternsService internService,
+            IValidator<PaginationRequest> paginationRequestValidator,
             IValidator<CreateCampaignRequest> createCampaingValidator, 
             IValidator<UpdateCampaignRequest> updateCampaignValidator,
-            IValidator<PaginationRequest> paginationRequestValidator,
             ILogger<CampaignsController> campaignsControllerLogger)
         {
             this.campaignsService = campaignsService;
             this.mentorsService = mentorsService;
+            this.internService = internService;
+            this.paginationRequestValidator = paginationRequestValidator;
             this.createCampaingValidator = createCampaingValidator;
             this.updateCampaignValidator = updateCampaignValidator;
-            this.paginationRequestValidator = paginationRequestValidator;
             this.campaignsControllerLogger = campaignsControllerLogger;
         }
 
@@ -125,6 +131,20 @@ namespace WebAPI.Features.Campaigns
             var paginationResponse = await mentorsService.GetAllAsync(filter, id);
 
             return CoreResult.Success(paginationResponse);
+        }
+
+        [HttpGet("{id}/interns")]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<InternByCampaignSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        public async Task<IActionResult> GetAllInternsByCampaignIdAsync(Guid Id, [FromQuery] int pageNum, [FromQuery] int pageSize)
+        {
+            var paginationRequest = new PaginationRequest(pageNum, pageSize);
+
+            await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
+
+            var internsByCampaignPaginationResponse = await internService.GetAllByCampaignIdAsync(paginationRequest, Id);
+
+            return CoreResult.Success(internsByCampaignPaginationResponse);
         }
     }
 }

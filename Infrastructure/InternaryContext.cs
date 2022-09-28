@@ -6,18 +6,20 @@ using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
 using Infrastructure.Features.LearningTopics;
+using Core.Features.Interns.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Infrastructure
 {
     public class InternaryContext : DbContext
     {
         public DbSet<Campaign> Campaigns { get; set; }
-
-        public DbSet<Mentor> Mentors { get; set; }
-
         public DbSet<Speciality> Specialties { get; set; }
-
+        public DbSet<Intern> Interns { get; set; }
+        public DbSet<InternCampaign> InternCampaigns { get; set; }
+        public DbSet<Status> Status { get; set; }
+        public DbSet<Mentor> Mentors { get; set; }
         public DbSet<LearningTopic> LearningTopics { get; set; }
 
         public InternaryContext(DbContextOptions<InternaryContext> options)
@@ -28,10 +30,7 @@ namespace Infrastructure
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfiguration(new CampaignEntityTypeConfiguration());
-            modelBuilder.ApplyConfiguration(new SpecialityEntityTypeConfiguration());
-            modelBuilder.ApplyConfiguration(new MentorEntityTypeConfiguration());
-            modelBuilder.ApplyConfiguration(new LearningTopicEntityTypeConfiguration());
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         }
     }
 }
