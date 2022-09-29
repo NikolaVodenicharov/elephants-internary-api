@@ -8,15 +8,15 @@ namespace Core.Common.Pagination
         {
             RuleFor(c => c.PageNum)
                 .NotNull()
-                .WithMessage("{PropertyName} is required")
+                .WithMessage("{PropertyName} is required.")
                 .GreaterThan(0)
-                .WithMessage("{PropertyName} must be greater than zero");
+                .WithMessage("{PropertyName} must be greater than zero.");
 
             RuleFor(c => c.PageSize)
                 .NotNull()
-                .WithMessage("{PropertyName} is required")
+                .WithMessage("{PropertyName} is required.")
                 .GreaterThan(0)
-                .WithMessage("{PropertyName} must be greater than zero");
+                .WithMessage("{PropertyName} must be greater than zero.");
         }
     }
 }

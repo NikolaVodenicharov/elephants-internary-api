@@ -1,7 +1,9 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
+using Core.Common.Exceptions;
 using FluentValidation;
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace WebAPI.Common.ErrorHandling
 {
@@ -24,6 +26,8 @@ namespace WebAPI.Common.ErrorHandling
             }
             catch (Exception ex)
             {
+                var isValidationError = false;
+
                 switch (ex)
                 {
                     case CoreException e:
@@ -32,6 +36,7 @@ namespace WebAPI.Common.ErrorHandling
 
                     case ValidationException e:
                         context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                        isValidationError = true;
                         break;
 
                     default:
@@ -43,6 +48,15 @@ namespace WebAPI.Common.ErrorHandling
 
                 var errorMessage = ex.Message ?? string.Empty;
 
+                if (isValidationError)
+                {
+                    errorMessage = String.Join("",
+                        new Regex(RegularExpressionPatterns.ValidationErrorMessageSplitPattern)
+                        .Split(errorMessage)
+                        .Where(p => p.Trim().Length > 0)
+                        ).Trim();
+                }
+
                 var error = new Error(errorMessage);
 
                 var coreResponse = CoreResult.Error(error, context.Response.StatusCode);
@@ -51,32 +65,6 @@ namespace WebAPI.Common.ErrorHandling
 
                 await context.Response.WriteAsync(coreResponse);
             }
-        }
-
-        private ErrorResponse CreateErrorResponse(Exception ex)
-        {
-            var error = GetSnakeCaseErrorName(ex);
-            var message = ex.Message ?? string.Empty;
-
-            var errorResponse = new ErrorResponse(error, message);
-            return errorResponse;
-        }
-
-        private string GetSnakeCaseErrorName(Exception ex)
-        {
-            var errorWithoutExceptionSuffix = ex
-                .GetType()
-                .Name
-                .Replace(nameof(Exception), string.Empty);
-
-            var snakeCaseError = ToUnderscoreCase(errorWithoutExceptionSuffix);
-
-            return snakeCaseError;
-        }
-
-        private string ToUnderscoreCase(string str)
-        {
-            return string.Concat(str.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
         }
     }
 }
