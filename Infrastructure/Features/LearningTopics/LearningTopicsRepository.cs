@@ -1,9 +1,16 @@
+using Core.Common.Pagination;
 using Core.Features.LearningTopics.Entities;
 using Core.Features.LearningTopics.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.LearningTopics
 {
+
+    internal static class Counter
+    {
+        public static int learningTopicCount = -1;
+    }
+
     public class LearningTopicsRepository : ILearningTopicsRepository
     {
         private readonly InternaryContext context;
@@ -31,11 +38,23 @@ namespace Infrastructure.Features.LearningTopics
             return learningTopic;
         }
 
-        public async Task<IEnumerable<LearningTopic>> GetAllAsync()
+        public async Task<IEnumerable<LearningTopic>> GetAllAsync(PaginationRequest? filter = null)
         {
-            var learningTopics = await context.LearningTopics
+            if (Counter.learningTopicCount == -1 || filter?.PageNum == 1)
+            {
+                await GetCountAsync();
+            }
+
+            var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
+            var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
+
+            var learningTopics = await context
+                .LearningTopics
                 .AsNoTracking()
                 .Include(t => t.Specialities)
+                .OrderBy(s => s.Id)
+                .Skip(skip)
+                .Take(take)
                 .ToListAsync();
 
             return learningTopics;
@@ -51,6 +70,15 @@ namespace Infrastructure.Features.LearningTopics
         public async Task SaveTrackingChangesAsync()
         {
             await context.SaveChangesAsync();
+        }
+
+        public async Task<int> GetCountAsync()
+        {
+            var count = await context.LearningTopics.CountAsync();
+
+            Counter.learningTopicCount = count;
+
+            return count;
         }
     }
 }

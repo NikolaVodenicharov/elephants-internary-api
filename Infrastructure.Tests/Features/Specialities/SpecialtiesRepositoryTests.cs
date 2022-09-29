@@ -180,7 +180,7 @@ namespace Infrastructure.Tests.Features.Specialities
         }
 
         [Fact]
-        public async Task GetPaginationAsync_WhenFilterNotNullAndNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenFilterNotNullAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
             var filter = new PaginationRequest(1, 10);
@@ -194,7 +194,6 @@ namespace Infrastructure.Tests.Features.Specialities
 
             //Assert
             Assert.Equal(1, specialties.Count());
-
         }
 
         [Fact]

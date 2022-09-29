@@ -1,4 +1,5 @@
 using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.LearningTopics.Interfaces;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.ResponseModels;
@@ -11,6 +12,11 @@ using System.Net;
 
 namespace Core.Features.LearningTopics
 {
+    internal static class Counter
+    {
+        public static int learningTopicCount = -1;
+    }
+
     public class LearningTopicsService : ILearningTopicsService
     {
         private readonly ILearningTopicsRepository learningTopicsRepository;
@@ -18,19 +24,22 @@ namespace Core.Features.LearningTopics
         private readonly ILogger<LearningTopicsService> learningTopicsServiceLogger;
         private readonly IValidator<CreateLearningTopicRequest> createLearningTopicValidator;
         private readonly IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public LearningTopicsService(
             ILearningTopicsRepository learningTopicsRepository,
             ISpecialitiesRepository specialitiesRepository,
             ILogger<LearningTopicsService> learningTopicsServiceLogger,
             IValidator<CreateLearningTopicRequest> createLearningTopicValidator,
-            IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator)
+            IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator,
+            IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.learningTopicsRepository = learningTopicsRepository;
             this.specialitiesRepository = specialitiesRepository;
             this.learningTopicsServiceLogger = learningTopicsServiceLogger;
             this.createLearningTopicValidator = createLearningTopicValidator;
             this.updateLearningTopicValidator = updateLearningTopicValidator;
+            this.paginationRequestValidator = paginationRequestValidator;
         }
 
         public async Task<LearningTopicSummaryResponse> CreateAsync(CreateLearningTopicRequest request)
@@ -102,6 +111,45 @@ namespace Core.Features.LearningTopics
             LogInformation(nameof(GetAllAsync));
 
             return learningTopicsResponse.ToLearningTopicSummaries();
+        }
+
+        public async Task<PaginationResponse<LearningTopicSummaryResponse>> GetPaginationAsync(PaginationRequest filter)
+        {
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
+
+            if (Counter.learningTopicCount == -1 || filter.PageNum == 1)
+            {
+                Counter.learningTopicCount = await learningTopicsRepository.GetCountAsync();
+            }
+
+            if (Counter.learningTopicCount == 0)
+            {
+                if (filter.PageNum > PaginationConstants.DefaultPageCount)
+                {
+                    LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                }
+
+                var emptyPaginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
+                    new List<LearningTopicSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                return emptyPaginationResponse;
+            }
+
+            var totalPages = (Counter.learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+
+            if (filter.PageNum > totalPages)
+            {
+                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+            }
+
+            var learningTopics = await learningTopicsRepository.GetAllAsync(filter);
+
+            var paginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
+                learningTopics.ToLearningTopicSummaries(), filter.PageNum.Value, totalPages);
+
+            LogInformation(nameof(GetPaginationAsync));
+
+            return paginationResponse;
         }
 
         private async Task ValidateDuplicateNameAsync(string learningTopicName)
@@ -177,6 +225,15 @@ namespace Core.Features.LearningTopics
         private void LogInformation(string methodName)
         {
             learningTopicsServiceLogger.LogInformation($"[{nameof(LearningTopicsService)}] {methodName} successfully executed.");
+        }
+
+        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
+        {
+            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
+
+            learningTopicsServiceLogger.LogError($"[{nameof(LearningTopicsService)}] {message}");
+
+            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }

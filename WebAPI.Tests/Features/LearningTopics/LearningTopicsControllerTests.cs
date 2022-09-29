@@ -17,6 +17,7 @@ using WebAPI.Common;
 using WebAPI.Features.LearningTopics;
 using WebAPI.Tests.Common;
 using Xunit;
+using Core.Common.Pagination;
 
 namespace WebAPI.Tests.Features.LearningTopics
 {
@@ -56,6 +57,7 @@ namespace WebAPI.Tests.Features.LearningTopics
         {
             var createLearningTopicValidator = new CreateLearningTopicRequestValidator();
             var updateLearningTopicValidator = new UpdateLearningTopicRequestValidator();
+            var paginationRequestValidator = new PaginationRequestValidator();
             var learningTopicsControllerLogger = new Mock<ILogger<LearningTopicsController>>();
             
             learningTopicsService = new Mock<ILearningTopicsService>();
@@ -64,6 +66,7 @@ namespace WebAPI.Tests.Features.LearningTopics
                 learningTopicsService.Object,
                 createLearningTopicValidator,
                 updateLearningTopicValidator,
+                paginationRequestValidator,
                 learningTopicsControllerLogger.Object
             );
 
@@ -295,7 +298,7 @@ namespace WebAPI.Tests.Features.LearningTopics
         }
 
         [Fact]
-        public async void GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        public async void GetAllAsync_WhenNotEmptyAndNoPageParametersSet_ShouldReturnCorrectCountElements()
         {
             // Arrange
             var learningTopicSummary = new LearningTopicSummaryResponse(id, name, specialitySummaries);
@@ -323,7 +326,7 @@ namespace WebAPI.Tests.Features.LearningTopics
         }
 
         [Fact]
-        public async void GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        public async void GetAllAsync_WhenEmptyAndNoPageParametersSet_ShouldReturnEmptyCollection()
         {
             // Arrange
             learningTopicsService
@@ -343,6 +346,83 @@ namespace WebAPI.Tests.Features.LearningTopics
             var learingTopicsResponse = jsonResult!.Value as CoreResponse<IEnumerable<LearningTopicSummaryResponse>>;
 
             Assert.Empty(learingTopicsResponse.Data);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        {
+            //Arrange
+            var invalidPageNum = -1;
+            var validPageSize = 10;
+
+            //Act
+            var action = async () => await learningTopicsController.GetAllAsync(invalidPageNum, validPageSize);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenOnlyPageNumIsSet_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await learningTopicsController.GetAllAsync(1);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenOnlyPageSizeIsSet_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await learningTopicsController.GetAllAsync(pageSize: 10);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await learningTopicsController.GetAllAsync(1, -1);
+
+            //Arrange
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNotEmptyAndBothParametersAreValid_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var learningTopicSummary = new LearningTopicSummaryResponse(id, name, specialitySummaries);
+            var additionalLearningTopicSummary = new LearningTopicSummaryResponse(Guid.NewGuid(), "Additional " + name, specialitySummaries);
+
+            var learningTopicSummaries = new List<LearningTopicSummaryResponse>() { learningTopicSummary, additionalLearningTopicSummary };
+
+            var pageNum = 1;
+            var pageSize = 10;
+
+            var expectedResponse = new PaginationResponse<LearningTopicSummaryResponse>(learningTopicSummaries, pageNum, 1);
+
+            learningTopicsService
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>()))
+                .ReturnsAsync(expectedResponse);
+
+            //Act
+            var actionResult = await learningTopicsController.GetAllAsync(pageNum, pageSize);
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<LearningTopicSummaryResponse>>;
+
+            Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
         }
     }
 }

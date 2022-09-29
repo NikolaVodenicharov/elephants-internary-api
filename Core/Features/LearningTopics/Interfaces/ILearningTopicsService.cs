@@ -1,3 +1,4 @@
+using Core.Common.Pagination;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.ResponseModels;
 namespace Core.Features.LearningTopics.Interfaces
@@ -11,5 +12,7 @@ namespace Core.Features.LearningTopics.Interfaces
         Task<LearningTopicSummaryResponse> GetByIdAsync(Guid id);
 
         Task<IEnumerable<LearningTopicSummaryResponse>> GetAllAsync();
+
+        Task<PaginationResponse<LearningTopicSummaryResponse>> GetPaginationAsync(PaginationRequest filter);
     }
 }

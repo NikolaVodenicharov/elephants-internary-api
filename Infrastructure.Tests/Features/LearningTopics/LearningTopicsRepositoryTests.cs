@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Core.Common.Pagination;
 
 namespace Infrastructure.Features.LearningTopics
 {
@@ -187,7 +188,7 @@ namespace Infrastructure.Features.LearningTopics
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCount()
+        public async Task GetAllAsync_WhenFilterNullAndNotEmpty_ShouldReturnCorrectCount()
         {
             // Arrange
             var expectedLearningTopicsCount = 2;
@@ -203,13 +204,44 @@ namespace Infrastructure.Features.LearningTopics
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenFilterNullAndEmpty_ShouldReturnEmptyCollection()
         {
             // Act
             var learningTopicsResult = await learningTopicsRepository.GetAllAsync();
             
             // Assert
             Assert.Empty(learningTopicsResult);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenFilterNotNullAndEmpty_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var learningTopics = await learningTopicsRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Empty(learningTopics);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenFilterNotNullAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 10);
+
+            var expectedLearningTopicsCount = 2;
+
+            await learningTopicsRepository.AddAsync(learningTopic);
+            await learningTopicsRepository.AddAsync(additionalLearningTopic);
+
+            //Act
+            var learningTopics = await learningTopicsRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Equal(expectedLearningTopicsCount, learningTopics.Count());
         }
 
         [Fact]

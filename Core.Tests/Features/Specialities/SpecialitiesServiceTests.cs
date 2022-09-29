@@ -330,6 +330,19 @@ namespace Core.Tests.Features.Specialities
             Assert.Equal(specialityList.Count, response.Content.Count());
         }
 
+        [Fact]
+        public async Task GetPaginationAsync_WhenFilterIsCorrectAndEmpty_ShouldReturnEmptyCollectionInResponse()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var response = await specialtiesService.GetPaginationAsync(filter);
+
+            //Assert
+            Assert.Empty(response.Content);
+        }
+
         #endregion
     }
 }

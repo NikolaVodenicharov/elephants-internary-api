@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
-using WebAPI.Common.ErrorHandling;
+using Core.Common.Pagination;
 
 namespace WebAPI.Features.LearningTopics
 {
@@ -18,17 +18,20 @@ namespace WebAPI.Features.LearningTopics
         private readonly ILearningTopicsService learningTopicsService;
         private readonly IValidator<CreateLearningTopicRequest> createLearningTopicValidator;
         private readonly IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator;
+        private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly ILogger<LearningTopicsController> learningTopicsControllerLogger;
         
         public LearningTopicsController(
             ILearningTopicsService learningTopicsService,
             IValidator<CreateLearningTopicRequest> createLearningTopicValidator,
             IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator,
+            IValidator<PaginationRequest> paginationRequestValidator,
             ILogger<LearningTopicsController> learningTopicsControllerLogger)
         {
             this.learningTopicsService = learningTopicsService;
             this.createLearningTopicValidator = createLearningTopicValidator;
             this.updateLearningTopicValidator = updateLearningTopicValidator;
+            this.paginationRequestValidator = paginationRequestValidator;
             this.learningTopicsControllerLogger = learningTopicsControllerLogger;
         }
 
@@ -81,17 +84,32 @@ namespace WebAPI.Features.LearningTopics
         }
 
         [HttpGet]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<IEnumerable<LearningTopicSummaryResponse>>))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetAllAsync()
+        [ProducesResponseType(typeof(CoreResponse<IEnumerable<LearningTopicSummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<LearningTopicSummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
-            LogInformation(nameof(GetAllAsync));
+            if (pageNum == null && pageSize == null)
+            {
+                LogInformation(nameof(GetAllAsync));
 
-            var learningTopicsResult = await learningTopicsService.GetAllAsync();
+                var learningTopicSummaries = await learningTopicsService.GetAllAsync();
 
-            return CoreResult.Success(learningTopicsResult);
+                return CoreResult.Success(learningTopicSummaries);
+            }
+
+            var filter = new PaginationRequest(pageNum, pageSize);
+
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
+
+            learningTopicsControllerLogger.LogInformation($"[{nameof(LearningTopicsController)}] Get {pageSize} " +
+                $"learning topics from page {pageNum}");
+
+            var paginationResponse = await learningTopicsService.GetPaginationAsync(filter);
+
+            return CoreResult.Success(paginationResponse);
         }
-        
+
         private void LogInformation(string methodName, Guid id)
         {
             learningTopicsControllerLogger.LogInformation($"[{nameof(LearningTopicsController)}] {methodName} executing, entity id: {id}.");

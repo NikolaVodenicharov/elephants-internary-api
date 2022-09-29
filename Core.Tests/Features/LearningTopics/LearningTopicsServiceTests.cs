@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Core.Common.Pagination;
+using System.Linq;
 
 namespace Core.Tests.Features.LearningTopics
 {
@@ -47,6 +49,7 @@ namespace Core.Tests.Features.LearningTopics
         {
             var createLearningTopicValidator = new CreateLearningTopicRequestValidator();
             var updateLearningTopicValidator = new UpdateLearningTopicRequestValidator();
+            var paginationRequestValidator = new PaginationRequestValidator();
             var learningTopicsServiceLoggerMock = new Mock<ILogger<LearningTopicsService>>();
 
             learningTopicRepositoryMock = new Mock<ILearningTopicsRepository>();
@@ -57,7 +60,8 @@ namespace Core.Tests.Features.LearningTopics
                 specialitiesRepositoryMock.Object,
                 learningTopicsServiceLoggerMock.Object,
                 createLearningTopicValidator,
-                updateLearningTopicValidator
+                updateLearningTopicValidator,
+                paginationRequestValidator
             );
 
             var speciality = new Speciality
@@ -366,7 +370,7 @@ namespace Core.Tests.Features.LearningTopics
             };
 
             learningTopicRepositoryMock
-                .Setup(s => s.GetAllAsync())
+                .Setup(s => s.GetAllAsync(null))
                 .ReturnsAsync(learningTopics);
 
             // Act
@@ -382,7 +386,7 @@ namespace Core.Tests.Features.LearningTopics
         {
             // Arrange
             learningTopicRepositoryMock
-                .Setup(s => s.GetAllAsync())
+                .Setup(s => s.GetAllAsync(null))
                 .ReturnsAsync(new List<LearningTopic>());
 
             // Act
@@ -390,6 +394,76 @@ namespace Core.Tests.Features.LearningTopics
 
             // Assert
             Assert.Empty(learningTopics);
+        }
+
+        #endregion
+
+        #region GetPaginationAsyncTests
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public async Task GetPaginationAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
+        {
+            //Arrange
+            var filter = new PaginationRequest(pageNum, 5);
+
+            //Act
+            var action = async () => await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public async Task GetPaginationAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, pageSize);
+
+            //Act
+            var action = async () => await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenFilterIsCorrectAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Assert
+            var filter = new PaginationRequest(1, 10);
+
+            var learningTopics = new List<LearningTopic>() { learningTopic };
+
+            learningTopicRepositoryMock
+                .Setup(s => s.GetCountAsync())
+                .ReturnsAsync(learningTopics.Count);
+
+            learningTopicRepositoryMock
+                .Setup(s => s.GetAllAsync(It.IsAny<PaginationRequest>()))
+                .ReturnsAsync(learningTopics);
+
+            //Act
+            var response = await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            Assert.Equal(learningTopics.Count, response.Content.Count());
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenFilterIsCorrectAndEmpty_ShouldReturnEmptyCollectionInResponse()
+        {
+            //Assert
+            var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var response = await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            Assert.Empty(response.Content);
         }
 
         #endregion

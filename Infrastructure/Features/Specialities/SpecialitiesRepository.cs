@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.Specialities
 {
-    internal class Counter
+    internal static class Counter
     {
         public static int specialitiesCount = -1;
     }

@@ -1,4 +1,5 @@
 using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.LearningTopics.Entities;
 namespace Core.Features.LearningTopics.Interfaces
 {
@@ -8,8 +9,10 @@ namespace Core.Features.LearningTopics.Interfaces
 
         Task<LearningTopic?> GetByIdAsync(Guid Id);
 
-        Task<IEnumerable<LearningTopic>> GetAllAsync();
+        Task<IEnumerable<LearningTopic>> GetAllAsync(PaginationRequest? filter = null);
 
         Task<bool> ExistsByNameAsync(string name);
+
+        Task<int> GetCountAsync();
     }
 }
