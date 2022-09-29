@@ -1,5 +1,7 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
+using Core.Common.Exceptions;
 using Core.Common.Pagination;
+using Core.Features.Campaigns.Interfaces;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
@@ -19,6 +21,7 @@ namespace Core.Features.Mentors
     public class MentorsService : IMentorsService
     {
         private readonly IMentorsRepository mentorsRepository;
+        private readonly ICampaignsRepository campaignsRepository;
         private readonly ISpecialitiesRepository specialitiesRepository;
         private readonly ILogger<MentorsService> mentorsServiceLogger;
         private readonly IValidator<CreateMentorRequest> createMentorRequestValidator;
@@ -29,6 +32,7 @@ namespace Core.Features.Mentors
 
         public MentorsService(
             IMentorsRepository mentorsRepository,
+            ICampaignsRepository campaignsRepository,
             ISpecialitiesRepository specialitiesRepository,
             ILogger<MentorsService> mentorsServiceLogger,
             IValidator<CreateMentorRequest> createMentorRequestValidator,
@@ -36,6 +40,7 @@ namespace Core.Features.Mentors
             IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.mentorsRepository = mentorsRepository;
+            this.campaignsRepository = campaignsRepository;
             this.specialitiesRepository = specialitiesRepository;
             this.mentorsServiceLogger = mentorsServiceLogger;
             this.createMentorRequestValidator = createMentorRequestValidator;
@@ -75,7 +80,7 @@ namespace Core.Features.Mentors
             return createdMentor.ToMentorSummaryResponse();
         }
 
-        public async Task<PaginationResponse<MentorSummaryResponse>> GetAllAsync(PaginationRequest filter, Guid? campaignId = null)
+        public async Task<PaginationResponse<MentorSummaryResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
@@ -139,15 +144,20 @@ namespace Core.Features.Mentors
             return paginationResponse;
         }
 
+        public async Task<IEnumerable<MentorSummaryResponse>> GetAllAsync()
+        {
+            var mentors = await mentorsRepository.GetAllAsync();
+
+            return mentors.ToMentorSummaryResponses();
+        }
+
         public async Task<MentorSummaryResponse> GetByIdAsync(Guid id)
         {
             var mentor = await mentorsRepository.GetByIdAsync(id);
 
             if (mentor is null)
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Mentor with Id {id} was not found.");
-
-                throw new CoreException("Requested mentor was not found.", HttpStatusCode.NotFound);
+                LogErrorAndThrowExceptionEntityNotFound("Mentor", id);
             }
 
             return mentor.ToMentorSummaryResponse();
@@ -170,9 +180,7 @@ namespace Core.Features.Mentors
 
             if (existingMentor is null)
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Mentor with Id {request.Id} wasn't found");
-
-                throw new CoreException("Requested mentor wasn't found.", HttpStatusCode.NotFound);
+                LogErrorAndThrowExceptionEntityNotFound("Mentor", request.Id);
             }
 
             var isEmailChanged = !existingMentor.Email.Equals(request.Email);
@@ -219,6 +227,39 @@ namespace Core.Features.Mentors
             return count;
         }
 
+        public async Task AddToCampaignAsync(AddToCampaignRequest request)
+        {
+            var campaign = await campaignsRepository.GetByIdAsync(request.CampaignId);
+
+            if (campaign is null)
+            {
+                LogErrorAndThrowExceptionEntityNotFound("Campaign", request.CampaignId);
+            }
+
+            var mentor = await mentorsRepository.GetByIdAsync(request.PersonId);
+
+            if (mentor is null)
+            {
+                LogErrorAndThrowExceptionEntityNotFound("Mentor", request.PersonId);
+            }
+
+            if (mentor.Campaigns.Contains(campaign))
+            {
+                mentorsServiceLogger.LogError($"[MentorsService] Mentor with Id {request.PersonId} is already assigned to" +
+                    $" campaign with Id {request.CampaignId}");
+
+                throw new CoreException($"Mentor {mentor.FirstName} {mentor.LastName} ({mentor.Email}) " +
+                    $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
+            }
+
+            mentor.Campaigns.Add(campaign);
+
+            await mentorsRepository.SaveTrackingChangesAsync();
+
+            mentorsServiceLogger.LogInformation($"[MentorsService] Mentor with Id {request.PersonId} successfully assigned " +
+                $"to campaign with Id {request.CampaignId}");
+        }
+
         private async Task CheckEmailAsync(string email)
         {
             var isEmailUsed = await mentorsRepository.IsEmailUsed(email);
@@ -240,6 +281,14 @@ namespace Core.Features.Mentors
             mentorsServiceLogger.LogError($"[{nameof(MentorsService)}] {message}");
 
             throw new CoreException(message, HttpStatusCode.BadRequest);
+        }
+
+        private void LogErrorAndThrowExceptionEntityNotFound(string entity, Guid id)
+        {
+            mentorsServiceLogger.LogError($"[{nameof(MentorsService)}] {entity} with Id {id} " +
+                    $"was not found");
+
+            throw new CoreException($"Requested {entity} was not found.", HttpStatusCode.NotFound);
         }
     }
 }

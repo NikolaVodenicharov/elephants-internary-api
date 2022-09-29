@@ -316,7 +316,7 @@ namespace WebAPI.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenCampaignIdNullAndNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenPageParametersSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
             var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
@@ -331,7 +331,7 @@ namespace WebAPI.Tests.Features.Mentors
             var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(expectedResponseList, 1, 2);
 
             mentorsServiceMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), null))
                 .ReturnsAsync(expectedPaginationResponse);
 
             //Act
@@ -350,13 +350,13 @@ namespace WebAPI.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenCampaignIdNullAndEmpty_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenPageParametersSetAndEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
             var emptyList = new List<MentorSummaryResponse>();
 
             mentorsServiceMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), null))
                 .ReturnsAsync(new PaginationResponse<MentorSummaryResponse>(emptyList, 1, 1));
 
             //Act
@@ -372,6 +372,76 @@ namespace WebAPI.Tests.Features.Mentors
             var paginationResponse = okObjectResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
 
             Assert.Empty(paginationResponse.Data.Content);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenOnlyPageNumIsSet_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await mentorsController.GetAllAsync(1);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenOnlyPageSizeIsSet_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await mentorsController.GetAllAsync(pageSize: 1);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageParametersNotSetAndEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var actionResult = await mentorsController.GetAllAsync();
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var okObjectResult = actionResult as JsonResult;
+
+            Assert.NotNull(okObjectResult);
+
+            var response = okObjectResult!.Value as CoreResponse<IEnumerable<MentorSummaryResponse>>;
+
+            Assert.Empty(response.Data);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageParametersNotSetAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
+            var expectedResponse2 = new MentorSummaryResponse(
+                Guid.NewGuid(), "John", "Smith", "john.smith@gmail.com",
+                specialitySummaries);
+
+            var expectedResponseList = new List<MentorSummaryResponse>() {
+                expectedResponse1, expectedResponse2
+            };
+
+            mentorsServiceMock
+                .Setup(x => x.GetAllAsync())
+                .ReturnsAsync(expectedResponseList);
+
+            //Act
+            var actionResult = await mentorsController.GetAllAsync();
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var response = jsonResult!.Value as CoreResponse<IEnumerable<MentorSummaryResponse>>;
+
+            Assert.Equal(expectedResponseList.Count, response.Data.Count());
         }
     }
 }

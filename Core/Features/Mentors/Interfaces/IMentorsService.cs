@@ -1,4 +1,5 @@
-﻿using Core.Common.Pagination;
+﻿using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
 
@@ -12,10 +13,14 @@ namespace Core.Features.Mentors.Interfaces
 
         public Task<MentorSummaryResponse> GetByIdAsync(Guid id);
 
-        public Task<PaginationResponse<MentorSummaryResponse>> GetAllAsync(PaginationRequest filter, Guid? campaignId = null);
+        public Task<PaginationResponse<MentorSummaryResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null);
+
+        public Task<IEnumerable<MentorSummaryResponse>> GetAllAsync();
 
         public Task<int> GetCountByCampaignIdAsync(Guid campaignId);
 
         public Task<int> GetCountAsync();
+
+        public Task AddToCampaignAsync(AddToCampaignRequest request);
     }
 }

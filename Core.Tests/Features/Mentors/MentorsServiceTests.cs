@@ -1,5 +1,8 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
+using Core.Common.Exceptions;
 using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
+using Core.Features.Campaigns.Interfaces;
 using Core.Features.Mentors;
 using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
@@ -28,6 +31,7 @@ namespace Core.Tests.Features.Mentors
         private readonly Guid specialityId = Guid.NewGuid();
         private readonly string specialityName = "Backend";
         private Mock<IMentorsRepository> mentorsRepositoryMock;
+        private Mock<ICampaignsRepository> campaignsRepositoryMock;
         private Mock<ISpecialitiesRepository> specialitiesRepositoryMock;
         private MentorsService mentorsServiceMock;
         private Mentor returnMentor;
@@ -65,13 +69,14 @@ namespace Core.Tests.Features.Mentors
             var paginationRequestValidator = new PaginationRequestValidator();
 
             mentorsRepositoryMock = new Mock<IMentorsRepository>();
+            campaignsRepositoryMock = new Mock<ICampaignsRepository>();
             specialitiesRepositoryMock = new Mock<ISpecialitiesRepository>();
 
             var mockLogger = new Mock<ILogger<MentorsService>>();
 
             mentorsServiceMock = new MentorsService(
-                mentorsRepositoryMock.Object, specialitiesRepositoryMock.Object, mockLogger.Object,
-                createMentorRequestValidator, updateMentorRequestValidator, paginationRequestValidator);
+                mentorsRepositoryMock.Object, campaignsRepositoryMock.Object, specialitiesRepositoryMock.Object, 
+                mockLogger.Object, createMentorRequestValidator, updateMentorRequestValidator, paginationRequestValidator);
 
             speciality = new Speciality()
             {
@@ -494,13 +499,13 @@ namespace Core.Tests.Features.Mentors
 
         #endregion
 
-        #region GetAllAsyncTests
+        #region GetPaginationAsyncTests
 
         [Theory]
         [InlineData(1, 5)]
         [InlineData(2, 10)]
         [InlineData(1, 100)]
-        public async Task GetAllAsync_WhenFilterIsCorrectAndCampaignIdIsNull_ShouldGetData(int pageNum, int pageSize)
+        public async Task GetPaginationAsync_WhenFilterIsCorrectAndCampaignIdIsNull_ShouldGetData(int pageNum, int pageSize)
         {
             //Arrange
             var mentorList = new List<Mentor>()
@@ -519,7 +524,7 @@ namespace Core.Tests.Features.Mentors
                 .ReturnsAsync(mentorList);
 
             //Act
-            var response = await mentorsServiceMock.GetAllAsync(filter);
+            var response = await mentorsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             Assert.Equal(mentorList.Count(), response.Content.Count());
@@ -528,13 +533,13 @@ namespace Core.Tests.Features.Mentors
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
-        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
+        public async Task GetPaginationAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
         {
             //Arrange
             var filter = new PaginationRequest(pageNum, 4);
 
             //Act
-            var action = async () => await mentorsServiceMock.GetAllAsync(filter);
+            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -543,24 +548,20 @@ namespace Core.Tests.Features.Mentors
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
+        public async Task GetPaginationAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
         {
             //Arrange
             var filter = new PaginationRequest(1, pageSize);
 
             //Act
-            var action = async () => await mentorsServiceMock.GetAllAsync(filter);
+            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
-        #endregion
-
-        #region GetMentorsByCampaignIdAsyncTests
-
         [Fact]
-        public async Task GetAllAsync_WhenCampaignIdIsSetAndCampaignHasMentors_ShouldReturnCorrectCount()
+        public async Task GetPaginationAsync_WhenCampaignIdIsSetAndCampaignHasMentors_ShouldReturnCorrectCount()
         {
             //Arrange
             var newId = Guid.NewGuid();
@@ -581,14 +582,14 @@ namespace Core.Tests.Features.Mentors
                 .ReturnsAsync(mentorList);
 
             //Act
-            var actualPaginationResponse = await mentorsServiceMock.GetAllAsync(filter, newId);
+            var actualPaginationResponse = await mentorsServiceMock.GetPaginationAsync(filter, newId);
 
             //Assert
             Assert.Equal(expectedPaginationResponse.Content.Count(), actualPaginationResponse.Content.Count());
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenCampaignIdIsSetAndCampaignHasNoMentors_ShouldReturnEmptyCollection()
+        public async Task GetPaginationAsync_WhenCampaignIdIsSetAndCampaignHasNoMentors_ShouldReturnEmptyCollection()
         {
             //Arrange
             var newId = Guid.NewGuid();
@@ -605,10 +606,54 @@ namespace Core.Tests.Features.Mentors
                 .ReturnsAsync(emptyList);
 
             //Act
-            var actualResponse = await mentorsServiceMock.GetAllAsync(filter, newId);
+            var actualResponse = await mentorsServiceMock.GetPaginationAsync(filter, newId);
 
             //Assert
             Assert.Empty(actualResponse.Content);
+        }
+
+        #endregion
+
+        #region GetAllAsyncTests
+
+        [Fact]
+        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var mentors = await mentorsServiceMock.GetAllAsync();
+
+            //Assert
+            Assert.Empty(mentors);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var mentor2 = new Mentor()
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Ab",
+                LastName = "Cd",
+                Email = "abcd@gmail.com",
+                Specialities = new List<Speciality>()
+            };
+
+            var mentorList = new List<Mentor>() { returnMentor, mentor2 };
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(mentorList.Count);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetAllAsync(null, null))
+                .ReturnsAsync(mentorList);
+
+            //Act
+            var response = await mentorsServiceMock.GetAllAsync();
+
+            //Assert
+            Assert.Equal(mentorList.Count, response.Count());
         }
 
         #endregion
@@ -674,6 +719,123 @@ namespace Core.Tests.Features.Mentors
 
             //Assert
             Assert.Equal(0, response);
+        }
+
+        #endregion
+
+        #region AddToCampaignAsyncTests
+
+        [Fact]
+        public async Task AssignToCampaignAsync_WhenCampaignNotFound_ShouldThrowError()
+        {
+            //Arrange
+            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+            
+            //Act
+            var action = async() => await mentorsServiceMock.AddToCampaignAsync(request);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task AssignToCampaignAsync_WhenMentorNotFound_ShouldThrowError()
+        {
+            //Arrange
+            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+
+            var campaign = new Campaign()
+            {
+                Id = request.CampaignId,
+                Name = "Test"
+            };
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaign);
+
+            //Act
+            var action = async () => await mentorsServiceMock.AddToCampaignAsync(request);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task AssignToCampaignAsync_WhenMentorAlreadyAssignedToCampaign_ShouldThrowError()
+        {
+            //Arrange
+            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+
+            var campaign = new Campaign()
+            {
+                Id = request.CampaignId,
+                Name = "Test"
+            };
+
+            var mentor = new Mentor()
+            {
+                Id = request.PersonId,
+                FirstName = mentorFirstName,
+                LastName = mentorLastName,
+                Email = mentorEmail,
+                Campaigns = new List<Campaign>() { campaign },
+                Specialities = new List<Speciality>()
+            };
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaign);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(mentor);
+
+            //Act
+            var action = async () => await mentorsServiceMock.AddToCampaignAsync(request);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task AssignToCampaignAsync_WhenMentorNotAssignedToCampaign_ShouldAddMentorToCampaign()
+        {
+            //Arrange
+            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+
+            var campaign = new Campaign()
+            {
+                Id = request.CampaignId,
+                Name = "Test"
+            };
+
+            var mentor = new Mentor()
+            {
+                Id = request.PersonId,
+                FirstName = mentorFirstName,
+                LastName = mentorLastName,
+                Email = mentorEmail,
+                Campaigns = new List<Campaign>(),
+                Specialities = new List<Speciality>()
+            };
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaign);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(mentor);
+
+            //Act
+            await mentorsServiceMock.AddToCampaignAsync(request);
+
+            //Arrange
+            var response = await mentorsRepositoryMock.Object.GetByIdAsync(request.PersonId);
+
+            Assert.NotNull(response);
+            Assert.Equal(campaign, response.Campaigns.First());
         }
 
         #endregion

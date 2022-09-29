@@ -16,6 +16,7 @@ using WebAPI.Common;
 using Core.Features.Interns.Interfaces;
 using WebAPI.Common.ErrorHandling;
 using Core.Features.Interns.ResponseModels;
+using Core.Common;
 
 namespace WebAPI.Features.Campaigns
 {
@@ -128,7 +129,7 @@ namespace WebAPI.Features.Campaigns
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            var paginationResponse = await mentorsService.GetAllAsync(filter, id);
+            var paginationResponse = await mentorsService.GetPaginationAsync(filter, id);
 
             return CoreResult.Success(paginationResponse);
         }
@@ -145,6 +146,24 @@ namespace WebAPI.Features.Campaigns
             var internsByCampaignPaginationResponse = await internService.GetAllByCampaignIdAsync(paginationRequest, Id);
 
             return CoreResult.Success(internsByCampaignPaginationResponse);
+        }
+
+        [HttpPost("{id}/mentors")]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<bool>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        public async Task<IActionResult> AddMentorAsync(Guid id, AddToCampaignRequest request)
+        {
+            if (id != request.CampaignId)
+            {
+                campaignsControllerLogger.LogError($"[CampaignsController] Invalid Campaign Id ({id}) in Update request data.");
+
+                throw new CoreException("Invalid Campaign Id in request data", HttpStatusCode.BadRequest);
+            }
+
+            await mentorsService.AddToCampaignAsync(request);
+
+            return CoreResult.Success(true);
         }
     }
 }

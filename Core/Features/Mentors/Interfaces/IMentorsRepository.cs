@@ -11,7 +11,7 @@ namespace Core.Features.Mentors.Interfaces
 
         public Task<Mentor?> GetByIdAsync(Guid id);
 
-        public Task<IEnumerable<Mentor>> GetAllAsync(PaginationRequest filter, Guid? campaignId = null);
+        public Task<IEnumerable<Mentor>> GetAllAsync(PaginationRequest? filter = null, Guid? campaignId = null);
 
         public Task<int> GetCountByCampaignIdAsync(Guid campaignId);
 

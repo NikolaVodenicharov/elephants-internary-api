@@ -87,20 +87,27 @@ namespace WebAPI.Features.Mentors
         }
 
         [HttpGet]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<MentorSummaryResponse>>))]
-        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum,
-            [Required][FromQuery] int pageSize)
+        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<MentorSummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<IEnumerable<MentorSummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
-            mentorsControllerLogger.LogInformation($"[MentorsController] Get {pageSize} mentors from page {pageNum}");
+            if (pageNum == null && pageSize == null)
+            {
+                var mentors = await mentorsService.GetAllAsync();
+
+                return CoreResult.Success(mentors);
+            }
 
             var filter = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            var paginationReponse = await mentorsService.GetAllAsync(filter);
+            mentorsControllerLogger.LogInformation($"[MentorsController] Get {pageSize} mentors from page {pageNum}");
 
-            return CoreResult.Success(paginationReponse);
+            var paginationResponse = await mentorsService.GetPaginationAsync(filter);
+
+            return CoreResult.Success(paginationResponse);
         }
     }
 }

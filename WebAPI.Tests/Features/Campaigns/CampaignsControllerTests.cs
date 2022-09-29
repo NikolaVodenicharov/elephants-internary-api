@@ -17,10 +17,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebAPI.Common;
-using WebAPI.Tests.Common;
 using WebAPI.Features.Campaigns;
 using Xunit;
 using Core.Features.Interns.ResponseModels;
+using Core.Common;
 
 namespace WebAPI.Tests.Features.Campaigns
 {
@@ -426,7 +426,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(mentorList.Count);
             
             mentorsServiceMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
                 .ReturnsAsync(expectedResponse);
 
             //Act
@@ -456,7 +456,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(0);
 
             mentorsServiceMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
                 .ReturnsAsync(emptyResponse);
 
             //Act
@@ -549,6 +549,45 @@ namespace WebAPI.Tests.Features.Campaigns
 
             Assert.NotNull(coreResponse);
             Assert.Empty(coreResponse!.Data!.Content);
+        }
+
+        #endregion
+
+        #region AddMentorAsyncTests
+
+        [Fact]
+        public async Task AddMentorAsync_WhenQueryIdAndModelIdDoesNotMatch_ShouldThrowException()
+        {
+            //Arrange
+            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+
+            //Act
+            var action = async () => await campaignsController.AddMentorAsync(Guid.NewGuid(), request);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task AddMentorAsync_WhenDataIsCorrect_ShouldReturnTrue()
+        {
+            //Arrange
+            var newId = Guid.NewGuid();
+            var request = new AddToCampaignRequest(newId, Guid.NewGuid());
+
+            //Act
+            var actionResult = await campaignsController.AddMentorAsync(newId, request);
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var response = jsonResult!.Value as CoreResponse<bool>;
+
+            Assert.True(response.Data);
         }
 
         #endregion

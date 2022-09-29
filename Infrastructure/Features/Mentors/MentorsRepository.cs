@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.Mentors
 {
+    internal static class Counter
+    {
+        public static int mentorsCount = -1;
+    }
+
     public class MentorsRepository : IMentorsRepository
     {
         private readonly InternaryContext context;
@@ -26,6 +31,7 @@ namespace Infrastructure.Features.Mentors
         public async Task<Mentor?> GetByIdAsync(Guid id)
         {
             var mentor = await context.Mentors
+                .Include(m => m.Campaigns)
                 .Include(m => m.Specialities)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -35,6 +41,8 @@ namespace Infrastructure.Features.Mentors
         public async Task<int> GetCountAsync()
         {
             var mentorCount = await context.Mentors.CountAsync();
+
+            Counter.mentorsCount = mentorCount;
 
             return mentorCount;
         }
@@ -49,9 +57,15 @@ namespace Infrastructure.Features.Mentors
             await context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Mentor>> GetAllAsync(PaginationRequest filter, Guid? campaignId)
+        public async Task<IEnumerable<Mentor>> GetAllAsync(PaginationRequest? filter = null, Guid? campaignId = null)
         {
-            var skip = (filter.PageNum.Value - 1) * filter.PageSize.Value;
+            if (Counter.mentorsCount == -1 || filter?.PageNum == 1)
+            {
+                await GetCountAsync();
+            }
+
+            var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
+            var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
 
             var mentors = await context.Mentors
                 .AsNoTracking()
@@ -59,7 +73,7 @@ namespace Infrastructure.Features.Mentors
                 .Include(m => m.Specialities)
                 .OrderBy(m => m.Id)
                 .Skip(skip)
-                .Take(filter.PageSize.Value)
+                .Take(take)
                 .ToListAsync();
 
             return mentors;
