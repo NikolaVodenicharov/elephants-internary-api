@@ -4,9 +4,22 @@ trigger:
 - none
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: windows-latest
+
+variables:
+  buildConfiguration: 'Release'
 
 steps:
+
+- task: UseDotNet@2
+  displayName: 'Fetch SDK 6.0.x'
+  inputs:
+    version: '6.0.x'
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: '**/*.csproj'
 
 - task: SonarCloudPrepare@1
   inputs:
@@ -17,13 +30,6 @@ steps:
     projectName: 'elephants-internary-api'
 
 - task: DotNetCoreCLI@2
-  displayName: 'Restore'
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
-    feedsToUse: 'select'
-
-- task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
     command: build
@@ -32,17 +38,31 @@ steps:
       !**/*.Tests.csproj
     arguments: '--configuration $(buildConfiguration)'
 
-
 - task: DotNetCoreCLI@2
-  displayName: 'dotnet test'
+  displayName: 'Test'
   inputs:
-    command: 'test'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
-    publishTestResults: true
-    projects: '**/*Tests/*.csproj'
+    command: test
+    projects: '**/*.Tests/*.csproj'
+    publishTestResults: false
+    arguments: '--configuration $(buildConfiguration) --logger trx --results-directory "$(Agent.TempDirectory)" --collect "Code coverage"'
 
 - task: SonarCloudAnalyze@1
 
 - task: SonarCloudPublish@1
   inputs:
     pollingTimeoutSec: '300'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '*.trx'
+    searchFolder: '$(Agent.TempDirectory)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish'
+  inputs:
+    command: publish
+    publishWebProjects: True
+    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: True
