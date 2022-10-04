@@ -75,12 +75,14 @@ namespace Core.Features.Campaigns
                 throw new CoreException("Requested campaign couldn't be found.", HttpStatusCode.NotFound);
             }
 
-            if (!existingCampaign.IsActive)
+            var isCampaignCompleted = IsCampaignCompleted(existingCampaign.IsActive, existingCampaign.EndDate);
+            
+            if (isCampaignCompleted)
             {
-                campaignsServiceLogger.LogError($"[CampaignsService] Campaign with Id {model.Id} is inactive " +
-                    $"and only active campaigns can be updated");
+                campaignsServiceLogger.LogError($"[CampaignsService] Campaign with Id {model.Id} is completed " +
+                    $"and can't be updated.");
 
-                throw new CoreException("Only active campaigns can be updated.", HttpStatusCode.BadRequest);
+                throw new CoreException("Completed campaigns can't be updated.", HttpStatusCode.BadRequest);
             }
 
             var hasNameChange = !existingCampaign.Name.Equals(model.Name);
@@ -165,6 +167,11 @@ namespace Core.Features.Campaigns
         public async Task<int> GetCountAsync()
         {
             return await campaignsRepository.GetCountAsync();
+        }
+
+        private static bool IsCampaignCompleted(bool isActive, DateTime endDate)
+        { 
+            return !isActive && DateTime.Compare(DateTime.Today, endDate) > 0;
         }
 
         private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
