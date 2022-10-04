@@ -1,4 +1,5 @@
 ﻿using Core.Features.Specialities.ResponseModels;
+using Core.Features.Campaigns.ResponseModels;
 
 namespace Core.Features.Mentors.ResponseModels
 {
@@ -14,14 +15,18 @@ namespace Core.Features.Mentors.ResponseModels
 
         public ICollection<SpecialitySummaryResponse> Specialities { get; set; }
 
+        public IEnumerable<CampaignSummaryResponse> Campaigns { get; set; }
+
         public MentorSummaryResponse(Guid id, string firstName, string lastName, string email, 
-            ICollection<SpecialitySummaryResponse> specialities)
+            ICollection<SpecialitySummaryResponse> specialities,
+            IEnumerable<CampaignSummaryResponse> campaigns)
         {
             Id = id;
             FirstName = firstName;
             LastName = lastName;
             Email = email;
             Specialities = specialities;
+            Campaigns = campaigns;
         }
     }
 }

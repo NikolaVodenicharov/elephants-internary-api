@@ -38,6 +38,7 @@ namespace Core.Tests.Features.Mentors
         private Speciality speciality;
         private List<Speciality> specialities;
         private List<Guid> specialityIds;
+        private List<Campaign> campaigns;
 
         public static IEnumerable<object[]> invalidNames = new List<object[]>
         {
@@ -91,13 +92,25 @@ namespace Core.Tests.Features.Mentors
 
             specialityIds = new List<Guid>() { speciality.Id };
 
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Campaign",
+                StartDate =  DateTime.Today.AddDays(5),
+                EndDate =  DateTime.Today.AddDays(35),
+                IsActive = false
+            };
+
+            campaigns = new List<Campaign>() { campaign };
+
             returnMentor = new Mentor()
             {
                 Id = id,
                 FirstName = mentorFirstName,
                 LastName = mentorLastName,
                 Email = mentorEmail,
-                Specialities = specialities
+                Specialities = specialities,
+                Campaigns = campaigns
             };
         }
 
@@ -636,7 +649,8 @@ namespace Core.Tests.Features.Mentors
                 FirstName = "Ab",
                 LastName = "Cd",
                 Email = "abcd@gmail.com",
-                Specialities = new List<Speciality>()
+                Specialities = new List<Speciality>(),
+                Campaigns = new List<Campaign>()
             };
 
             var mentorList = new List<Mentor>() { returnMentor, mentor2 };

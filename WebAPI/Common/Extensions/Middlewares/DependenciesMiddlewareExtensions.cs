@@ -51,7 +51,6 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ICampaignsRepository, CampaignsRepository>();
             services.AddTransient<IValidator<CreateCampaignRequest>, CreateCampaignRequestValidator>();
             services.AddTransient<IValidator<UpdateCampaignRequest>, UpdateCampaignRequestValidator>();
-            services.AddTransient<IValidator<PaginationRequest>, PaginationRequestValidator>();
             
         }
 

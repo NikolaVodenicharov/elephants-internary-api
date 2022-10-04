@@ -414,8 +414,17 @@ namespace WebAPI.Tests.Features.Campaigns
             //Arrange
             var specialtySummary = new SpecialitySummaryResponse(Guid.NewGuid(), "Backend");
 
+            var campaignSummary = new CampaignSummaryResponse(
+                Guid.NewGuid(),
+                "Test Campaign",
+                DateTime.Today.AddDays(5),
+                DateTime.Today.AddDays(35),
+                false
+            );
+
             var mentorSummary = new MentorSummaryResponse(Guid.NewGuid(), "John", "Doe", "john.doe@endava.com",
-                new List<SpecialitySummaryResponse>() { specialtySummary });
+                new List<SpecialitySummaryResponse>() { specialtySummary },
+                new List<CampaignSummaryResponse>() { campaignSummary } );
 
             var mentorList = new List<MentorSummaryResponse>() { mentorSummary };
 

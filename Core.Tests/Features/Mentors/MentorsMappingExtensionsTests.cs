@@ -2,6 +2,7 @@
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.Support;
 using Core.Features.Specialties.Entities;
+using Core.Features.Campaigns.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace Core.Tests.Features.Mentors
         private string email = "first.last@test.co.uk";
         private List<Speciality> specialities;
         private List<Guid> specialityIds;
+        private List<Campaign> campaigns;
 
         public MentorsMappingExtensionsTests()
         {
@@ -28,6 +30,17 @@ namespace Core.Tests.Features.Mentors
             specialities = new List<Speciality>() { speciality };
 
             specialityIds = new List<Guid>() { speciality.Id };
+
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Campaign",
+                StartDate =  DateTime.Today.AddDays(5),
+                EndDate =  DateTime.Today.AddDays(35),
+                IsActive = false
+            };
+
+            campaigns = new List<Campaign>() { campaign };
         }
 
         [Fact]
@@ -55,7 +68,8 @@ namespace Core.Tests.Features.Mentors
                 FirstName = firstName,
                 LastName = lastName,
                 Email = email,
-                Specialities = specialities
+                Specialities = specialities,
+                Campaigns = campaigns
             };
 
             //Act
@@ -66,6 +80,8 @@ namespace Core.Tests.Features.Mentors
             Assert.Equal(firstName, response.FirstName);
             Assert.Equal(lastName, response.LastName);
             Assert.Equal(email, response.Email);
+            Assert.Equal(specialities.Count, response.Specialities.Count);
+            Assert.Equal(campaigns.Count, response.Campaigns.Count());
         }
 
         [Fact]
@@ -79,7 +95,8 @@ namespace Core.Tests.Features.Mentors
                     FirstName = firstName,
                     LastName = lastName,
                     Email = email,
-                    Specialities = specialities
+                    Specialities = specialities,
+                    Campaigns = campaigns
                 }
             };
 

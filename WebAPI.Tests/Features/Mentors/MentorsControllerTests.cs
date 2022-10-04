@@ -7,6 +7,7 @@ using Core.Features.Mentors.Support;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
+using Core.Features.Campaigns.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,7 @@ namespace WebAPI.Tests.Features.Mentors
         private Speciality speciality;
         private List<SpecialitySummaryResponse> specialitySummaries;
         private List<Guid> specialityIds;
+        private List<CampaignSummaryResponse> campaignSummaries;
 
         public MentorsControllerTests()
         {
@@ -69,6 +71,16 @@ namespace WebAPI.Tests.Features.Mentors
             specialitySummaryResponse = new SpecialitySummaryResponse(speciality.Id, speciality.Name);
 
             specialitySummaries = new List<SpecialitySummaryResponse>() { specialitySummaryResponse };
+
+            var campaignSummary = new CampaignSummaryResponse(
+                Guid.NewGuid(),
+                "Test Campaign",
+                DateTime.Today.AddDays(5),
+                DateTime.Today.AddDays(35),
+                false
+            );
+
+            campaignSummaries = new List<CampaignSummaryResponse>() { campaignSummary };
         }
 
         [Fact]
@@ -77,7 +89,7 @@ namespace WebAPI.Tests.Features.Mentors
             //Arrange
             var request = new CreateMentorRequest(firstName, lastName, email, specialityIds);
 
-            var mentorSummary = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
+            var mentorSummary = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
 
             mentorsServiceMock
                 .Setup(x => x.CreateAsync(It.IsAny<CreateMentorRequest>()))
@@ -100,6 +112,7 @@ namespace WebAPI.Tests.Features.Mentors
             Assert.Equal(mentorSummary.LastName, createdResponse.Data.LastName);
             Assert.Equal(mentorSummary.Email, createdResponse.Data.Email);
             Assert.Equal(mentorSummary.Specialities, createdResponse.Data.Specialities);
+            Assert.Equal(mentorSummary.Campaigns, createdResponse.Data.Campaigns);
         }
 
         [Theory]
@@ -142,7 +155,7 @@ namespace WebAPI.Tests.Features.Mentors
             //Assert
             var request = new UpdateMentorRequest(id, firstName, lastName, email, specialityIds);
 
-            var mentorSummary = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
+            var mentorSummary = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
 
             mentorsServiceMock
                 .Setup(x => x.UpdateAsync(It.IsAny<UpdateMentorRequest>()))
@@ -165,6 +178,7 @@ namespace WebAPI.Tests.Features.Mentors
             Assert.Equal(mentorSummary.LastName, updatedResponse.Data.LastName);
             Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
             Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
+            Assert.Equal(mentorSummary.Campaigns, updatedResponse.Data.Campaigns);
         }
 
         [Theory]
@@ -177,7 +191,10 @@ namespace WebAPI.Tests.Features.Mentors
 
             var request = new UpdateMentorRequest(id, nameWithValidLength, nameWithValidLength, email, specialityIds);
 
-            var mentorSummary = new MentorSummaryResponse(id, nameWithValidLength, nameWithValidLength, email, specialitySummaries);
+            var mentorSummary = new MentorSummaryResponse(
+                id, nameWithValidLength, nameWithValidLength, email, 
+                specialitySummaries, 
+                campaignSummaries);
 
             mentorsServiceMock
                 .Setup(x => x.UpdateAsync(It.IsAny<UpdateMentorRequest>()))
@@ -200,6 +217,7 @@ namespace WebAPI.Tests.Features.Mentors
             Assert.Equal(mentorSummary.LastName, updatedResponse.Data.LastName);
             Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
             Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
+            Assert.Equal(mentorSummary.Campaigns, updatedResponse.Data.Campaigns);
         }
 
         [Theory]
@@ -270,7 +288,7 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetByIdAsync_WhenIdExists_ShouldReturnCorrectObject()
         {
             //Arrange
-            var expectedResponse = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
+            var expectedResponse = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
 
             mentorsServiceMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
@@ -293,6 +311,7 @@ namespace WebAPI.Tests.Features.Mentors
             Assert.Equal(expectedResponse.LastName, actualResponse.Data.LastName);
             Assert.Equal(expectedResponse.Email, actualResponse.Data.Email);
             Assert.Equal(expectedResponse.Specialities, actualResponse.Data.Specialities);
+            Assert.Equal(expectedResponse.Campaigns, actualResponse.Data.Campaigns);
         }
 
         [Fact]
@@ -319,10 +338,11 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
+            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
             var expectedResponse2 = new MentorSummaryResponse(
                 Guid.NewGuid(), "John", "Smith", "john.smith@gmail.com",
-                specialitySummaries);
+                specialitySummaries,
+                campaignSummaries);
 
             var expectedResponseList = new List<MentorSummaryResponse>() {
                 expectedResponse1, expectedResponse2
@@ -416,10 +436,11 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersNotSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries);
+            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
             var expectedResponse2 = new MentorSummaryResponse(
                 Guid.NewGuid(), "John", "Smith", "john.smith@gmail.com",
-                specialitySummaries);
+                specialitySummaries,
+                campaignSummaries);
 
             var expectedResponseList = new List<MentorSummaryResponse>() {
                 expectedResponse1, expectedResponse2

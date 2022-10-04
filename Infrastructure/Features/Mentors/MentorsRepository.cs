@@ -71,6 +71,7 @@ namespace Infrastructure.Features.Mentors
                 .AsNoTracking()
                 .Where(m => campaignId != null ? m.Campaigns.Any(c => c.Id == campaignId) : true)
                 .Include(m => m.Specialities)
+                .Include(m => m.Campaigns)
                 .OrderBy(m => m.Id)
                 .Skip(skip)
                 .Take(take)
