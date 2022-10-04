@@ -12,6 +12,6 @@
 
         public const string LearningTopicNamePattern = @"^([a-zA-Z]+([-\s]{1}[a-zA-Z]+)*)$";
 
-        public const string ValidationErrorMessageSplitPattern = @"Validation failed:|\r\n -- [a-zA-Z]+: |Severity: Error";
+        public const string ValidationErrorMessageSplitPattern = @"Validation failed:|-- [a-zA-Z]+: |Severity: Error";
     }
 }
