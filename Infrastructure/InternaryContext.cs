@@ -30,7 +30,61 @@ namespace Infrastructure
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            var allEntities = modelBuilder.Model.GetEntityTypes();
+
+            foreach (var entity in allEntities)
+            {
+                if (entity.GetTableName() == "Status")
+                    continue;
+
+                entity.AddProperty("CreatedDate", typeof(DateTime));
+                entity.AddProperty("UpdatedDate", typeof(DateTime));
+            }
+
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        }
+
+        public override int SaveChanges()
+        {
+            Save();
+
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            Save();
+
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void Save()
+        {
+            var addedEntities = ChangeTracker.Entries().Where(e => e.State == EntityState.Added).ToList();
+            var editedEntities = ChangeTracker.Entries().Where(e => e.State == EntityState.Modified).ToList();
+
+            var utcNow = DateTime.UtcNow;
+
+            addedEntities.ForEach(e =>
+            {
+                if (e.Properties.Any(p => p.Metadata.Name == "CreatedDate"))
+                {
+                    e.Property("CreatedDate").CurrentValue = utcNow;
+                }
+            });
+
+            editedEntities.ForEach(e =>
+            {
+                if (e.Properties.Any(p => p.Metadata.Name == "CreatedDate"))
+                {
+                    e.Property("CreatedDate").IsModified = false;
+                }
+
+                if (e.Properties.Any(p => p.Metadata.Name == "UpdatedDate"))
+                {
+                    e.Property("UpdatedDate").CurrentValue = utcNow;
+                }
+            });
         }
     }
 }
