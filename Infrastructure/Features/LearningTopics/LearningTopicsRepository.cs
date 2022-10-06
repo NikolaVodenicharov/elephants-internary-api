@@ -52,7 +52,7 @@ namespace Infrastructure.Features.LearningTopics
                 .LearningTopics
                 .AsNoTracking()
                 .Include(t => t.Specialities)
-                .OrderBy(s => s.Id)
+                .OrderByDescending(s => EF.Property<DateTime>(s, "UpdatedDate"))
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();

@@ -58,7 +58,7 @@ namespace Infrastructure.Features.Specialities
             var specialities = await context
                 .Specialties
                 .AsNoTracking()
-                .OrderBy(s => s.Id)
+                .OrderByDescending(s => EF.Property<DateTime>(s, "UpdatedDate"))
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();

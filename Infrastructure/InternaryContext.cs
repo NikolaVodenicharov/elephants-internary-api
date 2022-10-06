@@ -70,6 +70,7 @@ namespace Infrastructure
                 if (e.Properties.Any(p => p.Metadata.Name == "CreatedDate"))
                 {
                     e.Property("CreatedDate").CurrentValue = utcNow;
+                    e.Property("UpdatedDate").CurrentValue = utcNow;
                 }
             });
 
