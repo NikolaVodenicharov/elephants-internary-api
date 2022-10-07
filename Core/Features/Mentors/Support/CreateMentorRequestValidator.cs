@@ -8,17 +8,8 @@ namespace Core.Features.Mentors.Support
     {
         public CreateMentorRequestValidator()
         {
-            RuleFor(m => m.FirstName)
-                .NotEmpty()
-                .MinimumLength(MentorValidationConstraints.NamesMinLength)
-                .MaximumLength(MentorValidationConstraints.NamesMaxLength)
-                .Matches(RegularExpressionPatterns.PersonNamesPattern);
-
-            RuleFor(m => m.LastName)
-                .NotEmpty()
-                .MinimumLength(MentorValidationConstraints.NamesMinLength)
-                .MaximumLength(MentorValidationConstraints.NamesMaxLength)
-                .Matches(RegularExpressionPatterns.PersonNamesPattern);
+            RuleFor(m => m.DisplayName)
+                .NotEmpty();
 
             RuleFor(m => m.Email)
                 .NotEmpty()

@@ -23,8 +23,7 @@ namespace Infrastructure.Tests.Features.Mentors
     public class MentorsRepositoryTests
     {
         private readonly Guid id = Guid.NewGuid();
-        private readonly string firstName = "First";
-        private readonly string lastName = "Last";
+        private readonly string displayName = "First Last";
         private readonly string email = "first.last@email.com";
         private readonly InternaryContext context;
         private readonly IMentorsRepository mentorsRepository;
@@ -60,8 +59,7 @@ namespace Infrastructure.Tests.Features.Mentors
             mentor = new Mentor()
             {
                 Id = id,
-                FirstName = firstName,
-                LastName = lastName,
+                DisplayName = displayName,
                 Email = email,
                 Specialities = specialities
             };
@@ -77,37 +75,8 @@ namespace Infrastructure.Tests.Features.Mentors
 
             //Assert
             Assert.Equal(1, count);
-            Assert.Equal(mentor.FirstName, addedMentor.FirstName);
-            Assert.Equal(mentor.LastName, addedMentor.LastName);
+            Assert.Equal(mentor.DisplayName, addedMentor.DisplayName);
             Assert.Equal(mentor.Email, addedMentor.Email);
-        }
-
-        [Fact]
-        public async Task SaveTrackingChangesAsync_UpdateMentor_ShouldBeUpdated()
-        {
-            //Arrange
-            var mentorToUpdate = new Mentor()
-            {
-                FirstName = firstName,
-                LastName = lastName,
-                Email = email
-            };
-
-            //Act
-            await mentorsRepository.AddAsync(mentorToUpdate);
-
-            mentorToUpdate.LastName = "Newman";
-
-            await mentorsRepository.SaveTrackingChangesAsync();
-
-            var updatedMentor = await mentorsRepository.GetByIdAsync(mentorToUpdate.Id);
-
-            //Assert
-            Assert.NotNull(updatedMentor);
-            Assert.Equal(mentorToUpdate.Id, updatedMentor.Id);
-            Assert.Equal(mentorToUpdate.FirstName, updatedMentor.FirstName);
-            Assert.Equal(mentorToUpdate.LastName, updatedMentor.LastName);
-            Assert.Equal(mentorToUpdate.Email, updatedMentor.Email);
         }
 
         [Fact]
@@ -130,8 +99,7 @@ namespace Infrastructure.Tests.Features.Mentors
             var mentor2 = new Mentor()
             {
                 Id = Guid.NewGuid(),
-                FirstName = "John",
-                LastName = "Doe",
+                DisplayName = "John Doe",
                 Email = "john.doe@email.com"
             };
 
@@ -163,8 +131,7 @@ namespace Infrastructure.Tests.Features.Mentors
             //Assert
             Assert.NotNull(response);
             Assert.Equal(mentor.Id, response.Id);
-            Assert.Equal(mentor.FirstName, response.FirstName);
-            Assert.Equal(mentor.LastName, response.LastName);
+            Assert.Equal(mentor.DisplayName, response.DisplayName);
             Assert.Equal(mentor.Email, response.Email);
             Assert.NotNull(response.Specialities);
         }
@@ -237,8 +204,7 @@ namespace Infrastructure.Tests.Features.Mentors
             var mentor2 = new Mentor()
             {
                 Id = Guid.NewGuid(),
-                FirstName = "John",
-                LastName = "Doe",
+                DisplayName = "John Doe",
                 Email = "john.doe@email.com",
                 Specialities = new List<Speciality>()
             };

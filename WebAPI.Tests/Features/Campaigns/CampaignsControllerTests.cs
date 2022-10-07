@@ -422,7 +422,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 false
             );
 
-            var mentorSummary = new MentorSummaryResponse(Guid.NewGuid(), "John", "Doe", "john.doe@endava.com",
+            var mentorSummary = new MentorSummaryResponse(Guid.NewGuid(), "John Doe", "john.doe@endava.com",
                 new List<SpecialitySummaryResponse>() { specialtySummary },
                 new List<CampaignSummaryResponse>() { campaignSummary } );
 

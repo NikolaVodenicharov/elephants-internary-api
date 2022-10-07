@@ -2,6 +2,7 @@
 using Core.Features.Mentors.Entities;
 using Core.Features.Specialties.Entities;
 using Core.Features.LearningTopics.Entities;
+using Core.Features.Users.Entities;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
@@ -21,6 +22,10 @@ namespace Infrastructure
         public DbSet<Status> Status { get; set; }
         public DbSet<Mentor> Mentors { get; set; }
         public DbSet<LearningTopic> LearningTopics { get; set; }
+        
+        public DbSet<User> Users { get; set; }
+
+        public DbSet<Role> Roles { get; set; }
 
         public InternaryContext(DbContextOptions<InternaryContext> options)
             : base(options)

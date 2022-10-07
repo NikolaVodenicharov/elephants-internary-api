@@ -13,8 +13,7 @@ namespace Core.Tests.Features.Mentors
     public class MentorsMappingExtensionsTests
     {
         private Guid id = Guid.NewGuid();
-        private string firstName = "First";
-        private string lastName = "Last";
+        private string displayName = "First Last";
         private string email = "first.last@test.co.uk";
         private List<Speciality> specialities;
         private List<Guid> specialityIds;
@@ -47,14 +46,13 @@ namespace Core.Tests.Features.Mentors
         public void CreateMentorRequest_ToMentor_CreateCorrectObject()
         {
             //Arrange
-            var request = new CreateMentorRequest(firstName, lastName, email, specialityIds);
+            var request = new CreateMentorRequest(displayName, email, specialityIds);
 
             //Act
             var mentor = request.ToMentor();
 
             //Assert
-            Assert.Equal(firstName, mentor.FirstName);
-            Assert.Equal(lastName, mentor.LastName);
+            Assert.Equal(displayName, mentor.DisplayName);
             Assert.Equal(email, mentor.Email);
         }
 
@@ -65,8 +63,7 @@ namespace Core.Tests.Features.Mentors
             var mentor = new Mentor()
             {
                 Id = id,
-                FirstName = firstName,
-                LastName = lastName,
+                DisplayName = displayName,
                 Email = email,
                 Specialities = specialities,
                 Campaigns = campaigns
@@ -77,8 +74,7 @@ namespace Core.Tests.Features.Mentors
 
             //Assert
             Assert.Equal(id, response.Id);
-            Assert.Equal(firstName, response.FirstName);
-            Assert.Equal(lastName, response.LastName);
+            Assert.Equal(displayName, response.DisplayName);
             Assert.Equal(email, response.Email);
             Assert.Equal(specialities.Count, response.Specialities.Count);
             Assert.Equal(campaigns.Count, response.Campaigns.Count());
@@ -92,8 +88,7 @@ namespace Core.Tests.Features.Mentors
                 new Mentor()
                 {
                     Id = id,
-                    FirstName = firstName,
-                    LastName = lastName,
+                    DisplayName = displayName,
                     Email = email,
                     Specialities = specialities,
                     Campaigns = campaigns

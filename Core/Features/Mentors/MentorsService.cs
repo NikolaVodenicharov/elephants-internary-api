@@ -189,13 +189,6 @@ namespace Core.Features.Mentors
 
             Guard.EnsureNotNull(existingMentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), request.Id);
 
-            var isEmailChanged = !existingMentor.Email.Equals(request.Email);
-
-            if (isEmailChanged)
-            {
-                await CheckEmailAsync(request.Email);
-            }
-
             if (request.SpecialityIds.Count() != request.SpecialityIds.Distinct().Count())
             {
                 mentorsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(MentorsService), nameof(Mentor),
@@ -209,9 +202,6 @@ namespace Core.Features.Mentors
                 mentorsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(MentorsService), "specialities", request.SpecialityIds);
             }
 
-            existingMentor.FirstName = request.FirstName;
-            existingMentor.LastName = request.LastName;
-            existingMentor.Email = request.Email;
             existingMentor.Specialities = mentorSpecialities;
 
             await mentorsRepository.SaveTrackingChangesAsync();
@@ -244,7 +234,7 @@ namespace Core.Features.Mentors
                 mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is already assigned to" +
                     " campaign with Id {CampaignId}", nameof(MentorsService), nameof(request.PersonId), nameof(request.CampaignId));
 
-                throw new CoreException($"Mentor {mentor.FirstName} {mentor.LastName} ({mentor.Email}) " +
+                throw new CoreException($"Mentor {mentor.DisplayName} ({mentor.Email}) " +
                     $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
             }
 

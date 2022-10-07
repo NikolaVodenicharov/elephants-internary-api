@@ -4,20 +4,27 @@ using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
 using Core.Features.Mentors.Support;
-using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
+using Core.Features.Users.Interfaces;
+using Core.Features.Identity.ResponseModels;
+using Core.Features.Users.Entities;
+using Core.Features.Users.RequestModels;
+using Core.Features.Users.ResponseModels;
 using Core.Features.Campaigns.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebAPI.Common;
+using WebAPI.Features.Mentors.ApiRequestModels;
 using WebAPI.Features.Mentors;
+using WebAPI.Features.Mentors.Support;
 using Xunit;
 
 namespace WebAPI.Tests.Features.Mentors
@@ -25,8 +32,7 @@ namespace WebAPI.Tests.Features.Mentors
     public class MentorsControllerTests
     {
         private readonly Guid id = Guid.NewGuid();
-        private readonly string firstName = "First";
-        private readonly string lastName = "Last";
+        private readonly string displayName = "First Last";
         private readonly string email = "first.last@example.bg";
 
         private readonly int validPageNum = 1;
@@ -35,6 +41,7 @@ namespace WebAPI.Tests.Features.Mentors
         private readonly int invalidPageSize = 0;
 
         private readonly Mock<IMentorsService> mentorsServiceMock;
+        private readonly Mock<IUsersService> usersServiceMock;
         private readonly MentorsController mentorsController;
 
         private readonly SpecialitySummaryResponse specialitySummaryResponse;
@@ -42,23 +49,38 @@ namespace WebAPI.Tests.Features.Mentors
         private List<SpecialitySummaryResponse> specialitySummaries;
         private List<Guid> specialityIds;
         private List<CampaignSummaryResponse> campaignSummaries;
+        private IdentitySummaryResponse userIdentitySummary;
+        private MentorSummaryResponse mentorSummary;
 
         public MentorsControllerTests()
         {
             var createMentorRequestValidator = new CreateMentorRequestValidator();
             var updateMentorRequestValidator = new UpdateMentorRequestValidator();
+            var createMentorApiRequestValidator = new CreateMentorApiRequestValidator();
             var paginationRequestValidator = new PaginationRequestValidator();
 
             mentorsServiceMock = new Mock<IMentorsService>();
+            usersServiceMock = new Mock<IUsersService>();
 
             var loggerMock = new Mock<ILogger<MentorsController>>();
 
+            var invitationUrls = new InvitationUrlSettings
+            {
+                BackOfficeUrl = "https://test.com",
+                FrontOfficeUrl = "https://test.com"
+            };
+
+            var invitationUrlSettings = Options.Create<InvitationUrlSettings>(invitationUrls);
+        
             mentorsController = new(
                 mentorsServiceMock.Object,
+                usersServiceMock.Object,
                 loggerMock.Object,
                 createMentorRequestValidator,
                 updateMentorRequestValidator,
-                paginationRequestValidator);
+                createMentorApiRequestValidator,
+                paginationRequestValidator,
+                invitationUrlSettings);
 
             speciality = new Speciality()
             {
@@ -81,19 +103,36 @@ namespace WebAPI.Tests.Features.Mentors
             );
 
             campaignSummaries = new List<CampaignSummaryResponse>() { campaignSummary };
+
+            var identityId = Guid.NewGuid().ToString();
+            userIdentitySummary = new IdentitySummaryResponse(email, displayName);
+
+            mentorSummary = new MentorSummaryResponse(id, displayName, email, specialitySummaries, campaignSummaries);
         }
 
         [Fact]
         public async Task CreateAsync_WhenDataIsCorrect_ShouldReturnCorrectData()
         {
             //Arrange
-            var request = new CreateMentorRequest(firstName, lastName, email, specialityIds);
-
-            var mentorSummary = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
+            var request = new CreateMentorApiRequest(email, specialityIds);
+   
+            var userSummary = new UserSummaryResponse(Guid.NewGuid(), email, RoleEnum.Mentor);
 
             mentorsServiceMock
                 .Setup(x => x.CreateAsync(It.IsAny<CreateMentorRequest>()))
                 .ReturnsAsync(mentorSummary);
+            
+            usersServiceMock
+                .Setup(x => x.ExistsByEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(false);
+            
+            usersServiceMock
+                .Setup(x => x.SendInvitationByEmailAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(userIdentitySummary);
+
+            usersServiceMock
+                .Setup(x => x.CreateAsync(It.IsAny<CreateUserRequest>()))
+                .ReturnsAsync(userSummary);
 
             //Act
             var actionResult = await mentorsController.CreateAsync(request);
@@ -108,29 +147,9 @@ namespace WebAPI.Tests.Features.Mentors
             var createdResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
             Assert.Equal(mentorSummary.Id, createdResponse.Data.Id);
-            Assert.Equal(mentorSummary.FirstName, createdResponse.Data.FirstName);
-            Assert.Equal(mentorSummary.LastName, createdResponse.Data.LastName);
+            Assert.Equal(mentorSummary.DisplayName, createdResponse.Data.DisplayName);
             Assert.Equal(mentorSummary.Email, createdResponse.Data.Email);
             Assert.Equal(mentorSummary.Specialities, createdResponse.Data.Specialities);
-            Assert.Equal(mentorSummary.Campaigns, createdResponse.Data.Campaigns);
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(MentorValidationConstraints.NamesMinLength - 1)]
-        [InlineData(MentorValidationConstraints.NamesMaxLength + 1)]
-        public async Task CreateAsync_WhenNamesAreWithInvalidLength_ShouldThrowException(int nameLength)
-        {
-            //Arrange
-            var nameWithInvalidLength = TestHelper.GenerateString(nameLength);
-
-            var request = new CreateMentorRequest(nameWithInvalidLength, nameWithInvalidLength, email, specialityIds);
-
-            //Act
-            var action = async () => await mentorsController.CreateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Theory]
@@ -140,7 +159,7 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task CreateAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
         {
             //Arrange
-            var request = new CreateMentorRequest(firstName, lastName, invalidEmail, specialityIds);
+            var request = new CreateMentorApiRequest(invalidEmail, specialityIds);
 
             //Act
             var action = async () => await mentorsController.CreateAsync(request);
@@ -150,12 +169,27 @@ namespace WebAPI.Tests.Features.Mentors
         }
 
         [Fact]
+        public async Task CreateAsync_WhenUserEmailExists_ShouldThrowException()
+        {
+            // Arrange
+            var request = new CreateMentorApiRequest(email, specialityIds);
+            
+            usersServiceMock
+                .Setup(x => x.ExistsByEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(true);
+            
+            // Act
+            var action = async () => await mentorsController.CreateAsync(request);
+
+            // Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
         public async Task UpdateAsync_WhenDataIsCorrectShouldReturnCorrectData()
         {
             //Assert
-            var request = new UpdateMentorRequest(id, firstName, lastName, email, specialityIds);
-
-            var mentorSummary = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
+            var request = new UpdateMentorRequest(id, specialityIds);
 
             mentorsServiceMock
                 .Setup(x => x.UpdateAsync(It.IsAny<UpdateMentorRequest>()))
@@ -174,91 +208,16 @@ namespace WebAPI.Tests.Features.Mentors
             var updatedResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
             Assert.Equal(mentorSummary.Id, updatedResponse.Data.Id);
-            Assert.Equal(mentorSummary.FirstName, updatedResponse.Data.FirstName);
-            Assert.Equal(mentorSummary.LastName, updatedResponse.Data.LastName);
+            Assert.Equal(mentorSummary.DisplayName, updatedResponse.Data.DisplayName);
             Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
             Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
-            Assert.Equal(mentorSummary.Campaigns, updatedResponse.Data.Campaigns);
-        }
-
-        [Theory]
-        [InlineData(MentorValidationConstraints.NamesMinLength)]
-        [InlineData(MentorValidationConstraints.NamesMaxLength)]
-        public async Task UpdateAsync_WhenNamesAreWithValidLength_ShouldReturnCorrectData(int nameLength)
-        {
-            //Arrange
-            var nameWithValidLength = TestHelper.GenerateString(nameLength);
-
-            var request = new UpdateMentorRequest(id, nameWithValidLength, nameWithValidLength, email, specialityIds);
-
-            var mentorSummary = new MentorSummaryResponse(
-                id, nameWithValidLength, nameWithValidLength, email, 
-                specialitySummaries, 
-                campaignSummaries);
-
-            mentorsServiceMock
-                .Setup(x => x.UpdateAsync(It.IsAny<UpdateMentorRequest>()))
-                .ReturnsAsync(mentorSummary);
-
-            //Act
-            var actionResult = await mentorsController.UpdateAsync(id, request);
-
-            //Assert
-            Assert.IsType<JsonResult>(actionResult);
-
-            var jsonResult = actionResult as JsonResult;
-
-            Assert.NotNull(jsonResult);
-
-            var updatedResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
-
-            Assert.Equal(mentorSummary.Id, updatedResponse.Data.Id);
-            Assert.Equal(mentorSummary.FirstName, updatedResponse.Data.FirstName);
-            Assert.Equal(mentorSummary.LastName, updatedResponse.Data.LastName);
-            Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
-            Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
-            Assert.Equal(mentorSummary.Campaigns, updatedResponse.Data.Campaigns);
-        }
-
-        [Theory]
-        [InlineData("john@endava.com.")]
-        [InlineData("john@endava.co_uk")]
-        [InlineData("joh n@endava.co_uk")]
-        public async Task UpdateAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
-        {
-            //Arrange
-            var request = new UpdateMentorRequest(id, firstName, lastName, invalidEmail, specialityIds);
-
-            //Act
-            var action = async () => await mentorsController.UpdateAsync(id, request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(MentorValidationConstraints.NamesMinLength - 1)]
-        [InlineData(MentorValidationConstraints.NamesMaxLength + 1)]
-        public async Task UpdateAsync_WhenNamesAreWithInvalidLength_ShouldThrowException(int nameLength)
-        {
-            //Arrange
-            var nameWithInvalidLength = TestHelper.GenerateString(nameLength);
-
-            var request = new UpdateMentorRequest(id, nameWithInvalidLength, nameWithInvalidLength, email, specialityIds);
-
-            //Act
-            var action = async () => await mentorsController.UpdateAsync(id, request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Fact]
         public async Task UpdateAsync_WhenQueryIdAndModelIdDoesNotMatch_ShouldThrowException()
         {
             //Arrange
-            var request = new UpdateMentorRequest(id, firstName, lastName, email, specialityIds);
+            var request = new UpdateMentorRequest(id, specialityIds);
 
             //Act
             var action = async () => await mentorsController.UpdateAsync(Guid.NewGuid(), request);
@@ -288,11 +247,9 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetByIdAsync_WhenIdExists_ShouldReturnCorrectObject()
         {
             //Arrange
-            var expectedResponse = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
-
             mentorsServiceMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(expectedResponse);
+                .ReturnsAsync(mentorSummary);
 
             //Act
             var actionResult = await mentorsController.GetByIdAsync(id);
@@ -306,12 +263,11 @@ namespace WebAPI.Tests.Features.Mentors
 
             var actualResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
-            Assert.Equal(expectedResponse.Id, actualResponse.Data.Id);
-            Assert.Equal(expectedResponse.FirstName, actualResponse.Data.FirstName);
-            Assert.Equal(expectedResponse.LastName, actualResponse.Data.LastName);
-            Assert.Equal(expectedResponse.Email, actualResponse.Data.Email);
-            Assert.Equal(expectedResponse.Specialities, actualResponse.Data.Specialities);
-            Assert.Equal(expectedResponse.Campaigns, actualResponse.Data.Campaigns);
+            Assert.Equal(mentorSummary.Id, actualResponse.Data.Id);
+            Assert.Equal(mentorSummary.DisplayName, actualResponse.Data.DisplayName);
+            Assert.Equal(mentorSummary.Email, actualResponse.Data.Email);
+            Assert.Equal(mentorSummary.Specialities, actualResponse.Data.Specialities);
+            Assert.Equal(mentorSummary.Campaigns, actualResponse.Data.Campaigns);
         }
 
         [Fact]
@@ -338,14 +294,13 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
-            var expectedResponse2 = new MentorSummaryResponse(
-                Guid.NewGuid(), "John", "Smith", "john.smith@gmail.com",
+            var expectedResponse = new MentorSummaryResponse(
+                Guid.NewGuid(), "John Smith", "john.smith@gmail.com",
                 specialitySummaries,
                 campaignSummaries);
 
             var expectedResponseList = new List<MentorSummaryResponse>() {
-                expectedResponse1, expectedResponse2
+                mentorSummary, expectedResponse
             };
 
             var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(expectedResponseList, 1, 2);
@@ -436,14 +391,13 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersNotSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse1 = new MentorSummaryResponse(id, firstName, lastName, email, specialitySummaries, campaignSummaries);
-            var expectedResponse2 = new MentorSummaryResponse(
-                Guid.NewGuid(), "John", "Smith", "john.smith@gmail.com",
+            var expectedResponse = new MentorSummaryResponse(
+                Guid.NewGuid(), "John Smith", "john.smith@gmail.com",
                 specialitySummaries,
                 campaignSummaries);
 
             var expectedResponseList = new List<MentorSummaryResponse>() {
-                expectedResponse1, expectedResponse2
+                mentorSummary, expectedResponse
             };
 
             mentorsServiceMock
