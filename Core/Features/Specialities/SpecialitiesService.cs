@@ -1,4 +1,5 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
+using Core.Common.Exceptions;
 using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
@@ -7,6 +8,7 @@ using Core.Features.Specialities.Support;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace Core.Features.Specialities
@@ -46,7 +48,7 @@ namespace Core.Features.Specialities
 
             var specialitySummaryResponse = await specialitiesRepository.AddAsync(speciality);
 
-            LogInformation(nameof(CreateAsync), specialitySummaryResponse.Id);
+            specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(CreateAsync), true);
 
             return specialitySummaryResponse;
         }
@@ -57,16 +59,15 @@ namespace Core.Features.Specialities
 
             var speciality = await specialitiesRepository.GetByIdAsync(updateSpecialityRequest.Id);
 
-            if (speciality == null)
-            {
-                ThrowExceptionIdNotFound(updateSpecialityRequest.Id);
-            }
+            Guard.EnsureNotNull(speciality, specialitiesServiceLogger, nameof(SpecialitiesService),
+                nameof(Speciality), updateSpecialityRequest.Id);
 
-            speciality!.Name = updateSpecialityRequest.Name;
+            speciality.Name = updateSpecialityRequest.Name;
 
             await specialitiesRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(UpdateAsync), speciality.Id);
+            specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(UpdateAsync),
+                nameof(Speciality), speciality.Id, true);
 
             return speciality.ToSpecialitySummaryResponse();
         }
@@ -75,12 +76,11 @@ namespace Core.Features.Specialities
         {
             var speciality = await specialitiesRepository.GetByIdAsync(id);
 
-            if (speciality == null)
-            {
-                ThrowExceptionIdNotFound(id);
-            }
+            Guard.EnsureNotNull(speciality, specialitiesServiceLogger, nameof(SpecialitiesService),
+                nameof(Speciality), id);
 
-            LogInformation(nameof(GetByIdAsync), speciality!.Id);
+            specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(GetByIdAsync),
+                nameof(Speciality), id, true);
 
             return speciality.ToSpecialitySummaryResponse();
         }
@@ -89,7 +89,7 @@ namespace Core.Features.Specialities
         {
             var specialities = await specialitiesRepository.GetAllAsync();
 
-            specialitiesServiceLogger.LogInformation($"[{nameof(SpecialitiesService)}] {nameof(GetAllAsync)} successfully executed.");
+            specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(GetAllAsync), true);
 
             return specialities;
         }
@@ -97,6 +97,9 @@ namespace Core.Features.Specialities
         public async Task<PaginationResponse<SpecialitySummaryResponse>> GetPaginationAsync(PaginationRequest filter)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
+
+            Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize,
+                specialitiesServiceLogger, nameof(SpecialitiesService));
 
             if (Counter.specialitiesCount == -1 || filter.PageNum == 1)
             {
@@ -107,11 +110,14 @@ namespace Core.Features.Specialities
             {
                 if (filter.PageNum > PaginationConstants.DefaultPageCount)
                 {
-                    LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                    specialitiesServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(Specialities), 
+                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                 }
 
                 var emptyPaginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
                     new List<SpecialitySummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(GetAllAsync), true);
 
                 return emptyPaginationResponse;
             }
@@ -120,7 +126,8 @@ namespace Core.Features.Specialities
 
             if (filter.PageNum > totalPages)
             {
-                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+                specialitiesServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(SpecialitiesService), 
+                    totalPages, filter.PageNum.Value);
             }
 
             var specialities = await specialitiesRepository.GetAllAsync(filter);
@@ -128,7 +135,7 @@ namespace Core.Features.Specialities
             var paginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
                 specialities, filter.PageNum.Value, totalPages);
 
-            specialitiesServiceLogger.LogInformation($"[{nameof(SpecialitiesService)}] {nameof(GetAllAsync)} successfully executed.");
+            specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(GetAllAsync), true);
 
             return paginationResponse;
         }
@@ -141,7 +148,8 @@ namespace Core.Features.Specialities
 
             if (isNameExist)
             {
-                ThrowExceptionNameExist(createSpecialityRequest.Name);
+                specialitiesServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(SpecialitiesService), 
+                    nameof(Speciality), nameof(Speciality.Name), createSpecialityRequest.Name);
             }
         }
 
@@ -149,44 +157,14 @@ namespace Core.Features.Specialities
         {
             await updateSpecialityValidator.ValidateAndThrowAsync(updateSpecialityRequest);
 
-            var isNameTaken = await specialitiesRepository.IsNameTakenByOtherAsync(updateSpecialityRequest.Name, updateSpecialityRequest.Id);
+            var isNameTaken = await specialitiesRepository.IsNameTakenByOtherAsync(updateSpecialityRequest.Name, 
+                updateSpecialityRequest.Id);
 
             if (isNameTaken)
             {
-                ThrowExceptionNameExist(updateSpecialityRequest.Name);
+                specialitiesServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(SpecialitiesService), 
+                    nameof(Speciality), nameof(Speciality.Name), updateSpecialityRequest.Name);
             }
-        }
-
-        private void ThrowExceptionIdNotFound(Guid id)
-        {
-            var idNotFoundMessage = $"{nameof(Speciality)} with Id {id} was not found.";
-
-            specialitiesServiceLogger.LogError($"[{nameof(SpecialitiesService)}] {idNotFoundMessage}");
-
-            throw new CoreException(idNotFoundMessage, HttpStatusCode.NotFound);
-        }
-
-        private void ThrowExceptionNameExist(string name)
-        {
-            var message = $"{nameof(Speciality)} with name {name} already exist.";
-
-            specialitiesServiceLogger.LogError(message);
-
-            throw new CoreException(message, HttpStatusCode.BadRequest);
-        }
-
-        private void LogInformation(string methodName, Guid id)
-        {
-            specialitiesServiceLogger.LogInformation($"[{nameof(SpecialitiesService)}] {methodName} successfully executed, entity id: {id}.");
-        }
-
-        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
-        {
-            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
-
-            specialitiesServiceLogger.LogError($"[{nameof(SpecialitiesService)}] {message}");
-
-            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }

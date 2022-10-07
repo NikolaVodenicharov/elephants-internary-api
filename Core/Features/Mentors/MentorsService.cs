@@ -1,7 +1,9 @@
 ﻿using Core.Common;
 using Core.Common.Exceptions;
 using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
+using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
@@ -29,7 +31,6 @@ namespace Core.Features.Mentors
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         
-
         public MentorsService(
             IMentorsRepository mentorsRepository,
             ICampaignsRepository campaignsRepository,
@@ -56,20 +57,15 @@ namespace Core.Features.Mentors
 
             if (request.SpecialityIds.Count() != request.SpecialityIds.Distinct().Count())
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Mentor can't have duplicate specialties: " +
-                    $"[{String.Join(",", request.SpecialityIds)}]");
-
-                throw new CoreException("Mentor can't have duplicate specialties.", HttpStatusCode.BadRequest);
+                mentorsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(MentorsService), nameof(Mentor),
+                    "specialities", request.SpecialityIds);
             }
 
             var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(request.SpecialityIds);
 
             if (mentorSpecialities.Count != request.SpecialityIds.Count())
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Not all specialities are found: " +
-                    $"[{String.Join(", ", request.SpecialityIds)}]");
-
-                throw new CoreException("Not all specialties were found.", HttpStatusCode.BadRequest);
+                mentorsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(MentorsService), "specialities", request.SpecialityIds);
             }
 
             var mentor = request.ToMentor();
@@ -77,12 +73,17 @@ namespace Core.Features.Mentors
 
             var createdMentor = await mentorsRepository.AddAsync(mentor);
 
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(CreateAsync), true);
+
             return createdMentor.ToMentorSummaryResponse();
         }
 
         public async Task<PaginationResponse<MentorSummaryResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
+
+            Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize, mentorsServiceLogger,
+                nameof(MentorsService));
 
             if (campaignId != null)
             {
@@ -95,11 +96,14 @@ namespace Core.Features.Mentors
                 {
                     if (filter.PageNum > PaginationConstants.DefaultPageCount)
                     {
-                        LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                        mentorsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(MentorsService), 
+                            PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                     }
 
                     var emptyPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
                         new List<MentorSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                    mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
                     return emptyPaginationResponse;
                 }
@@ -115,11 +119,14 @@ namespace Core.Features.Mentors
                 {
                     if (filter.PageNum > PaginationConstants.DefaultPageCount)
                     {
-                        LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                        mentorsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(MentorsService), 
+                            PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                     }
 
                     var emptyPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
                         new List<MentorSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+
+                    mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
                     return emptyPaginationResponse;
                 }
@@ -131,7 +138,8 @@ namespace Core.Features.Mentors
 
             if (filter.PageNum > totalPages)
             {
-                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+                mentorsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(MentorsService), totalPages, 
+                    filter.PageNum.Value);
             }
 
             var mentors = campaignId != null ? 
@@ -141,12 +149,16 @@ namespace Core.Features.Mentors
             var paginationResponse = new PaginationResponse<MentorSummaryResponse>(
                 mentors.ToMentorSummaryResponses(), filter.PageNum.Value, totalPages);
 
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
+
             return paginationResponse;
         }
 
         public async Task<IEnumerable<MentorSummaryResponse>> GetAllAsync()
         {
             var mentors = await mentorsRepository.GetAllAsync();
+
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetAllAsync), true);
 
             return mentors.ToMentorSummaryResponses();
         }
@@ -155,10 +167,9 @@ namespace Core.Features.Mentors
         {
             var mentor = await mentorsRepository.GetByIdAsync(id);
 
-            if (mentor is null)
-            {
-                LogErrorAndThrowExceptionEntityNotFound("Mentor", id);
-            }
+            Guard.EnsureNotNull(mentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), id);
+
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetByIdAsync), true);
 
             return mentor.ToMentorSummaryResponse();
         }
@@ -174,14 +185,9 @@ namespace Core.Features.Mentors
         {
             await updateMentorRequestValidator.ValidateAndThrowAsync(request);
 
-            mentorsServiceLogger.LogInformation($"[MentorsService] Update mentor with Id {request.Id}");
-
             var existingMentor = await mentorsRepository.GetByIdAsync(request.Id);
 
-            if (existingMentor is null)
-            {
-                LogErrorAndThrowExceptionEntityNotFound("Mentor", request.Id);
-            }
+            Guard.EnsureNotNull(existingMentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), request.Id);
 
             var isEmailChanged = !existingMentor.Email.Equals(request.Email);
 
@@ -192,20 +198,15 @@ namespace Core.Features.Mentors
 
             if (request.SpecialityIds.Count() != request.SpecialityIds.Distinct().Count())
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Mentor can't have duplicate specialties: " +
-                    $"[{String.Join(",", request.SpecialityIds)}]");
-
-                throw new CoreException("Mentor can't have duplicate specialties.", HttpStatusCode.BadRequest);
+                mentorsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(MentorsService), nameof(Mentor),
+                    "specialities", request.SpecialityIds);
             }
 
             var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(request.SpecialityIds);
 
             if (mentorSpecialities.Count != request.SpecialityIds.Count())
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Not all specialties were found: " +
-                    $"[{String.Join(", ", request.SpecialityIds)}]");
-
-                throw new CoreException("Not all specialties were found.", HttpStatusCode.BadRequest);
+                mentorsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(MentorsService), "specialities", request.SpecialityIds);
             }
 
             existingMentor.FirstName = request.FirstName;
@@ -215,7 +216,8 @@ namespace Core.Features.Mentors
 
             await mentorsRepository.SaveTrackingChangesAsync();
 
-            mentorsServiceLogger.LogInformation($"[MentorsService] Mentor with Id {request.Id} updated successfully");
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(UpdateAsync), nameof(Mentor), 
+                request.Id, true);
 
             return existingMentor.ToMentorSummaryResponse();
         }  
@@ -231,22 +233,16 @@ namespace Core.Features.Mentors
         {
             var campaign = await campaignsRepository.GetByIdAsync(request.CampaignId);
 
-            if (campaign is null)
-            {
-                LogErrorAndThrowExceptionEntityNotFound("Campaign", request.CampaignId);
-            }
+            Guard.EnsureNotNull(campaign, mentorsServiceLogger, nameof(MentorsService), nameof(Campaign), request.CampaignId);
 
             var mentor = await mentorsRepository.GetByIdAsync(request.PersonId);
 
-            if (mentor is null)
-            {
-                LogErrorAndThrowExceptionEntityNotFound("Mentor", request.PersonId);
-            }
+            Guard.EnsureNotNull(mentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), request.PersonId);
 
             if (mentor.Campaigns.Contains(campaign))
             {
-                mentorsServiceLogger.LogError($"[MentorsService] Mentor with Id {request.PersonId} is already assigned to" +
-                    $" campaign with Id {request.CampaignId}");
+                mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is already assigned to" +
+                    " campaign with Id {CampaignId}", nameof(MentorsService), nameof(request.PersonId), nameof(request.CampaignId));
 
                 throw new CoreException($"Mentor {mentor.FirstName} {mentor.LastName} ({mentor.Email}) " +
                     $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
@@ -256,8 +252,8 @@ namespace Core.Features.Mentors
 
             await mentorsRepository.SaveTrackingChangesAsync();
 
-            mentorsServiceLogger.LogInformation($"[MentorsService] Mentor with Id {request.PersonId} successfully assigned " +
-                $"to campaign with Id {request.CampaignId}");
+            mentorsServiceLogger.LogInformationAddedToEntity(nameof(MentorsService), nameof(Mentor), request.PersonId,
+                nameof(Campaign), request.CampaignId);
         }
 
         private async Task CheckEmailAsync(string email)
@@ -266,29 +262,9 @@ namespace Core.Features.Mentors
 
             if (isEmailUsed)
             {
-                var message = $"Email '{email}' is already used";
-
-                mentorsServiceLogger.LogError($"[MentorsService] {message}");
-
-                throw new CoreException($"{message}. Please choose a new one.", HttpStatusCode.BadRequest);
+                mentorsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(MentorsService), nameof(Mentor), 
+                    nameof(Mentor.Email), email);
             }
-        }
-
-        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
-        {
-            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
-
-            mentorsServiceLogger.LogError($"[{nameof(MentorsService)}] {message}");
-
-            throw new CoreException(message, HttpStatusCode.BadRequest);
-        }
-
-        private void LogErrorAndThrowExceptionEntityNotFound(string entity, Guid id)
-        {
-            mentorsServiceLogger.LogError($"[{nameof(MentorsService)}] {entity} with Id {id} " +
-                    $"was not found");
-
-            throw new CoreException($"Requested {entity} was not found.", HttpStatusCode.NotFound);
         }
     }
 }

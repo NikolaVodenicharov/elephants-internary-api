@@ -1,9 +1,12 @@
-﻿using Core.Common.Pagination;
+﻿using Core.Common.Exceptions;
+using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Interns.Entities;
 using Core.Features.Specialties.Entities;
 using Infrastructure.Features.Interns;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +40,9 @@ namespace Infrastructure.Tests.Features.Interns
 
             context = new InternaryContext(dbOptions.Options);
 
-            internsRepository = new InternsRepository(context);
+            var loggerMock = new Mock<ILogger<InternsRepository>>();
+
+            internsRepository = new InternsRepository(context, loggerMock.Object);
 
             internMock = new Intern()
             {
@@ -240,6 +245,31 @@ namespace Infrastructure.Tests.Features.Interns
             Assert.Equal(paginationRequestMock.PageSize, paginationResponse.Content.Count());
             Assert.Equal(paginationRequestMock.PageNum, paginationResponse.PageNum);
             Assert.Equal(3, paginationResponse.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
+        {
+            //Arrange
+
+            var filter = new PaginationRequest(10, 10);
+
+            var intern = new Intern()
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                PersonalEmail = "John.Doe@gmail.com"
+            };
+
+            context.Interns.Add(intern);
+
+            await context.SaveChangesAsync();
+
+            //Act
+            var action = async() => await internsRepository.GetAllAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]

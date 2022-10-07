@@ -625,6 +625,36 @@ namespace Core.Tests.Features.Mentors
             Assert.Empty(actualResponse.Content);
         }
 
+        [Fact]
+        public async Task GetPaginationAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
+        {
+            //Arrange
+            var pageNum = 10;
+            var pageSize = 10;
+            var count = 1;
+
+            var mentorList = new List<Mentor>()
+            {
+                returnMentor
+            };
+
+            var filter = new PaginationRequest(pageNum, pageSize);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
+                .ReturnsAsync(mentorList);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(count);
+
+            //Act
+            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
         #endregion
 
         #region GetAllAsyncTests

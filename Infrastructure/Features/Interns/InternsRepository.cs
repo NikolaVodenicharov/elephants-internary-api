@@ -1,4 +1,5 @@
-﻿using Core.Common.Pagination;
+﻿using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Campaigns.Support;
 using Core.Features.Interns.Entities;
 using Core.Features.Interns.Interfaces;
@@ -6,16 +7,19 @@ using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
 using Core.Features.Specialities.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Features.Interns
 {
     public class InternsRepository : IInternsRepository
     {
         private readonly InternaryContext context;
+        private readonly ILogger<InternsRepository> internsRepositoryLogger;
 
-        public InternsRepository(InternaryContext context)
+        public InternsRepository(InternaryContext context, ILogger<InternsRepository> internsRepositoryLogger)
         {
             this.context = context;
+            this.internsRepositoryLogger = internsRepositoryLogger;
         }
 
         public async Task<InternSummaryResponse> AddAsync(Intern intern)
@@ -93,23 +97,38 @@ namespace Infrastructure.Features.Interns
 
         public async Task<PaginationResponse<InternSummaryResponse>> GetAllAsync(PaginationRequest paginationRequest)
         {
+            Guard.EnsureNotNullPagination(paginationRequest.PageNum, paginationRequest.PageSize, 
+                internsRepositoryLogger, nameof(InternsRepository));
+
             var elementsCount = await context
                 .Interns
                 .CountAsync();
 
             if (elementsCount == 0)
             {
+                if (paginationRequest.PageNum > PaginationConstants.DefaultPageCount)
+                {
+                    internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
+                        PaginationConstants.DefaultPageCount, paginationRequest.PageNum.Value);
+                }
+
                 var zeroElementResult = new PaginationResponse<InternSummaryResponse>(
-                new List<InternSummaryResponse>(),
-                paginationRequest.PageNum.Value,
-                PaginationConstants.DefaultPageCount);
+                    new List<InternSummaryResponse>(),
+                    paginationRequest.PageNum.Value,
+                    PaginationConstants.DefaultPageCount);
 
                 return zeroElementResult;
             }
 
-            var pageCount = CalculatePageCount(paginationRequest, elementsCount);
+            var pageCount = CalculatePageCount(paginationRequest.PageSize.Value, elementsCount);
 
-            var skip = CalculateSkipCount(paginationRequest);
+            if (paginationRequest.PageNum > pageCount)
+            {
+                internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
+                    pageCount, paginationRequest.PageNum.Value);
+            }
+
+            var skip = CalculateSkipCount(paginationRequest.PageNum.Value, paginationRequest.PageSize.Value);
 
             var interns = await context
                 .Interns
@@ -132,6 +151,9 @@ namespace Infrastructure.Features.Interns
 
         public async Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
         {
+            Guard.EnsureNotNullPagination(paginationRequest.PageNum, paginationRequest.PageSize,
+                internsRepositoryLogger, nameof(InternsRepository));
+
             var elementsCount = await context
                 .InternCampaigns
                 .Where(ic => ic.CampaignId == campaignId)
@@ -139,6 +161,12 @@ namespace Infrastructure.Features.Interns
 
             if (elementsCount == 0)
             {
+                if (paginationRequest.PageNum > PaginationConstants.DefaultPageCount)
+                {
+                    internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
+                        PaginationConstants.DefaultPageCount, paginationRequest.PageNum.Value);
+                }
+
                 var zeroElementResult = new PaginationResponse<InternByCampaignSummaryResponse>(
                 new List<InternByCampaignSummaryResponse>(),
                 paginationRequest.PageNum.Value,
@@ -147,9 +175,15 @@ namespace Infrastructure.Features.Interns
                 return zeroElementResult;
             }
 
-            int pageCount = CalculatePageCount(paginationRequest, elementsCount);
+            int pageCount = CalculatePageCount(paginationRequest.PageSize.Value, elementsCount);
 
-            int skip = CalculateSkipCount(paginationRequest);
+            if (paginationRequest.PageNum > pageCount)
+            {
+                internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
+                    pageCount, paginationRequest.PageNum.Value);
+            }
+
+            int skip = CalculateSkipCount(paginationRequest.PageNum.Value, paginationRequest.PageSize.Value);
 
             var internsByCampaignSummaryResponse = await context
                 .InternCampaigns
@@ -195,14 +229,14 @@ namespace Infrastructure.Features.Interns
             await context.SaveChangesAsync();
         }
 
-        private static int CalculatePageCount(PaginationRequest paginationRequest, int elementsCount)
+        private static int CalculatePageCount(int pageSize, int elementsCount)
         {
-            return (int)Math.Ceiling((double)elementsCount / paginationRequest.PageSize.Value);
+            return (int)Math.Ceiling((double)elementsCount / pageSize);
         }
 
-        private static int CalculateSkipCount(PaginationRequest paginationRequest)
+        private static int CalculateSkipCount(int pageNum, int pageSize)
         {
-            return (paginationRequest.PageNum.Value - 1) * paginationRequest.PageSize.Value;
+            return (pageNum - 1) * pageSize;
         }
     }
 }

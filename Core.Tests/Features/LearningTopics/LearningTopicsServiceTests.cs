@@ -431,6 +431,36 @@ namespace Core.Tests.Features.LearningTopics
         }
 
         [Fact]
+        public async Task GetPaginationAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
+        {
+            //Arrange
+            var pageNum = 10;
+            var pageSize = 10;
+            var count = 1;
+
+            var learningTopicList = new List<LearningTopic>()
+            {
+                learningTopic
+            };
+
+            var filter = new PaginationRequest(pageNum, pageSize);
+
+            learningTopicRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
+                .ReturnsAsync(learningTopicList);
+
+            learningTopicRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(count);
+
+            //Act
+            var action = async () => await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
         public async Task GetPaginationAsync_WhenFilterIsCorrectAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Assert

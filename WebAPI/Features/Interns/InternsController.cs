@@ -12,6 +12,7 @@ using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
 using WebAPI.Features.Interns.ApiRequestModels;
+using Core.Common;
 
 namespace WebAPI.Features.Interns
 {
@@ -55,7 +56,7 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> CreateAsync(CreateInternRequest createInternRequest)
         {
-            LogInformation(nameof(CreateAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(CreateAsync));
 
             await createInternRequestValidator.ValidateAndThrowAsync(createInternRequest);
 
@@ -70,7 +71,7 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateInternApiRequest updateInternApiRequest)
         {
-            LogInformation(nameof(UpdateAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(UpdateAsync));
 
             var updateInternRequest = new UpdateInternRequest(
                 id,
@@ -91,11 +92,13 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetDetailsByIdAsync(Guid id)
         {
-            LogInformation(nameof(GetDetailsByIdAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(GetDetailsByIdAsync));
 
             if (id == Guid.Empty)
             {
-                internsControllerLogger.LogError($"[{nameof(InternsController)}] Invalid {nameof(Intern)} Id ({id}) in {nameof(GetDetailsByIdAsync)} method.");
+                internsControllerLogger.LogError(
+                    "[{ControllerName}] Invalid {EntityName} Id ({Id}) in {MethodName} method.",
+                    nameof(InternsController), nameof(Intern), id, nameof(GetDetailsByIdAsync));
 
                 throw new CoreException($"Invalid {nameof(id)}.", HttpStatusCode.BadRequest);
             }
@@ -110,7 +113,7 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum, [Required][FromQuery] int pageSize)
         {
-            LogInformation(nameof(GetAllAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(GetAllAsync));
 
             var paginationRequest = new PaginationRequest(pageNum, pageSize);
 
@@ -127,7 +130,7 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> AddInternCampaignAsync(Guid id, Guid campaignId, AddInternCampaignApiRequest addInternCampaignApiRequest)
         {
-            LogInformation(nameof(AddInternCampaignAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(AddInternCampaignAsync));
 
             var addInternCampaignRequest = new AddInternCampaignRequest(
                 id,
@@ -147,7 +150,7 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> UpdateInternCampaignAsync(Guid id, Guid campaignId, UpdateInternCampaignApiRequest updateInternCampaignApiRequest)
         {
-            LogInformation(nameof(UpdateInternCampaignAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(UpdateInternCampaignAsync));
 
             var updateInternCampaignRequest = new UpdateInternCampaignRequest(
                 id,
@@ -166,7 +169,7 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> AddStateAsync(Guid id, Guid campaignId, AddStateApiRequest addStateApiRequest)
         {
-            LogInformation(nameof(AddStateAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(AddStateAsync));
 
             var addStateRequest = new AddStateRequest(
                 id,
@@ -186,16 +189,11 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<StatusResponse>>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetAllStatusAsync()
         {
-            LogInformation(nameof(GetAllAsync));
+            internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(GetAllAsync));
 
             var statusResponseCollelction = await internCampaignsService.GetAllStatusAsync();
 
             return CoreResult.Success(statusResponseCollelction);
-        }
-
-        private void LogInformation(string methodName)
-        {
-            internsControllerLogger.LogInformation("[{ControllerName}] {methodName} executing.", nameof(InternsController), methodName);
         }
     }
 }

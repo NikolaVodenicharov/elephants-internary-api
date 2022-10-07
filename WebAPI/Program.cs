@@ -19,7 +19,8 @@ builder.Services.ConfigureAndMigrateDatabase(builder.Configuration);
 builder.Services.CustomizeCorsPolicy(appSettings);
 builder.Services.CustomizeDependencies();
 builder.Services.CustomizeRouting();
-builder.SetupLogger();
+
+builder.SetupLogger(builder.Environment.IsProduction());
 
 
 var app = builder.Build();

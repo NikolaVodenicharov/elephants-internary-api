@@ -8,15 +8,14 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using WebAPI.Common.Abstractions;
-using System.Text.Json;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.ResponseModels;
 using Core.Common.Pagination;
 using WebAPI.Common;
 using Core.Features.Interns.Interfaces;
-using WebAPI.Common.ErrorHandling;
 using Core.Features.Interns.ResponseModels;
 using Core.Common;
+using Core.Features.Campaigns.Entities;
 
 namespace WebAPI.Features.Campaigns
 {
@@ -54,7 +53,7 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> CreateAsync(CreateCampaignRequest model)
         {
-            campaignsControllerLogger.LogInformation($"[CampaignsController] Create campaign: {JsonSerializer.Serialize(model)}");
+            campaignsControllerLogger.LogInformation(nameof(CampaignsController), nameof(CreateAsync));
 
             await createCampaingValidator.ValidateAndThrowAsync(model);
 
@@ -69,11 +68,11 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateCampaignRequest model)
         {
+            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(UpdateAsync), nameof(Campaign), id);
+
             if (id != model.Id)
             {
-                campaignsControllerLogger.LogError($"[CampaignsController] Invalid Campaign Id ({id}) in Update request data.");
-                
-                throw new CoreException("Invalid Campaign Id in request data", HttpStatusCode.BadRequest);
+                campaignsControllerLogger.LogErrorAndThrowExceptionIdMismatch(nameof(CampaignsController), model.Id, id);
             }
             
             await updateCampaignValidator.ValidateAndThrowAsync(model);
@@ -88,7 +87,7 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
         {
-            campaignsControllerLogger.LogInformation($"[CampaignsController] Get campaign with Id {id}");
+            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetByIdAsync), nameof(Campaign), id);
 
             var campaign = await campaignsService.GetByIdAsync(id);
 
@@ -102,7 +101,7 @@ namespace WebAPI.Features.Campaigns
         public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)
         {
-            campaignsControllerLogger.LogInformation($"[CampaignsController] Get {pageSize} campaigns from page {pageNum}");
+            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetAllAsync));
 
             var filter = new PaginationRequest(pageNum, pageSize);
 
@@ -120,8 +119,7 @@ namespace WebAPI.Features.Campaigns
         public async Task<IActionResult> GetMentorsByCampaignIdAsync(Guid id, [Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)
         {
-            campaignsControllerLogger.LogInformation($"[CampaignsController] Get {pageSize} mentors from page {pageNum} " +
-                $"for campaign with Id {id}");
+            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetMentorsByCampaignIdAsync), nameof(Campaign), id);
 
             await campaignsService.GetByIdAsync(id);
 
@@ -139,6 +137,9 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetAllInternsByCampaignIdAsync(Guid id, [FromQuery] int pageNum, [FromQuery] int pageSize)
         {
+            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetAllInternsByCampaignIdAsync), 
+                nameof(Campaign), id);
+
             var paginationRequest = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
@@ -156,9 +157,8 @@ namespace WebAPI.Features.Campaigns
         {
             if (id != request.CampaignId)
             {
-                campaignsControllerLogger.LogError($"[CampaignsController] Invalid Campaign Id ({id}) in Update request data.");
-
-                throw new CoreException("Invalid Campaign Id in request data", HttpStatusCode.BadRequest);
+                campaignsControllerLogger.LogErrorAndThrowExceptionIdMismatch(nameof(CampaignsController),
+                    request.CampaignId, id);
             }
 
             await mentorsService.AddToCampaignAsync(request);

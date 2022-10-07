@@ -6,11 +6,11 @@ using Core.Features.Mentors.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.ComponentModel.DataAnnotations;
 using System.Net;
-using System.Text.Json;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
+using Core.Common;
+using Core.Features.Mentors.Entities;
 
 namespace WebAPI.Features.Mentors
 {
@@ -42,7 +42,7 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> CreateAsync(CreateMentorRequest request)
         {
-            mentorsControllerLogger.LogInformation($"[MentorsController] Create mentor with data: {JsonSerializer.Serialize(request)}");
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(CreateAsync));
 
             await createMentorRequestValidator.ValidateAndThrowAsync(request);
 
@@ -57,14 +57,12 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateMentorRequest request)
         {
-            mentorsControllerLogger.LogInformation($"[MentorsController] Update mentor with Id {request.Id} with data: " +
-                $"{JsonSerializer.Serialize(request)}");
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(UpdateAsync), nameof(Mentor), id);
 
             if (id != request.Id)
             {
-                mentorsControllerLogger.LogError($"[MentorsController] Invalid mentor Id ({id}) in Update request data");
-
-                throw new CoreException("Invalid mentor Id in request data.", HttpStatusCode.BadRequest);
+                mentorsControllerLogger.LogErrorAndThrowExceptionIdMismatch(nameof(MentorsController), 
+                    request.Id, id);
             }
 
             await updateMentorRequestValidator.ValidateAndThrowAsync(request);
@@ -79,7 +77,7 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
         {
-            mentorsControllerLogger.LogInformation($"[MentorsController] Get mentor with Id {id}");
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(GetByIdAsync), nameof(Mentor), id);
 
             var mentor = await mentorsService.GetByIdAsync(id);
 
@@ -92,6 +90,8 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(GetAllAsync));
+
             if (pageNum == null && pageSize == null)
             {
                 var mentors = await mentorsService.GetAllAsync();
@@ -102,8 +102,6 @@ namespace WebAPI.Features.Mentors
             var filter = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
-
-            mentorsControllerLogger.LogInformation($"[MentorsController] Get {pageSize} mentors from page {pageNum}");
 
             var paginationResponse = await mentorsService.GetPaginationAsync(filter);
 

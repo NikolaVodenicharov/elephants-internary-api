@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
+using Core.Common;
 
 namespace WebAPI.Features.Specialities
 {
@@ -41,7 +42,7 @@ namespace WebAPI.Features.Specialities
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> CreateAsync(CreateSpecialityRequest createSpecialityRequest)
         {
-            LogInformation(nameof(CreateAsync));
+            specialitiesControllerLogger.LogInformationMethod(nameof(SpecialitiesController), nameof(CreateAsync));
 
             await createSpecialityValidator.ValidateAndThrowAsync(createSpecialityRequest);
 
@@ -56,14 +57,12 @@ namespace WebAPI.Features.Specialities
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateSpecialityRequest updateSpecialityRequest)
         {
-            LogInformation(nameof(UpdateAsync), id);
+            specialitiesControllerLogger.LogInformationMethod(nameof(SpecialitiesController), nameof(UpdateAsync), nameof(Speciality), id);
 
             if (id != updateSpecialityRequest.Id)
             {
-                specialitiesControllerLogger.LogError($"[{nameof(SpecialitiesController)}] Invalid {nameof(Speciality)} Id ({id}) " +
-                    $"in {nameof(UpdateAsync)} method.");
-
-                throw new CoreException($"Invalid {nameof(id)}.", HttpStatusCode.BadRequest);
+                specialitiesControllerLogger.LogErrorAndThrowExceptionIdMismatch(nameof(SpecialitiesController), 
+                    updateSpecialityRequest.Id, id);
             }
 
             await updateSpecialityValidator.ValidateAndThrowAsync(updateSpecialityRequest);
@@ -79,10 +78,10 @@ namespace WebAPI.Features.Specialities
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
+            specialitiesControllerLogger.LogInformationMethod(nameof(SpecialitiesController), nameof(GetAllAsync));
+
             if (pageNum == null && pageSize == null)
             {
-                LogInformation(nameof(GetAllAsync));
-
                 var specialitySummaries = await specialitiesService.GetAllAsync();
 
                 return CoreResult.Success(specialitySummaries);
@@ -91,9 +90,6 @@ namespace WebAPI.Features.Specialities
             var filter = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
-
-            specialitiesControllerLogger.LogInformation($"[{nameof(SpecialitiesController)}] Get {pageSize} " +
-                $"specialties from page {pageNum}");
 
             var paginationResponse  = await specialitiesService.GetPaginationAsync(filter);
 
@@ -105,21 +101,11 @@ namespace WebAPI.Features.Specialities
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
-            LogInformation(nameof(GetByIdAsync), id);
+            specialitiesControllerLogger.LogInformationMethod(nameof(SpecialitiesController), nameof(GetByIdAsync), nameof(Speciality), id);
 
             var specialitySummaryResponse = await specialitiesService.GetByIdAsync(id);
 
             return CoreResult.Success(specialitySummaryResponse);
-        }
-
-        private void LogInformation(string methodName)
-        {
-            specialitiesControllerLogger.LogInformation($"[{nameof(SpecialitiesController)}] {methodName} executing.");
-        }
-
-        private void LogInformation(string methodName, Guid id)
-        {
-            specialitiesControllerLogger.LogInformation($"[{nameof(SpecialitiesController)}] {methodName} executing, entity id: {id}.");
         }
     }
 }
