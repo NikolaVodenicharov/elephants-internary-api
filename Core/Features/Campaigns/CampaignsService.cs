@@ -10,11 +10,6 @@ using System.Net;
 
 namespace Core.Features.Campaigns
 {
-    internal static class Counter
-    {
-        public static int campaignCount = -1;
-    }
-
     public class CampaignsService : ICampaignsService
     {
         private readonly ICampaignsRepository campaignsRepository;
@@ -117,12 +112,9 @@ namespace Core.Features.Campaigns
         {
             await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
 
-            if (Counter.campaignCount == -1 || filter.PageNum == 1)
-            {
-                Counter.campaignCount = await GetCountAsync();
-            }
+            var campaignCount = await GetCountAsync();
 
-            if (Counter.campaignCount == 0)
+            if (campaignCount == 0)
             {
                 if (filter.PageNum > PaginationConstants.DefaultPageCount)
                 {
@@ -135,7 +127,7 @@ namespace Core.Features.Campaigns
                 return emptyPaginationResponse;
             }
 
-            var totalPages = (Counter.campaignCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = (campaignCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
 
             if (filter.PageNum > totalPages)
             {

@@ -7,11 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.Specialities
 {
-    internal static class Counter
-    {
-        public static int specialitiesCount = -1;
-    }
-
     public class SpecialitiesRepository : ISpecialitiesRepository
     {
         private readonly InternaryContext context;
@@ -47,11 +42,6 @@ namespace Infrastructure.Features.Specialities
 
         public async Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync(PaginationRequest? filter = null)
         {
-            if (Counter.specialitiesCount == -1 || filter?.PageNum == 1)
-            {
-               await GetCountAsync();
-            }
-
             var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
             var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
 
@@ -95,8 +85,6 @@ namespace Infrastructure.Features.Specialities
         public async Task<int> GetCountAsync()
         {
             var count = await context.Specialties.CountAsync();
-
-            Counter.specialitiesCount = count;
 
             return count;
         }

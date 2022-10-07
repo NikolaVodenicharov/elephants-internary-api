@@ -11,11 +11,6 @@ using System.Net;
 
 namespace Core.Features.Specialities
 {
-    internal static class Counter
-    {
-        public static int specialitiesCount = -1;
-    }
-
     public class SpecialitiesService : ISpecialitiesService
     {
         private readonly ISpecialitiesRepository specialitiesRepository;
@@ -98,12 +93,9 @@ namespace Core.Features.Specialities
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            if (Counter.specialitiesCount == -1 || filter.PageNum == 1)
-            {
-                Counter.specialitiesCount = await specialitiesRepository.GetCountAsync();
-            }
+            var specialitiesCount = await specialitiesRepository.GetCountAsync();
 
-            if (Counter.specialitiesCount == 0)
+            if (specialitiesCount == 0)
             {
                 if (filter.PageNum > PaginationConstants.DefaultPageCount)
                 {
@@ -116,7 +108,7 @@ namespace Core.Features.Specialities
                 return emptyPaginationResponse;
             }
 
-            var totalPages = (Counter.specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = (specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
 
             if (filter.PageNum > totalPages)
             {

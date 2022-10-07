@@ -12,11 +12,6 @@ using System.Net;
 
 namespace Core.Features.LearningTopics
 {
-    internal static class Counter
-    {
-        public static int learningTopicCount = -1;
-    }
-
     public class LearningTopicsService : ILearningTopicsService
     {
         private readonly ILearningTopicsRepository learningTopicsRepository;
@@ -117,12 +112,9 @@ namespace Core.Features.LearningTopics
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            if (Counter.learningTopicCount == -1 || filter.PageNum == 1)
-            {
-                Counter.learningTopicCount = await learningTopicsRepository.GetCountAsync();
-            }
+            var learningTopicCount = await learningTopicsRepository.GetCountAsync();
 
-            if (Counter.learningTopicCount == 0)
+            if (learningTopicCount == 0)
             {
                 if (filter.PageNum > PaginationConstants.DefaultPageCount)
                 {
@@ -135,7 +127,7 @@ namespace Core.Features.LearningTopics
                 return emptyPaginationResponse;
             }
 
-            var totalPages = (Counter.learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = (learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
 
             if (filter.PageNum > totalPages)
             {

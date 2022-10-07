@@ -13,11 +13,6 @@ using System.Net;
 
 namespace Core.Features.Mentors
 {
-    internal class Counter
-    {
-        public static int mentorCount = -1;
-        public static Dictionary<Guid, int> countByCampaign = new();
-    }
     public class MentorsService : IMentorsService
     {
         private readonly IMentorsRepository mentorsRepository;
@@ -27,8 +22,6 @@ namespace Core.Features.Mentors
         private readonly IValidator<CreateMentorRequest> createMentorRequestValidator;
         private readonly IValidator<UpdateMentorRequest> updateMentorRequestValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
-
-        
 
         public MentorsService(
             IMentorsRepository mentorsRepository,
@@ -84,14 +77,13 @@ namespace Core.Features.Mentors
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
+            int mentorCount;
+
             if (campaignId != null)
             {
-                if (!Counter.countByCampaign.ContainsKey(campaignId.Value) || filter.PageNum == 1)
-                {
-                    Counter.countByCampaign[campaignId.Value] = await GetCountByCampaignIdAsync(campaignId.Value);
-                }
-
-                if (Counter.countByCampaign[campaignId.Value] == 0)
+                mentorCount = await GetCountByCampaignIdAsync(campaignId.Value);
+                
+                if (mentorCount == 0)
                 {
                     if (filter.PageNum > PaginationConstants.DefaultPageCount)
                     {
@@ -106,12 +98,9 @@ namespace Core.Features.Mentors
             }
             else
             {
-                if (Counter.mentorCount == -1 || filter.PageNum == 1)
-                {
-                    Counter.mentorCount = await GetCountAsync();
-                }
+                mentorCount = await GetCountAsync();
 
-                if (Counter.mentorCount == 0)
+                if (mentorCount == 0)
                 {
                     if (filter.PageNum > PaginationConstants.DefaultPageCount)
                     {
@@ -125,9 +114,7 @@ namespace Core.Features.Mentors
                 }
             }
 
-            var elementCount = campaignId != null ? Counter.countByCampaign[campaignId.Value] : Counter.mentorCount;
-
-            var totalPages = (elementCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = (mentorCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
 
             if (filter.PageNum > totalPages)
             {
