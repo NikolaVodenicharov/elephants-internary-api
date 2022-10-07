@@ -4,20 +4,11 @@
     {
         public Guid Id { get; set; }
 
-        public string FirstName { get; set; }
-
-        public string LastName { get; set; }
-
-        public string Email { get; set; }
-
         public IEnumerable<Guid> SpecialityIds { get; set; }
 
-        public UpdateMentorRequest(Guid id, string firstName, string lastName, string email, IEnumerable<Guid> specialityIds)
+        public UpdateMentorRequest(Guid id, IEnumerable<Guid> specialityIds)
         {
             Id = id;
-            FirstName = firstName;
-            LastName = lastName;
-            Email = email;
             SpecialityIds = specialityIds;
         }
     }

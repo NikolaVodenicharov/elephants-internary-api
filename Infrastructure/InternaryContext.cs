@@ -6,6 +6,7 @@ using Core.Features.Interns.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using Infrastructure.Common;
+using Core.Features.Users.Entities;
 
 namespace Infrastructure
 {
@@ -18,6 +19,10 @@ namespace Infrastructure
         public DbSet<Status> Status { get; set; }
         public DbSet<Mentor> Mentors { get; set; }
         public DbSet<LearningTopic> LearningTopics { get; set; }
+        
+        public DbSet<User> Users { get; set; }
+
+        public DbSet<Role> Roles { get; set; }
 
         public InternaryContext(DbContextOptions<InternaryContext> options)
             : base(options)

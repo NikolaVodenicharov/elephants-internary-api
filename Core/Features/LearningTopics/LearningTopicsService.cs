@@ -1,5 +1,6 @@
-using Core.Common.Exceptions;
+using Core.Common;
 using Core.Common.Pagination;
+using Core.Features.LearningTopics.Entities;
 using Core.Features.LearningTopics.Interfaces;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.ResponseModels;
@@ -8,7 +9,6 @@ using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using System.Net;
 
 namespace Core.Features.LearningTopics
 {
@@ -50,7 +50,7 @@ namespace Core.Features.LearningTopics
 
             var learningTopicResponse = await learningTopicsRepository.AddAsync(learningTopic);
 
-            LogInformation(nameof(CreateAsync), learningTopicResponse.Id);
+            learningTopicsServiceLogger.LogInformationMethod(nameof(LearningTopicsService), nameof(CreateAsync), true);
 
             return learningTopicResponse.ToLearningTopicSummary();
         }
@@ -61,10 +61,8 @@ namespace Core.Features.LearningTopics
 
             var existingLearningTopic = await learningTopicsRepository.GetByIdAsync(request.Id);
 
-            if(existingLearningTopic is null)
-            {
-                ThrowExceptionIdNotFound(request.Id);
-            }
+            Guard.EnsureNotNull(existingLearningTopic, learningTopicsServiceLogger, nameof(LearningTopicsService),
+                nameof(LearningTopic), request.Id);
 
             var hasNameChanged = !existingLearningTopic.Name.Equals(request.Name);
 
@@ -80,7 +78,8 @@ namespace Core.Features.LearningTopics
 
             await learningTopicsRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(UpdateAsync), existingLearningTopic.Id);
+            learningTopicsServiceLogger.LogInformationMethod(nameof(LearningTopicsService), nameof(UpdateAsync), 
+                nameof(LearningTopic), existingLearningTopic.Id, true);
 
             return existingLearningTopic.ToLearningTopicSummary();
         }
@@ -89,12 +88,11 @@ namespace Core.Features.LearningTopics
         {
             var learningTopicResponse = await learningTopicsRepository.GetByIdAsync(id);
 
-            if(learningTopicResponse is null)
-            {
-                ThrowExceptionIdNotFound(id);
-            }
+            Guard.EnsureNotNull(learningTopicResponse, learningTopicsServiceLogger,
+                nameof(LearningTopicsService), nameof(LearningTopic), id);
 
-            LogInformation(nameof(GetByIdAsync), learningTopicResponse.Id);
+            learningTopicsServiceLogger.LogInformationMethod(nameof(LearningTopicsService), nameof(GetByIdAsync), 
+                nameof(LearningTopic), id, true);
 
             return learningTopicResponse.ToLearningTopicSummary();
         }
@@ -103,7 +101,7 @@ namespace Core.Features.LearningTopics
         {
             var learningTopicsResponse = await learningTopicsRepository.GetAllAsync();
 
-            LogInformation(nameof(GetAllAsync));
+            learningTopicsServiceLogger.LogInformationMethod(nameof(LearningTopicsService), nameof(GetAllAsync), true);
 
             return learningTopicsResponse.ToLearningTopicSummaries();
         }
@@ -112,13 +110,17 @@ namespace Core.Features.LearningTopics
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
+            Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize, learningTopicsServiceLogger,
+                nameof(LearningTopicsService));
+
             var learningTopicCount = await learningTopicsRepository.GetCountAsync();
 
             if (learningTopicCount == 0)
             {
                 if (filter.PageNum > PaginationConstants.DefaultPageCount)
                 {
-                    LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                    learningTopicsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(LearningTopicsService), 
+                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                 }
 
                 var emptyPaginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
@@ -131,7 +133,8 @@ namespace Core.Features.LearningTopics
 
             if (filter.PageNum > totalPages)
             {
-                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+                learningTopicsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(LearningTopicsService), 
+                    totalPages, filter.PageNum.Value);
             }
 
             var learningTopics = await learningTopicsRepository.GetAllAsync(filter);
@@ -139,7 +142,7 @@ namespace Core.Features.LearningTopics
             var paginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
                 learningTopics.ToLearningTopicSummaries(), filter.PageNum.Value, totalPages);
 
-            LogInformation(nameof(GetPaginationAsync));
+            learningTopicsServiceLogger.LogInformationMethod(nameof(LearningTopicsService), nameof(GetPaginationAsync), true);
 
             return paginationResponse;
         }
@@ -150,7 +153,8 @@ namespace Core.Features.LearningTopics
 
             if (nameExists)
             {
-                ThrowExceptionDuplicateName(learningTopicName);
+                learningTopicsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(LearningTopicsService), nameof(LearningTopic),
+                    nameof(LearningTopic.Name), learningTopicName);
             }
         }
 
@@ -158,74 +162,19 @@ namespace Core.Features.LearningTopics
         {
             if(specialityIds.Count() != specialityIds.Distinct().Count())
             {
-                ThrowExceptionDuplicateSpecialities(specialityIds);
+                learningTopicsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(LearningTopicsService), nameof(LearningTopic),
+                    "specialities", specialityIds);
             }
 
             var specialities = await specialitiesRepository.GetByIdsAsync(specialityIds);
             
             if(specialities.Count() != specialityIds.Count())
             {
-                ThrowExceptionSpecialitiesNotExist(specialityIds);
+                learningTopicsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(LearningTopicsService), 
+                    "specialities", specialityIds);
             }
 
             return specialities;
-        }
-
-        private void ThrowExceptionIdNotFound(Guid id)
-        {
-            var idNotFoundMessage = "Requested learning topic was not found!";
-
-            learningTopicsServiceLogger.LogError($"[{nameof(LearningTopicsService)}] {idNotFoundMessage} [{id}]");
-
-            throw new CoreException(idNotFoundMessage, HttpStatusCode.NotFound);
-        }
-
-        private void ThrowExceptionDuplicateSpecialities(ICollection<Guid> specialityIds)
-        {
-            var duplicateSpecialitiesMessage = "Learning Topic cannot have duplicate specialities!";
-
-            learningTopicsServiceLogger.LogError($"[{nameof(LearningTopicsService)}] {duplicateSpecialitiesMessage}"
-                + $" [{String.Join(",", specialityIds)}]");
-
-            throw new CoreException(duplicateSpecialitiesMessage, HttpStatusCode.BadRequest);
-        }
-
-        private void ThrowExceptionSpecialitiesNotExist(ICollection<Guid> specialityIds)
-        {
-            var specialitiesNotFoundMessage = "Not all selected specialities are found.";
-
-            learningTopicsServiceLogger.LogError($"[{nameof(LearningTopicsService)}] {specialitiesNotFoundMessage}"
-                + $" [{String.Join(",", specialityIds)}]");
-
-            throw new CoreException(specialitiesNotFoundMessage, HttpStatusCode.BadRequest);
-        }
-
-        private void ThrowExceptionDuplicateName(string name)
-        {
-            var duplicateNameMessage = "A learning topic with that name already exists.";
-
-            learningTopicsServiceLogger.LogError($"[{nameof(LearningTopicsService)}] {duplicateNameMessage} [{name}]");
-
-            throw new CoreException(duplicateNameMessage, HttpStatusCode.BadRequest);
-        }
-
-        private void LogInformation(string methodName, Guid id)
-        {
-            learningTopicsServiceLogger.LogInformation($"[{nameof(LearningTopicsService)}] {methodName} successfully executed, entity id: {id}.");
-        }
-
-        private void LogInformation(string methodName)
-        {
-            learningTopicsServiceLogger.LogInformation($"[{nameof(LearningTopicsService)}] {methodName} successfully executed.");
-        }
-
-        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
-        {
-            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
-
-            learningTopicsServiceLogger.LogError($"[{nameof(LearningTopicsService)}] {message}");
-
-            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }

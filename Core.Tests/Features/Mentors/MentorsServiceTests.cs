@@ -25,8 +25,7 @@ namespace Core.Tests.Features.Mentors
     public class MentorsServiceTests
     {
         private readonly Guid id = Guid.NewGuid();
-        private readonly string mentorFirstName = "Iliyan";
-        private readonly string mentorLastName = "Dimitrov";
+        private readonly string mentorDisplayName = "Iliyan Dimitrov";
         private readonly string mentorEmail = "iliyan.dimitrov@endava.com";
         private readonly Guid specialityId = Guid.NewGuid();
         private readonly string specialityName = "Backend";
@@ -39,15 +38,6 @@ namespace Core.Tests.Features.Mentors
         private List<Speciality> specialities;
         private List<Guid> specialityIds;
         private List<Campaign> campaigns;
-
-        public static IEnumerable<object[]> invalidNames = new List<object[]>
-        {
-            new object[] { TestHelper.GenerateString(MentorValidationConstraints.NamesMinLength - 1) },
-            new object[] { TestHelper.GenerateString(MentorValidationConstraints.NamesMaxLength + 1) },
-            new object[] { "Name1" },
-            new object[] { " Name" },
-            new object[] { "Name " },
-        };
 
         public static IEnumerable<object[]> invalidEmails = new List<object[]>
         {
@@ -106,8 +96,7 @@ namespace Core.Tests.Features.Mentors
             returnMentor = new Mentor()
             {
                 Id = id,
-                FirstName = mentorFirstName,
-                LastName = mentorLastName,
+                DisplayName = mentorDisplayName,
                 Email = mentorEmail,
                 Specialities = specialities,
                 Campaigns = campaigns
@@ -164,8 +153,7 @@ namespace Core.Tests.Features.Mentors
 
             //Assert
             Assert.NotEqual(Guid.Empty, response.Id);
-            Assert.Equal(mentorFirstName, response.FirstName);
-            Assert.Equal(mentorLastName, response.LastName);
+            Assert.Equal(mentorDisplayName, response.DisplayName);
             Assert.Equal(mentorEmail, response.Email);
             Assert.NotNull(response.Specialities);
         }
@@ -191,26 +179,11 @@ namespace Core.Tests.Features.Mentors
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
-        [Theory]
-        [MemberData(nameof(invalidNames))]
-        public async Task CreateAsync_WhenFirstNameIsInvalid_ShouldThrowException(string invalidFirstName)
+        [Fact]
+        public async Task CreateAsync_WhenDisplayNameIsEmpty_ShouldThrowException()
         {
             //Arrange
-            var request = new CreateMentorRequest(invalidFirstName, mentorLastName, "test@example.com", specialityIds);
-
-            //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Theory]
-        [MemberData(nameof(invalidNames))]
-        public async Task CreateAsync_WhenLastNameIsInvalid_ShouldThrowException(string invalidLastName)
-        {
-            //Arrange
-            var request = new CreateMentorRequest(mentorFirstName, invalidLastName, "test@example.com", specialityIds);
+            var request = new CreateMentorRequest(string.Empty, mentorEmail, specialityIds);
 
             //Act
             var action = async () => await mentorsServiceMock.CreateAsync(request);
@@ -224,7 +197,7 @@ namespace Core.Tests.Features.Mentors
         public async Task CreateAsync_WhenEmailIsIncorrectFormat_ShouldThrowException(string invalidEmail)
         {
             //Arrange
-            var request = new CreateMentorRequest(mentorFirstName, mentorLastName, invalidEmail, specialityIds);
+            var request = new CreateMentorRequest(mentorDisplayName, invalidEmail, specialityIds);
 
             //Act
             var action = async () => await mentorsServiceMock.CreateAsync(request);
@@ -278,8 +251,7 @@ namespace Core.Tests.Features.Mentors
             //Assert
             Assert.NotNull(response);
             Assert.NotEqual(Guid.Empty, response.Id);
-            Assert.Equal(request.FirstName, response.FirstName);
-            Assert.Equal(request.LastName, response.LastName);
+            Assert.Equal(request.DisplayName, response.DisplayName);
             Assert.Equal(request.Email, response.Email);
             Assert.NotEmpty(response.Specialities);
             Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
@@ -313,9 +285,6 @@ namespace Core.Tests.Features.Mentors
             //Assert
             Assert.NotNull(response);
             Assert.Equal(request.Id, response.Id);
-            Assert.Equal(request.FirstName, response.FirstName);
-            Assert.Equal(request.LastName, response.LastName);
-            Assert.Equal(request.Email, response.Email);
             Assert.NotNull(response.Specialities);
             Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
         }
@@ -357,121 +326,8 @@ namespace Core.Tests.Features.Mentors
             //Assert
             Assert.NotNull(response);
             Assert.Equal(request.Id, response.Id);
-            Assert.Equal(request.FirstName, response.FirstName);
-            Assert.Equal(request.LastName, response.LastName);
-            Assert.Equal(request.Email, response.Email);
             Assert.NotNull(response.Specialities);
             Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WhenUpdatedEmailIsUsed_ShouldThrowException()
-        {
-            //Arrange
-            var request = CreateUpdateMentorRequest();
-            request.Email = "used.email@test.com";
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
-
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(true);
-
-            //Act
-            var action = async () => await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WhenUpdatedEmailNotUsed_ShouldUpdate()
-        {
-            //Arrange
-            var updatedEmail = "john.doe@endava.com";
-            var request = CreateUpdateMentorRequest();
-
-            var updatedMentor = new Mentor()
-            { 
-                Id = id,
-                FirstName = mentorFirstName,
-                LastName = mentorLastName,
-                Email = updatedEmail,
-                Specialities = specialities
-            };
-
-            request.Email = updatedEmail;
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
-
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(false);
-
-            //Act
-            var response = await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            Assert.NotNull(response);
-            Assert.Equal(updatedEmail, response.Email);
-        }
-
-        [Theory]
-        [MemberData(nameof(invalidNames))]
-        public async Task UpdateAsync_WhenFirstNameIsInvalid_ShouldThrowException(string invalidFirstName)
-        {
-            //Arrange
-            var request = CreateUpdateMentorRequest();
-            request.FirstName = invalidFirstName;
-
-            //Act
-            var action = async () => await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-
-        }
-
-        [Theory]
-        [MemberData(nameof(invalidNames))]
-        public async Task UpdateAsync_WhenLastNameIsInvalid_ShouldThrowException(string invalidLastName)
-        {
-            //Arrange
-            var request = CreateUpdateMentorRequest();
-            request.LastName = invalidLastName;
-
-            //Act
-            var action = async () => await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Theory]
-        [MemberData(nameof(invalidEmails))]
-        public async Task UpdateAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
-        {
-            //Arrange
-            var request = CreateUpdateMentorRequest();
-            request.Email = invalidEmail;
-
-            //Act
-            var action = async () => await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         #endregion
@@ -492,8 +348,7 @@ namespace Core.Tests.Features.Mentors
             //Assert
             Assert.NotNull(response);
             Assert.Equal(id, response.Id);
-            Assert.Equal(mentorFirstName, response.FirstName);
-            Assert.Equal(mentorLastName, response.LastName);
+            Assert.Equal(mentorDisplayName, response.DisplayName);
             Assert.Equal(mentorEmail, response.Email);
         }
 
@@ -625,6 +480,36 @@ namespace Core.Tests.Features.Mentors
             Assert.Empty(actualResponse.Content);
         }
 
+        [Fact]
+        public async Task GetPaginationAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
+        {
+            //Arrange
+            var pageNum = 10;
+            var pageSize = 10;
+            var count = 1;
+
+            var mentorList = new List<Mentor>()
+            {
+                returnMentor
+            };
+
+            var filter = new PaginationRequest(pageNum, pageSize);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
+                .ReturnsAsync(mentorList);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(count);
+
+            //Act
+            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
         #endregion
 
         #region GetAllAsyncTests
@@ -646,8 +531,7 @@ namespace Core.Tests.Features.Mentors
             var mentor2 = new Mentor()
             {
                 Id = Guid.NewGuid(),
-                FirstName = "Ab",
-                LastName = "Cd",
+                DisplayName = "Ab Cd",
                 Email = "abcd@gmail.com",
                 Specialities = new List<Speciality>(),
                 Campaigns = new List<Campaign>()
@@ -790,8 +674,7 @@ namespace Core.Tests.Features.Mentors
             var mentor = new Mentor()
             {
                 Id = request.PersonId,
-                FirstName = mentorFirstName,
-                LastName = mentorLastName,
+                DisplayName = mentorDisplayName,
                 Email = mentorEmail,
                 Campaigns = new List<Campaign>() { campaign },
                 Specialities = new List<Speciality>()
@@ -827,8 +710,7 @@ namespace Core.Tests.Features.Mentors
             var mentor = new Mentor()
             {
                 Id = request.PersonId,
-                FirstName = mentorFirstName,
-                LastName = mentorLastName,
+                DisplayName = mentorDisplayName,
                 Email = mentorEmail,
                 Campaigns = new List<Campaign>(),
                 Specialities = new List<Speciality>()
@@ -857,12 +739,12 @@ namespace Core.Tests.Features.Mentors
         private CreateMentorRequest CreateValidCreateMentorRequest()
         {
             //Arrange
-            return new CreateMentorRequest(mentorFirstName, mentorLastName, mentorEmail, specialityIds);
+            return new CreateMentorRequest(mentorDisplayName, mentorEmail, specialityIds);
         }
 
         private UpdateMentorRequest CreateUpdateMentorRequest()
         {
-            return new UpdateMentorRequest(id, mentorFirstName, mentorLastName, mentorEmail, specialityIds);
+            return new UpdateMentorRequest(id, specialityIds);
         }
     }
 }

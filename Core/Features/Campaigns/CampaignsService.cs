@@ -1,5 +1,7 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
+using Core.Common.Exceptions;
 using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
@@ -39,43 +41,34 @@ namespace Core.Features.Campaigns
 
             if (isExist)
             {
-                var message = $"Campaign with name {model.Name} already exist.";
-
-                campaignsServiceLogger.LogError($"[CampaignsService] {message}");
-
-                throw new CoreException(message, HttpStatusCode.BadRequest);
+                campaignsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(CampaignsService), nameof(Campaign),
+                    nameof(Campaign.Name), model.Name);
             }
 
             var campaign = model.ToCampaign();
 
             var createdCampaign = await campaignsRepository.AddAsync(campaign);
 
-            campaignsServiceLogger.LogInformation($"[CampaignsService] Create new campaign with Id {createdCampaign.Id} complete.");
+            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(CreateAsync), true);
 
             return createdCampaign.ToCampaignSummary();
         }
 
         public async Task<CampaignSummaryResponse> UpdateAsync(UpdateCampaignRequest model)
         {
-            campaignsServiceLogger.LogInformation($"[CampaignsService] Executing update of campaign with Id {model.Id}.");
-
             await updateCampaignValidator.ValidateAndThrowAsync(model);
 
             var existingCampaign = await campaignsRepository.GetByIdAsync(model.Id);
 
-            if (existingCampaign is null)
-            {
-                campaignsServiceLogger.LogError($"[CampaignsService] Campaign with Id {model.Id} was not found.");
-
-                throw new CoreException("Requested campaign couldn't be found.", HttpStatusCode.NotFound);
-            }
+            Guard.EnsureNotNull(existingCampaign, campaignsServiceLogger,
+                nameof(CampaignsService), nameof(Campaign), model.Id);
 
             var isCampaignCompleted = IsCampaignCompleted(existingCampaign.IsActive, existingCampaign.EndDate);
             
             if (isCampaignCompleted)
             {
-                campaignsServiceLogger.LogError($"[CampaignsService] Campaign with Id {model.Id} is completed " +
-                    $"and can't be updated.");
+                campaignsServiceLogger.LogError("[{ServiceName}] Campaign with Id {Id} is completed " +
+                    "and can't be updated.", nameof(CampaignsService), model.Id);
 
                 throw new CoreException("Completed campaigns can't be updated.", HttpStatusCode.BadRequest);
             }
@@ -88,11 +81,8 @@ namespace Core.Features.Campaigns
 
                 if(existsByName)
                 {
-                    var message = $"Campaign with name {model.Name} already exists.";
-
-                    campaignsServiceLogger.LogError($"[CampaignsService] {message}");
-
-                    throw new CoreException(message, HttpStatusCode.BadRequest);
+                    campaignsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(CampaignsService), nameof(Campaign),
+                        nameof(Campaign.Name), model.Name);
                 }
             }
 
@@ -102,8 +92,9 @@ namespace Core.Features.Campaigns
             existingCampaign.IsActive = model.IsActive;
 
             await campaignsRepository.SaveTrackingChangesAsync();
-            
-            campaignsServiceLogger.LogInformation($"[CampaignsService] Update of campaign with {model.Id} complete.");
+
+            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(UpdateAsync), 
+                nameof(Campaign), model.Id, true);
 
             return existingCampaign.ToCampaignSummary();
         }
@@ -112,13 +103,17 @@ namespace Core.Features.Campaigns
         {
             await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
 
+            Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize, campaignsServiceLogger,
+                nameof(CampaignsService));
+
             var campaignCount = await GetCountAsync();
 
             if (campaignCount == 0)
             {
                 if (filter.PageNum > PaginationConstants.DefaultPageCount)
                 {
-                    LogErrorAndThrowExceptionPageCount(PaginationConstants.DefaultPageCount, filter.PageNum.Value);
+                    campaignsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(CampaignsService), 
+                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                 }
 
                 var emptyPaginationResponse = new PaginationResponse<CampaignSummaryResponse>(
@@ -131,13 +126,16 @@ namespace Core.Features.Campaigns
 
             if (filter.PageNum > totalPages)
             {
-                LogErrorAndThrowExceptionPageCount(totalPages, filter.PageNum.Value);
+                campaignsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(CampaignsService), 
+                    totalPages, filter.PageNum.Value);
             }
 
             var campaigns = await campaignsRepository.GetAllAsync(filter);
 
             var paginationResponse = new PaginationResponse<CampaignSummaryResponse>(
                 campaigns.ToCampaignSummaries(), filter.PageNum.Value, totalPages);
+
+            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(GetAllAsync), true);
 
             return paginationResponse;
         }
@@ -146,12 +144,11 @@ namespace Core.Features.Campaigns
         {
             var campaign = await campaignsRepository.GetByIdAsync(campaignId);
 
-            if (campaign is null)
-            {
-                campaignsServiceLogger.LogError($"[CampaignsService] Campaign with Id {campaignId} was not found.");
+            Guard.EnsureNotNull(campaign, campaignsServiceLogger, nameof(CampaignsService), nameof(Campaign),
+                campaignId);
 
-                throw new CoreException("Requested campaign couldn't be found.", HttpStatusCode.NotFound);
-            }
+            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(GetByIdAsync),
+                nameof(Campaign), campaignId, true);
 
             return campaign.ToCampaignSummary();
         }
@@ -164,15 +161,6 @@ namespace Core.Features.Campaigns
         private static bool IsCampaignCompleted(bool isActive, DateTime endDate)
         { 
             return !isActive && DateTime.Compare(DateTime.Today, endDate) > 0;
-        }
-
-        private void LogErrorAndThrowExceptionPageCount(int totalPages, int pageNum)
-        {
-            var message = $"Total number of pages is {totalPages} and requested page number is {pageNum}";
-
-            campaignsServiceLogger.LogError($"[{nameof(CampaignsService)}] {message}");
-
-            throw new CoreException(message, HttpStatusCode.BadRequest);
         }
     }
 }

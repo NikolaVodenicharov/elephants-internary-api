@@ -14,14 +14,8 @@ namespace Infrastructure.Features.Mentors
             builder.HasKey(m => m.Id);
 
             builder
-                .Property(m => m.FirstName)
-                .IsRequired(true)
-                .HasMaxLength(MentorValidationConstraints.NamesMaxLength);
-
-            builder
-                .Property(m => m.LastName)
-                .IsRequired(true)
-                .HasMaxLength(MentorValidationConstraints.NamesMaxLength);
+                .Property(m => m.DisplayName)
+                .IsRequired(true);
 
             builder
                 .Property(m => m.Email)

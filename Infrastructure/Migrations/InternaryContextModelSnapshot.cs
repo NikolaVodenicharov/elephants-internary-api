@@ -248,22 +248,16 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -293,6 +287,64 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Specialties");
+                });
+
+            modelBuilder.Entity("Core.Features.Users.Entities.Role", b =>
+                {
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("RoleId");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = 0,
+                            Name = "Administrator"
+                        },
+                        new
+                        {
+                            RoleId = 1,
+                            Name = "Mentor"
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            Name = "Intern"
+                        });
+                });
+
+            modelBuilder.Entity("Core.Features.Users.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("MentorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MentorId")
+                        .IsUnique()
+                        .HasFilter("[MentorId] IS NOT NULL");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("LearningTopicSpecialities", b =>
@@ -386,6 +438,23 @@ namespace Infrastructure.Migrations
                     b.Navigation("InternCampaign");
 
                     b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("Core.Features.Users.Entities.User", b =>
+                {
+                    b.HasOne("Core.Features.Mentors.Entities.Mentor", "Mentor")
+                        .WithOne()
+                        .HasForeignKey("Core.Features.Users.Entities.User", "MentorId");
+
+                    b.HasOne("Core.Features.Users.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Mentor");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("LearningTopicSpecialities", b =>

@@ -2,18 +2,14 @@
 {
     public class CreateMentorRequest
     {
-        public string FirstName { get; set; }
-
-        public string LastName { get; set; }
-
+        public string DisplayName { get; set; }
         public string Email { get; set; }
 
         public IEnumerable<Guid> SpecialityIds { get; set; }
 
-        public CreateMentorRequest(string firstName, string lastName, string email, IEnumerable<Guid> specialityIds)
+        public CreateMentorRequest(string displayName, string email, IEnumerable<Guid> specialityIds)
         {
-            FirstName = firstName;
-            LastName = lastName;
+            DisplayName = displayName;
             Email = email;
             SpecialityIds = specialityIds;
         }

@@ -7,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var appSettings = builder.Configuration.GetSection(ApplicationSettings.SectionName).Get<ApplicationSettings>();
 var azureSettings = builder.Configuration.GetSection(AzureSettings.SectionName).Get<AzureSettings>();
+var graphSettings = builder.Configuration.GetSection(GraphSettings.SectionName).Get<GraphSettings>();
+
+builder.ConfigureServices();
 
 builder.Services.CustomizeIdentity(builder.Configuration);
 
@@ -17,9 +20,11 @@ builder.Services.CustomizeSwagger(appSettings);
 builder.Services.ConfigureAndMigrateDatabase(builder.Configuration);
 
 builder.Services.CustomizeCorsPolicy(appSettings);
+builder.Services.AddGraphApi(graphSettings);
 builder.Services.CustomizeDependencies();
 builder.Services.CustomizeRouting();
-builder.SetupLogger();
+
+builder.SetupLogger(builder.Environment.IsProduction());
 
 
 var app = builder.Build();

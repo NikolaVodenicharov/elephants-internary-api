@@ -10,23 +10,9 @@ namespace Core.Features.Mentors.Support
         {
             RuleFor(m => m.Id)
                 .NotEqual(Guid.Empty);
-
-            RuleFor(m => m.FirstName)
-                .NotEmpty()
-                .MinimumLength(MentorValidationConstraints.NamesMinLength)
-                .MaximumLength(MentorValidationConstraints.NamesMaxLength)
-                .Matches(RegularExpressionPatterns.PersonNamesPattern);
-
-            RuleFor(m => m.LastName)
-                .NotEmpty()
-                .MinimumLength(MentorValidationConstraints.NamesMinLength)
-                .MaximumLength(MentorValidationConstraints.NamesMaxLength)
-                .Matches(RegularExpressionPatterns.PersonNamesPattern);
-
-            RuleFor(m => m.Email)
-                .NotEmpty()
-                .Matches(RegularExpressionPatterns.EmailPattern)
-                .EmailAddress();
+            
+            RuleFor(m => m.SpecialityIds)
+                .NotEmpty();
         }
     }
 }

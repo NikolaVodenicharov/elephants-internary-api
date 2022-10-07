@@ -6,10 +6,8 @@ namespace Core.Features.Mentors.ResponseModels
     public class MentorSummaryResponse
     {
         public Guid Id { get; set; }
-
-        public string FirstName { get; set; }
-
-        public string LastName { get; set; }
+        
+        public string DisplayName { get; set; }
 
         public string Email { get; set; }
 
@@ -17,13 +15,12 @@ namespace Core.Features.Mentors.ResponseModels
 
         public IEnumerable<CampaignSummaryResponse> Campaigns { get; set; }
 
-        public MentorSummaryResponse(Guid id, string firstName, string lastName, string email, 
+        public MentorSummaryResponse(Guid id, string displayName, string email, 
             ICollection<SpecialitySummaryResponse> specialities,
             IEnumerable<CampaignSummaryResponse> campaigns)
         {
             Id = id;
-            FirstName = firstName;
-            LastName = lastName;
+            DisplayName = displayName;
             Email = email;
             Specialities = specialities;
             Campaigns = campaigns;

@@ -1,6 +1,5 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
 using Core.Common.Pagination;
-using Core.Features.Campaigns.Entities;
 using Core.Features.Interns.Entities;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
@@ -8,8 +7,6 @@ using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
 
 namespace Core.Features.Interns
 {
@@ -59,7 +56,7 @@ namespace Core.Features.Interns
 
             var internStoredResponse = await internsRepository.AddAsync(intern);
 
-            LogInformation(nameof(CreateAsync));
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(CreateAsync), true);
 
             return internStoredResponse;
         }
@@ -77,7 +74,8 @@ namespace Core.Features.Interns
 
             await internsRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(UpdateAsync));
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(UpdateAsync), 
+                nameof(Intern), updateInternRequest.Id, true);
 
             return intern.ToInternSummaryResponse();
         }
@@ -88,18 +86,19 @@ namespace Core.Features.Interns
 
             var internPaginationResponse = await internsRepository.GetAllAsync(paginationRequest);
 
-            LogInformation(nameof(GetAllAsync));
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetAllAsync), true);
 
             return internPaginationResponse;
         }
 
-        public async Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
+        public async Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, 
+            Guid campaignId)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
 
             var internsByCampaignPaginationResponse = await internsRepository.GetAllByCampaignIdAsync(paginationRequest, campaignId);
 
-            LogInformation(nameof(GetAllByCampaignIdAsync));
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetAllByCampaignIdAsync), true);
 
             return internsByCampaignPaginationResponse;
         }
@@ -108,9 +107,11 @@ namespace Core.Features.Interns
         {
             var internDetailsResponse = await internsRepository.GetDetailsByIdAsync(id);
 
-            EnsureNotNull(internDetailsResponse);
+            Guard.EnsureNotNull(internDetailsResponse, internsServiceLogger,
+                nameof(InternsService), nameof(Intern), id);
 
-            LogInformation(nameof(CreateAsync));
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetDetailsByIdAsync),
+                nameof(Intern), id, true);
 
             return internDetailsResponse;
         }
@@ -119,7 +120,8 @@ namespace Core.Features.Interns
         {
             var intern = await internsRepository.GetByIdAsync(id);
 
-            EnsureNotNull(intern);
+            Guard.EnsureNotNull(intern, internsServiceLogger, nameof(InternsService),
+                nameof(Intern), id);
 
             return intern;
         }
@@ -144,38 +146,9 @@ namespace Core.Features.Interns
 
             if (emailExist)
             {
-                var message = $"Email {email} already exist.";
-
-                LogError(message);
-
-                throw new CoreException(message, HttpStatusCode.BadRequest);
+                internsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(InternsService), nameof(Intern),
+                    nameof(Intern.PersonalEmail), email);
             }
-        }
-
-        private void EnsureNotNull<T>([NotNull] T? entity)
-        {
-            if (entity != null)
-            {
-                return;
-            }
-
-            var idNotFoundMessage = $"Requested model with the given ID was not found.";
-
-            LogError(idNotFoundMessage);
-
-            internsServiceLogger.LogError("[{ServiceName}] {idNotFoundMessage}", nameof(InternsService), idNotFoundMessage);
-
-            throw new CoreException(idNotFoundMessage, HttpStatusCode.NotFound);
-        }
-
-        private void LogInformation(string methodName)
-        {
-            internsServiceLogger.LogInformation("[{ServiceName}] {methodName} successfully executed.", nameof(InternsService), methodName);
-        }
-
-        private void LogError(string message)
-        {
-            internsServiceLogger.LogError("[{ServiceName}] {message}", nameof(InternsService), message);
         }
     }
 }

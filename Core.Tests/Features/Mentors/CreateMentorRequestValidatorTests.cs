@@ -11,21 +11,11 @@ namespace Core.Tests.Features.Mentors
     {
         CreateMentorRequestValidator validator = new();
 
-        private readonly string firstName = "Ivan";
-        private readonly string lastName = "Ivanov";
+        private readonly string displayName = "Ivan Ivanov";
         private readonly string email = "Ivan.Ivanov@endava.com";
         private List<Guid> specialityIds = new List<Guid>()
         {
             Guid.NewGuid()
-        };
-
-        public static IEnumerable<object[]> invalidNames = new List<object[]>
-        {
-            new object[] { TestHelper.GenerateString(MentorValidationConstraints.NamesMinLength - 1) },
-            new object[] { TestHelper.GenerateString(MentorValidationConstraints.NamesMaxLength + 1) },
-            new object[] { "Name1" },
-            new object[] { " Name" },
-            new object[] { "Name " },
         };
 
         public static IEnumerable<object[]> invalidEmails = new List<object[]>
@@ -41,16 +31,6 @@ namespace Core.Tests.Features.Mentors
             new object[] { "invalidexample.co_ukkkk" },
         };
 
-        public static IEnumerable<object[]> validNames = new List<object[]>
-        {
-            new object[] { TestHelper.GenerateString(MentorValidationConstraints.NamesMinLength) },
-            new object[] { TestHelper.GenerateString(MentorValidationConstraints.NamesMaxLength) },
-            new object[] { "John" },
-            new object[] { "Ana-Maria" },
-            new object[] { "Mary Alexandra" },
-        };
-
-
         public static IEnumerable<object[]> validEmails = new List<object[]>
         {
             new object[] { "user.example@test.com" },
@@ -58,33 +38,31 @@ namespace Core.Tests.Features.Mentors
             new object[] { "random123@example.gov.in" },
         };
 
-        [Theory]
-        [MemberData(nameof(invalidNames))]
-        public void Validator_WhenFirstNameIsInvalid_ShouldHaveError(string invalidFirstName)
+        [Fact]
+        public void Validator_WhenDisplayNameIsNotEmpty_ShouldNotHaveError()
         {
-            var request = new CreateMentorRequest(invalidFirstName, lastName, email, specialityIds);
+            var request = new CreateMentorRequest(displayName, email, specialityIds);
 
             validator
                 .TestValidate(request)
-                .ShouldHaveValidationErrorFor(c => c.FirstName);
+                .ShouldNotHaveValidationErrorFor(c => c.DisplayName);
         }
 
-        [Theory]
-        [MemberData(nameof(invalidNames))]
-        public void Validator_WhenLastNameIsInvalid_ShouldHaveError(string invalidLastName)
+        [Fact]
+        public void Validator_WhenDisplayNameIsEmpty_ShouldHaveError()
         {
-            var request = new CreateMentorRequest(firstName, invalidLastName, email, specialityIds);
+            var request = new CreateMentorRequest(string.Empty, email, specialityIds);
 
             validator
                 .TestValidate(request)
-                .ShouldHaveValidationErrorFor(c => c.LastName);
+                .ShouldHaveValidationErrorFor(c => c.DisplayName);
         }
 
         [Theory]
         [MemberData(nameof(invalidEmails))]
         public void Validator_WhenEmailIsInvalid_ShouldHaveError(string invalidEmail)
         {
-            var request = new CreateMentorRequest(firstName, lastName, invalidEmail, specialityIds);
+            var request = new CreateMentorRequest(displayName, invalidEmail, specialityIds);
 
             validator
                 .TestValidate(request)
@@ -92,32 +70,10 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Theory]
-        [MemberData(nameof(validNames))]
-        public void Validator_WhenFirstNameIsValid_ShouldNotHaveError(string validFirstName)
-        {
-            var request = new CreateMentorRequest(validFirstName, lastName, email, specialityIds);
-
-            validator
-                .TestValidate(request)
-                .ShouldNotHaveValidationErrorFor(m => m.FirstName);
-        }
-
-        [Theory]
-        [MemberData(nameof(validNames))]
-        public void Validator_WhenLastNameIsValid_ShouldNotHaveError(string validLastName)
-        {
-            var request = new CreateMentorRequest(firstName, validLastName, email, specialityIds);
-
-            validator
-                .TestValidate(request)
-                .ShouldNotHaveValidationErrorFor(m => m.LastName);
-        }
-
-        [Theory]
         [MemberData(nameof(validEmails))]
         public void Validator_WhenEmailIsValid_ShouldNotHaveError(string validEmail)
         {
-            var request = new CreateMentorRequest(firstName, lastName, validEmail, specialityIds);
+            var request = new CreateMentorRequest(displayName, validEmail, specialityIds);
 
             validator
                 .TestValidate(request)

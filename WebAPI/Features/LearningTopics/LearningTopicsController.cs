@@ -9,6 +9,8 @@ using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
 using Core.Common.Pagination;
+using Core.Common;
+using Core.Features.LearningTopics.Entities;
 
 namespace WebAPI.Features.LearningTopics
 {
@@ -40,7 +42,7 @@ namespace WebAPI.Features.LearningTopics
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> CreateAsync(CreateLearningTopicRequest request)
         {
-            LogInformation(nameof(CreateAsync));
+            learningTopicsControllerLogger.LogInformationMethod(nameof(LearningTopicsController), nameof(CreateAsync));
 
             await createLearningTopicValidator.ValidateAndThrowAsync(request);
 
@@ -55,13 +57,12 @@ namespace WebAPI.Features.LearningTopics
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateLearningTopicRequest request)
         {
-            LogInformation(nameof(UpdateAsync), request.Id);
+            learningTopicsControllerLogger.LogInformationMethod(nameof(LearningTopicsController), nameof(UpdateAsync), nameof(LearningTopic), request.Id);
 
             if (id != request.Id)
             {
-                learningTopicsControllerLogger.LogError($"[{nameof(LearningTopicsController)}] Invalid Learning Topic Id ({id}) in {nameof(UpdateAsync)} method.");
-
-                throw new CoreException($"Invalid Id of Learning topic provided in request data.", HttpStatusCode.BadRequest);
+                learningTopicsControllerLogger.LogErrorAndThrowExceptionIdMismatch(nameof(LearningTopicsController), 
+                    request.Id, id);
             }
 
             await updateLearningTopicValidator.ValidateAndThrowAsync(request);
@@ -76,7 +77,7 @@ namespace WebAPI.Features.LearningTopics
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
-            LogInformation(nameof(GetByIdAsync), id);
+            learningTopicsControllerLogger.LogInformationMethod(nameof(LearningTopicsController), nameof(GetByIdAsync), nameof(LearningTopic), id);
 
             var learningTopicResult = await learningTopicsService.GetByIdAsync(id);
 
@@ -89,10 +90,10 @@ namespace WebAPI.Features.LearningTopics
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
-            if (pageNum == null && pageSize == null)
-            {
-                LogInformation(nameof(GetAllAsync));
+            learningTopicsControllerLogger.LogInformationMethod(nameof(LearningTopicsController), nameof(GetAllAsync));
 
+            if (pageNum == null && pageSize == null)
+            {     
                 var learningTopicSummaries = await learningTopicsService.GetAllAsync();
 
                 return CoreResult.Success(learningTopicSummaries);
@@ -102,22 +103,9 @@ namespace WebAPI.Features.LearningTopics
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            learningTopicsControllerLogger.LogInformation($"[{nameof(LearningTopicsController)}] Get {pageSize} " +
-                $"learning topics from page {pageNum}");
-
             var paginationResponse = await learningTopicsService.GetPaginationAsync(filter);
 
             return CoreResult.Success(paginationResponse);
-        }
-
-        private void LogInformation(string methodName, Guid id)
-        {
-            learningTopicsControllerLogger.LogInformation($"[{nameof(LearningTopicsController)}] {methodName} executing, entity id: {id}.");
-        }
-
-        private void LogInformation(string methodName)
-        {
-            learningTopicsControllerLogger.LogInformation($"[{nameof(LearningTopicsController)}] {methodName} executing.");
         }
     }
 }

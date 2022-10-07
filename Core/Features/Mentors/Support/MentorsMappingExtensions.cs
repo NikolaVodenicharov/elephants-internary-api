@@ -1,7 +1,6 @@
 ﻿using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
-using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialities.Support;
 using Core.Features.Campaigns.Support;
 
@@ -13,9 +12,8 @@ namespace Core.Features.Mentors.Support
         {
             var mentor = new Mentor()
             {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
+                DisplayName = request.DisplayName,
+                Email = request.Email
             };
 
             return mentor;
@@ -23,7 +21,7 @@ namespace Core.Features.Mentors.Support
 
         public static MentorSummaryResponse ToMentorSummaryResponse(this Mentor mentor)
         {
-            var response = new MentorSummaryResponse(mentor.Id, mentor.FirstName, mentor.LastName, mentor.Email, 
+            var response = new MentorSummaryResponse(mentor.Id, mentor.DisplayName, mentor.Email, 
                 mentor.Specialities.ToSpecialitySummaryResponses().ToList(),
                 mentor.Campaigns.ToCampaignSummaries().ToList());
 

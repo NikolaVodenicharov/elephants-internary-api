@@ -1,4 +1,5 @@
-﻿using Core.Common.Exceptions;
+﻿using Core.Common;
+using Core.Common.Exceptions;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
 using Core.Features.Interns.Entities;
@@ -60,7 +61,7 @@ namespace Core.Features.Interns
 
             await internsRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(AddInternCampaignAsync));
+            internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(AddInternCampaignAsync), true);
 
             return internCampaign.ToInternCampaignResponse();
         }
@@ -77,7 +78,7 @@ namespace Core.Features.Interns
 
             await internsRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(AddStateAsync));
+            internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(AddStateAsync), true);
 
             return state.ToStateResponse();
         }
@@ -94,7 +95,7 @@ namespace Core.Features.Interns
 
             await internsRepository.SaveTrackingChangesAsync();
 
-            LogInformation(nameof(UpdateInternCampaignAsync));
+            internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(UpdateInternCampaignAsync), true);
 
             return internCampaign.ToInternCampaignResponse();
         }
@@ -114,7 +115,7 @@ namespace Core.Features.Interns
                 States = new List<State>() { state }
             };
 
-            LogInformation(nameof(CreateInternCampaignAsync));
+            internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(CreateInternCampaignAsync), true);
 
             return internIntersection;
         }
@@ -123,12 +124,12 @@ namespace Core.Features.Interns
         {
             var statusResponseCollection = await internsRepository.GetAllStatusAsync();
 
-            LogInformation(nameof(GetAllStatusAsync));
+            internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(GetAllStatusAsync), true);
 
             return statusResponseCollection;
         }
 
-        private State CreateState(StatusEnum statusId, string justification)
+        private static State CreateState(StatusEnum statusId, string justification)
         {
             var state = new State()
             {
@@ -144,7 +145,8 @@ namespace Core.Features.Interns
         {
             var intern = await internsRepository.GetByIdAsync(id);
 
-            EnsureNotNull(intern);
+            Guard.EnsureNotNull(intern, internCampaignsServiceLogger, nameof(InternCampaignsService), 
+                nameof(Intern), id);
 
             return intern;
         }
@@ -153,7 +155,8 @@ namespace Core.Features.Interns
         {
             var campaign = await campaignRepository.GetByIdAsync(id);
 
-            EnsureNotNull(campaign);
+            Guard.EnsureNotNull(campaign, internCampaignsServiceLogger, nameof(InternCampaignsService),
+                nameof(Campaign), id);
 
             return campaign;
         }
@@ -162,7 +165,8 @@ namespace Core.Features.Interns
         {
             var speciality = await specialitiesRepository.GetByIdAsync(id);
 
-            EnsureNotNull(speciality);
+            Guard.EnsureNotNull(speciality, internCampaignsServiceLogger, nameof(InternCampaignsService),
+                nameof(Speciality), id);
 
             return speciality;
         }
@@ -171,12 +175,13 @@ namespace Core.Features.Interns
         {
             var internCampaign = await internsRepository.GetInternCampaignByIdsAsync(internId, campaignId);
 
-            EnsureNotNull(internCampaign);
+            Guard.EnsureNotNull(internCampaign, internCampaignsServiceLogger, nameof(InternCampaignsService),
+                nameof(InternCampaign));
 
             return internCampaign;
         }
 
-        private void AddInternCampaingToIntern(Intern intern, InternCampaign internCampaign)
+        private static void AddInternCampaingToIntern(Intern intern, InternCampaign internCampaign)
         {
             if (intern.InternCampaigns == null)
             {
@@ -210,27 +215,6 @@ namespace Core.Features.Interns
 
                 throw new CoreException(internInCampaignMessage, HttpStatusCode.BadRequest);
             }
-        }
-
-        private void EnsureNotNull<T>([NotNull] T? entity)
-        {
-            if (entity != null)
-            {
-                return;
-            }
-
-            var idNotFoundMessage = $"Requested model with the given ID was not found.";
-
-            LogError(idNotFoundMessage);
-
-            internCampaignsServiceLogger.LogError("[{ServiceName}] {idNotFoundMessage}", nameof(InternsService), idNotFoundMessage);
-
-            throw new CoreException(idNotFoundMessage, HttpStatusCode.NotFound);
-        }
-
-        private void LogInformation(string methodName)
-        {
-            internCampaignsServiceLogger.LogInformation("[{ServiceName}] {methodName} successfully executed.", nameof(InternCampaignsService), methodName);
         }
 
         private void LogError(string message)

@@ -1,7 +1,9 @@
 ﻿namespace WebAPI.Common.Extensions.Middlewares;
 public static class ConfigureLoggerMiddleware
 {
-    public static void SetupLogger(this WebApplicationBuilder builder)
+    private const long maxFileSize = 10 * 1024 * 1024; //10 MB
+
+    internal static void SetupLogger(this WebApplicationBuilder builder, bool isProduction)
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var logFolder = "Logs";
@@ -11,9 +13,14 @@ public static class ConfigureLoggerMiddleware
         builder.Services.AddLogging(logging =>
         {
             logging.ClearProviders();
-            logging.AddConsole();
-            logging.AddDebug();
-            logging.AddFile(logFilePath);
+
+            if (!isProduction)
+            {
+                logging.AddConsole();
+                logging.AddDebug();
+            }
+
+            logging.AddFile(logFilePath, fileSizeLimitBytes: maxFileSize);
         });
     }
 }
