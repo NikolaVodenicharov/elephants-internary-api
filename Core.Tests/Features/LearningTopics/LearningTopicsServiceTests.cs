@@ -486,8 +486,42 @@ namespace Core.Tests.Features.LearningTopics
         [Fact]
         public async Task GetPaginationAsync_WhenFilterIsCorrectAndEmpty_ShouldReturnEmptyCollectionInResponse()
         {
-            //Assert
+            //Arrange
             var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var response = await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            Assert.Empty(response.Content);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenEmptyAndPageNumIsMoreThanOne_ShouldThrowException()
+        {
+            //Arrange
+            var filter = new PaginationRequest(2, 5);
+
+            learningTopicRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(0);
+
+            //Act
+            var action = async () => await learningTopicsService.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenEmptyAndPageNumIsOne_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 5);
+
+            learningTopicRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(0);
 
             //Act
             var response = await learningTopicsService.GetPaginationAsync(filter);

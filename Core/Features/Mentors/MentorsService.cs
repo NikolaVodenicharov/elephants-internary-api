@@ -69,16 +69,9 @@ namespace Core.Features.Mentors
             Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize, mentorsServiceLogger,
                 nameof(MentorsService));
 
-            int mentorCount;
-
-            if (campaignId != null)
-            {
-                mentorCount = await GetCountByCampaignIdAsync(campaignId.Value);
-            }
-            else
-            {
-                mentorCount = await GetCountAsync();
-            }
+            var mentorCount = campaignId != null ?
+                await GetCountByCampaignIdAsync(campaignId.Value) :
+                await GetCountAsync();
 
             if (mentorCount == 0)
             {
