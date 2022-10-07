@@ -12,18 +12,14 @@ namespace Infrastructure.Features.Interns
                 .Property(s => s.StatusId)
                 .HasConversion<int>();
 
-            var utcNow = DateTime.UtcNow;
-
             builder
                 .HasData(
                     Enum.GetValues(typeof(StatusEnum))
                     .Cast<StatusEnum>()
-                    .Select(statusId => new
+                    .Select(statusId => new Status()
                     {
                         StatusId = statusId,
-                        Name = statusId.ToString(),
-                        CreatedDate = utcNow,
-                        UpdatedDate = utcNow
+                        Name = statusId.ToString()
                     })
 
                 );

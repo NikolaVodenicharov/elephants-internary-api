@@ -12,6 +12,12 @@ namespace Infrastructure
 {
     public class InternaryContext : DbContext
     {
+        // Entities that have data seeding will not have shadow properties added
+        private readonly List<string> entitiesToIgnore = new List<string>()
+        {
+            nameof(Status), nameof(Roles)
+        };
+
         public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<Speciality> Specialties { get; set; }
         public DbSet<Intern> Interns { get; set; }
@@ -32,9 +38,9 @@ namespace Infrastructure
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ConfigureShadowProperties();
-
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            modelBuilder.ConfigureShadowProperties(entitiesToIgnore);
         }
 
         public override int SaveChanges()

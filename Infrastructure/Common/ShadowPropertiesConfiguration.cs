@@ -5,11 +5,13 @@ namespace Infrastructure.Common
 {
     internal static class ShadowPropertiesConfiguration
     {
-        public static void ConfigureShadowProperties(this ModelBuilder modelBuilder)
+        public static void ConfigureShadowProperties(this ModelBuilder modelBuilder,
+            List<string> entitiesToIgnore)
         {
-            var allEntities = modelBuilder.Model.GetEntityTypes();
+            var entities = modelBuilder.Model.GetEntityTypes()
+                .Where(e => e.GetTableName() != null && !entitiesToIgnore.Contains(e.GetTableName()));
 
-            foreach (var entity in allEntities)
+            foreach (var entity in entities)
             {
                 entity.AddProperty("CreatedDate", typeof(DateTime));
                 entity.AddProperty("UpdatedDate", typeof(DateTime));
