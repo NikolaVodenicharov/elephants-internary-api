@@ -9,7 +9,7 @@ namespace Infrastructure.Common
             List<string> entitiesToIgnore)
         {
             var entities = modelBuilder.Model.GetEntityTypes()
-                .Where(e => e.GetTableName() != null && !entitiesToIgnore.Contains(e.GetTableName()));
+                .Where(e => !entitiesToIgnore.Contains(e.Name.Split(".").Last()));
 
             foreach (var entity in entities)
             {

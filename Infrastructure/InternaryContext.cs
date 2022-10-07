@@ -15,7 +15,7 @@ namespace Infrastructure
         // Entities that have data seeding will not have shadow properties added
         private readonly List<string> entitiesToIgnore = new List<string>()
         {
-            nameof(Status), nameof(Roles)
+            nameof(Status), nameof(Role)
         };
 
         public DbSet<Campaign> Campaigns { get; set; }
