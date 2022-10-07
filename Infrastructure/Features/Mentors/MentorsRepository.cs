@@ -5,11 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.Mentors
 {
-    internal static class Counter
-    {
-        public static int mentorsCount = -1;
-    }
-
     public class MentorsRepository : IMentorsRepository
     {
         private readonly InternaryContext context;
@@ -42,8 +37,6 @@ namespace Infrastructure.Features.Mentors
         {
             var mentorCount = await context.Mentors.CountAsync();
 
-            Counter.mentorsCount = mentorCount;
-
             return mentorCount;
         }
 
@@ -59,11 +52,6 @@ namespace Infrastructure.Features.Mentors
 
         public async Task<IEnumerable<Mentor>> GetAllAsync(PaginationRequest? filter = null, Guid? campaignId = null)
         {
-            if (Counter.mentorsCount == -1 || filter?.PageNum == 1)
-            {
-                await GetCountAsync();
-            }
-
             var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
             var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
 
