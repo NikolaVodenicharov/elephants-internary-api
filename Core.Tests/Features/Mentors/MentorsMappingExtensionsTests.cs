@@ -57,7 +57,7 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Fact]
-        public void Mentor_ToMentorSummaryResponse_CreateCorrectObject()
+        public void Mentor_ToMentorDetailsResponse_CreateCorrectObject()
         {
             //Arrange
             var mentor = new Mentor()
@@ -70,7 +70,7 @@ namespace Core.Tests.Features.Mentors
             };
 
             //Act
-            var response = mentor.ToMentorSummaryResponse();
+            var response = mentor.ToMentorDetailsResponse();
 
             //Assert
             Assert.Equal(id, response.Id);
@@ -81,7 +81,7 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Fact]
-        public void IEnumerableOfMentors_ToMentorSummaryResponses_CreateCorrectObject()
+        public void IEnumerableOfMentors_ToMentorDetailsResponses_CreateCorrectObject()
         {
             //Arrange
             var mentorList = new List<Mentor>() {
@@ -96,10 +96,33 @@ namespace Core.Tests.Features.Mentors
             };
 
             //Act
-            var responseList = mentorList.ToMentorSummaryResponses().ToList();
+            var responseList = mentorList.ToMentorDetailsResponses().ToList();
 
             //Assert
             Assert.Equal(mentorList.Count, responseList.Count);
+        }
+
+        [Fact]
+        public void Mentor_ToMentorSummaryResponse_CreateCorrectObject()
+        {
+            // Arrange
+            var mentor = new Mentor()
+            {
+                Id = id,
+                DisplayName = displayName,
+                Email = email,
+                Specialities = specialities,
+                Campaigns = campaigns
+            };
+
+            // Act
+            var response = mentor.ToMentorSummaryResponse();
+
+            // Assert
+            Assert.Equal(id, response.Id);
+            Assert.Equal(displayName, response.DisplayName);
+            Assert.Equal(email, response.Email);
+            Assert.Equal(specialities.Count, response.Specialities.Count);
         }
     }
 }

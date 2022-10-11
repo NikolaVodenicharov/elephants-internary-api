@@ -422,13 +422,13 @@ namespace WebAPI.Tests.Features.Campaigns
                 false
             );
 
-            var mentorSummary = new MentorSummaryResponse(Guid.NewGuid(), "John Doe", "john.doe@endava.com",
+            var mentorSummary = new MentorDetailsResponse(Guid.NewGuid(), "John Doe", "john.doe@endava.com",
                 new List<SpecialitySummaryResponse>() { specialtySummary },
                 new List<CampaignSummaryResponse>() { campaignSummary } );
 
-            var mentorList = new List<MentorSummaryResponse>() { mentorSummary };
+            var mentorList = new List<MentorDetailsResponse>() { mentorSummary };
 
-            var expectedResponse = new PaginationResponse<MentorSummaryResponse>(mentorList, validPageNum, 1);
+            var expectedResponse = new PaginationResponse<MentorDetailsResponse>(mentorList, validPageNum, 1);
 
             mentorsServiceMock
                 .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
@@ -448,7 +448,7 @@ namespace WebAPI.Tests.Features.Campaigns
 
             Assert.NotNull(jsonResult);
 
-            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
 
             Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
         }
@@ -457,8 +457,8 @@ namespace WebAPI.Tests.Features.Campaigns
         public async Task GetMentorsByCampaignIdAsync_WhenNoMentorsFound_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var emptyResponse = new PaginationResponse<MentorSummaryResponse>(
-                new List<MentorSummaryResponse>(), validPageNum, 1);
+            var emptyResponse = new PaginationResponse<MentorDetailsResponse>(
+                new List<MentorDetailsResponse>(), validPageNum, 1);
 
             mentorsServiceMock
                 .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
@@ -478,7 +478,7 @@ namespace WebAPI.Tests.Features.Campaigns
 
             Assert.NotNull(jsonResult);
 
-            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
 
             Assert.Empty(actualResponse.Data.Content);
         }

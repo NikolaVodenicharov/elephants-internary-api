@@ -436,8 +436,8 @@ namespace Core.Tests.Features.Mentors
 
             var mentorList = new List<Mentor>() { returnMentor };
 
-            var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
-                mentorList.ToMentorSummaryResponses(), 1, 4);
+            var expectedPaginationResponse = new PaginationResponse<MentorDetailsResponse>(
+                mentorList.ToMentorDetailsResponses(), 1, 4);
 
             var filter = new PaginationRequest(1, 1);
 
@@ -466,8 +466,8 @@ namespace Core.Tests.Features.Mentors
 
             var emptyList = new List<Mentor>();
 
-            var expectedResponse = new PaginationResponse<MentorSummaryResponse>(
-                emptyList.ToMentorSummaryResponses(), 1, 1);
+            var expectedResponse = new PaginationResponse<MentorDetailsResponse>(
+                emptyList.ToMentorDetailsResponses(), 1, 1);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))

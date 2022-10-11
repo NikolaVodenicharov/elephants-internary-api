@@ -78,7 +78,7 @@ namespace Core.Features.Mentors
             return createdMentor.ToMentorSummaryResponse();
         }
 
-        public async Task<PaginationResponse<MentorSummaryResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null)
+        public async Task<PaginationResponse<MentorDetailsResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
@@ -100,8 +100,8 @@ namespace Core.Features.Mentors
                             PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                     }
 
-                    var emptyPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
-                        new List<MentorSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+                    var emptyPaginationResponse = new PaginationResponse<MentorDetailsResponse>(
+                        new List<MentorDetailsResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
 
                     mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
@@ -123,8 +123,8 @@ namespace Core.Features.Mentors
                             PaginationConstants.DefaultPageCount, filter.PageNum.Value);
                     }
 
-                    var emptyPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
-                        new List<MentorSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
+                    var emptyPaginationResponse = new PaginationResponse<MentorDetailsResponse>(
+                        new List<MentorDetailsResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
 
                     mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
@@ -146,24 +146,24 @@ namespace Core.Features.Mentors
                 await mentorsRepository.GetAllAsync(filter, campaignId) : 
                 await mentorsRepository.GetAllAsync(filter);
 
-            var paginationResponse = new PaginationResponse<MentorSummaryResponse>(
-                mentors.ToMentorSummaryResponses(), filter.PageNum.Value, totalPages);
+            var paginationResponse = new PaginationResponse<MentorDetailsResponse>(
+                mentors.ToMentorDetailsResponses(), filter.PageNum.Value, totalPages);
 
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
             return paginationResponse;
         }
 
-        public async Task<IEnumerable<MentorSummaryResponse>> GetAllAsync()
+        public async Task<IEnumerable<MentorDetailsResponse>> GetAllAsync()
         {
             var mentors = await mentorsRepository.GetAllAsync();
 
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetAllAsync), true);
 
-            return mentors.ToMentorSummaryResponses();
+            return mentors.ToMentorDetailsResponses();
         }
 
-        public async Task<MentorSummaryResponse> GetByIdAsync(Guid id)
+        public async Task<MentorDetailsResponse> GetByIdAsync(Guid id)
         {
             var mentor = await mentorsRepository.GetByIdAsync(id);
 
@@ -171,7 +171,7 @@ namespace Core.Features.Mentors
 
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetByIdAsync), true);
 
-            return mentor.ToMentorSummaryResponse();
+            return mentor.ToMentorDetailsResponse();
         }
 
         public async Task<int> GetCountAsync()
@@ -181,7 +181,7 @@ namespace Core.Features.Mentors
             return mentorCount;
         }
 
-        public async Task<MentorSummaryResponse> UpdateAsync(UpdateMentorRequest request)
+        public async Task<MentorDetailsResponse> UpdateAsync(UpdateMentorRequest request)
         {
             await updateMentorRequestValidator.ValidateAndThrowAsync(request);
 
@@ -209,7 +209,7 @@ namespace Core.Features.Mentors
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(UpdateAsync), nameof(Mentor), 
                 request.Id, true);
 
-            return existingMentor.ToMentorSummaryResponse();
+            return existingMentor.ToMentorDetailsResponse();
         }  
 
         public async Task<int> GetCountByCampaignIdAsync(Guid campaignId)
