@@ -115,21 +115,9 @@ namespace Core.Features.LearningTopics
 
             var learningTopicCount = await learningTopicsRepository.GetCountAsync();
 
-            if (learningTopicCount == 0)
-            {
-                if (filter.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    learningTopicsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(LearningTopicsService), 
-                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
-                }
-
-                var emptyPaginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
-                    new List<LearningTopicSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
-
-                return emptyPaginationResponse;
-            }
-
-            var totalPages = (learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = learningTopicCount > 0 ?
+                (learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value :
+                PaginationConstants.DefaultPageCount;
 
             if (filter.PageNum > totalPages)
             {
@@ -137,7 +125,9 @@ namespace Core.Features.LearningTopics
                     totalPages, filter.PageNum.Value);
             }
 
-            var learningTopics = await learningTopicsRepository.GetAllAsync(filter);
+            var learningTopics = learningTopicCount > 0 ?
+                await learningTopicsRepository.GetAllAsync(filter) :
+                new List<LearningTopic>();
 
             var paginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
                 learningTopics.ToLearningTopicSummaries(), filter.PageNum.Value, totalPages);

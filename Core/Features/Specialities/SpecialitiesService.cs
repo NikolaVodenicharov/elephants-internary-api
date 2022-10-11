@@ -98,23 +98,9 @@ namespace Core.Features.Specialities
 
             var specialitiesCount = await specialitiesRepository.GetCountAsync();
 
-            if (specialitiesCount == 0)
-            {
-                if (filter.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    specialitiesServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(Specialities), 
-                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
-                }
-
-                var emptyPaginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
-                    new List<SpecialitySummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
-
-                specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(GetAllAsync), true);
-
-                return emptyPaginationResponse;
-            }
-
-            var totalPages = (specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = specialitiesCount > 0 ?
+                (specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value :
+                PaginationConstants.DefaultPageCount;
 
             if (filter.PageNum > totalPages)
             {
@@ -122,7 +108,9 @@ namespace Core.Features.Specialities
                     totalPages, filter.PageNum.Value);
             }
 
-            var specialities = await specialitiesRepository.GetAllAsync(filter);
+            var specialities = specialitiesCount > 0 ?
+                await specialitiesRepository.GetAllAsync(filter) :
+                new List<SpecialitySummaryResponse>();
 
             var paginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
                 specialities, filter.PageNum.Value, totalPages);

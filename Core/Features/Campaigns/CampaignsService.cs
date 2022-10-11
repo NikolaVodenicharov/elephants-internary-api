@@ -108,21 +108,9 @@ namespace Core.Features.Campaigns
 
             var campaignCount = await GetCountAsync();
 
-            if (campaignCount == 0)
-            {
-                if (filter.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    campaignsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(CampaignsService), 
-                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
-                }
-
-                var emptyPaginationResponse = new PaginationResponse<CampaignSummaryResponse>(
-                    new List<CampaignSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
-
-                return emptyPaginationResponse;
-            }
-
-            var totalPages = (campaignCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = campaignCount > 0 ?
+                (campaignCount + filter.PageSize.Value - 1) / filter.PageSize.Value :
+                PaginationConstants.DefaultPageCount;
 
             if (filter.PageNum > totalPages)
             {
@@ -130,7 +118,9 @@ namespace Core.Features.Campaigns
                     totalPages, filter.PageNum.Value);
             }
 
-            var campaigns = await campaignsRepository.GetAllAsync(filter);
+            var campaigns = campaignCount > 0 ?
+                await campaignsRepository.GetAllAsync(filter) :
+                new List<Campaign>();
 
             var paginationResponse = new PaginationResponse<CampaignSummaryResponse>(
                 campaigns.ToCampaignSummaries(), filter.PageNum.Value, totalPages);
