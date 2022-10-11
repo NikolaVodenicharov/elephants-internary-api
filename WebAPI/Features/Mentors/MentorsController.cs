@@ -89,7 +89,7 @@ namespace WebAPI.Features.Mentors
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorDetailsResponse>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateMentorRequest request)
@@ -110,7 +110,7 @@ namespace WebAPI.Features.Mentors
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorSummaryResponse>))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorDetailsResponse>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
         {
@@ -122,8 +122,8 @@ namespace WebAPI.Features.Mentors
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<MentorSummaryResponse>>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(CoreResponse<IEnumerable<MentorSummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<MentorDetailsResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<IEnumerable<MentorDetailsResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {

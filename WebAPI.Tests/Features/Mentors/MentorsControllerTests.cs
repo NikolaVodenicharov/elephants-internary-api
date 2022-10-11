@@ -50,7 +50,7 @@ namespace WebAPI.Tests.Features.Mentors
         private List<Guid> specialityIds;
         private List<CampaignSummaryResponse> campaignSummaries;
         private IdentitySummaryResponse userIdentitySummary;
-        private MentorSummaryResponse mentorSummary;
+        private MentorDetailsResponse mentorDetails;
 
         public MentorsControllerTests()
         {
@@ -107,7 +107,7 @@ namespace WebAPI.Tests.Features.Mentors
             var identityId = Guid.NewGuid().ToString();
             userIdentitySummary = new IdentitySummaryResponse(email, displayName);
 
-            mentorSummary = new MentorSummaryResponse(id, displayName, email, specialitySummaries, campaignSummaries);
+            mentorDetails = new MentorDetailsResponse(id, displayName, email, specialitySummaries, campaignSummaries);
         }
 
         [Fact]
@@ -117,6 +117,8 @@ namespace WebAPI.Tests.Features.Mentors
             var request = new CreateMentorApiRequest(email, specialityIds);
    
             var userSummary = new UserSummaryResponse(Guid.NewGuid(), email, RoleEnum.Mentor);
+
+            var mentorSummary = new MentorSummaryResponse(id, displayName, email, specialitySummaries);
 
             mentorsServiceMock
                 .Setup(x => x.CreateAsync(It.IsAny<CreateMentorRequest>()))
@@ -193,7 +195,7 @@ namespace WebAPI.Tests.Features.Mentors
 
             mentorsServiceMock
                 .Setup(x => x.UpdateAsync(It.IsAny<UpdateMentorRequest>()))
-                .ReturnsAsync(mentorSummary);
+                .ReturnsAsync(mentorDetails);
 
             //Act
             var actionResult = await mentorsController.UpdateAsync(id, request);
@@ -205,12 +207,13 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(jsonResult);
 
-            var updatedResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
+            var updatedResponse = jsonResult!.Value as CoreResponse<MentorDetailsResponse>;
 
-            Assert.Equal(mentorSummary.Id, updatedResponse.Data.Id);
-            Assert.Equal(mentorSummary.DisplayName, updatedResponse.Data.DisplayName);
-            Assert.Equal(mentorSummary.Email, updatedResponse.Data.Email);
-            Assert.Equal(mentorSummary.Specialities, updatedResponse.Data.Specialities);
+            Assert.Equal(mentorDetails.Id, updatedResponse.Data.Id);
+            Assert.Equal(mentorDetails.DisplayName, updatedResponse.Data.DisplayName);
+            Assert.Equal(mentorDetails.Email, updatedResponse.Data.Email);
+            Assert.Equal(mentorDetails.Specialities, updatedResponse.Data.Specialities);
+            Assert.Equal(mentorDetails.Campaigns, updatedResponse.Data.Campaigns);
         }
 
         [Fact]
@@ -249,7 +252,7 @@ namespace WebAPI.Tests.Features.Mentors
             //Arrange
             mentorsServiceMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(mentorSummary);
+                .ReturnsAsync(mentorDetails);
 
             //Act
             var actionResult = await mentorsController.GetByIdAsync(id);
@@ -261,13 +264,13 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(jsonResult);
 
-            var actualResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
+            var actualResponse = jsonResult!.Value as CoreResponse<MentorDetailsResponse>;
 
-            Assert.Equal(mentorSummary.Id, actualResponse.Data.Id);
-            Assert.Equal(mentorSummary.DisplayName, actualResponse.Data.DisplayName);
-            Assert.Equal(mentorSummary.Email, actualResponse.Data.Email);
-            Assert.Equal(mentorSummary.Specialities, actualResponse.Data.Specialities);
-            Assert.Equal(mentorSummary.Campaigns, actualResponse.Data.Campaigns);
+            Assert.Equal(mentorDetails.Id, actualResponse.Data.Id);
+            Assert.Equal(mentorDetails.DisplayName, actualResponse.Data.DisplayName);
+            Assert.Equal(mentorDetails.Email, actualResponse.Data.Email);
+            Assert.Equal(mentorDetails.Specialities, actualResponse.Data.Specialities);
+            Assert.Equal(mentorDetails.Campaigns, actualResponse.Data.Campaigns);
         }
 
         [Fact]
@@ -294,16 +297,16 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse = new MentorSummaryResponse(
+            var expectedResponse = new MentorDetailsResponse(
                 Guid.NewGuid(), "John Smith", "john.smith@gmail.com",
                 specialitySummaries,
                 campaignSummaries);
 
-            var expectedResponseList = new List<MentorSummaryResponse>() {
-                mentorSummary, expectedResponse
+            var expectedResponseList = new List<MentorDetailsResponse>() {
+                mentorDetails, expectedResponse
             };
 
-            var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(expectedResponseList, 1, 2);
+            var expectedPaginationResponse = new PaginationResponse<MentorDetailsResponse>(expectedResponseList, 1, 2);
 
             mentorsServiceMock
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), null))
@@ -319,7 +322,7 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(jsonResult);
 
-            var paginationResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
+            var paginationResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
 
             Assert.Equal(expectedResponseList.Count, paginationResponse.Data.Content.Count());
         }
@@ -328,11 +331,11 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersSetAndEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var emptyList = new List<MentorSummaryResponse>();
+            var emptyList = new List<MentorDetailsResponse>();
 
             mentorsServiceMock
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), null))
-                .ReturnsAsync(new PaginationResponse<MentorSummaryResponse>(emptyList, 1, 1));
+                .ReturnsAsync(new PaginationResponse<MentorDetailsResponse>(emptyList, 1, 1));
 
             //Act
             var actionResult = await mentorsController.GetAllAsync(validPageNum, validPageSize);
@@ -344,7 +347,7 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(okObjectResult);
 
-            var paginationResponse = okObjectResult!.Value as CoreResponse<PaginationResponse<MentorSummaryResponse>>;
+            var paginationResponse = okObjectResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
 
             Assert.Empty(paginationResponse.Data.Content);
         }
@@ -382,7 +385,7 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(okObjectResult);
 
-            var response = okObjectResult!.Value as CoreResponse<IEnumerable<MentorSummaryResponse>>;
+            var response = okObjectResult!.Value as CoreResponse<IEnumerable<MentorDetailsResponse>>;
 
             Assert.Empty(response.Data);
         }
@@ -391,13 +394,13 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersNotSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse = new MentorSummaryResponse(
+            var expectedResponse = new MentorDetailsResponse(
                 Guid.NewGuid(), "John Smith", "john.smith@gmail.com",
                 specialitySummaries,
                 campaignSummaries);
 
-            var expectedResponseList = new List<MentorSummaryResponse>() {
-                mentorSummary, expectedResponse
+            var expectedResponseList = new List<MentorDetailsResponse>() {
+                mentorDetails, expectedResponse
             };
 
             mentorsServiceMock
@@ -414,7 +417,7 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(jsonResult);
 
-            var response = jsonResult!.Value as CoreResponse<IEnumerable<MentorSummaryResponse>>;
+            var response = jsonResult!.Value as CoreResponse<IEnumerable<MentorDetailsResponse>>;
 
             Assert.Equal(expectedResponseList.Count, response.Data.Count());
         }

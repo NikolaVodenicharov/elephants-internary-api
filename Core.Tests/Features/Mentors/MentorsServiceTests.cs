@@ -516,8 +516,8 @@ namespace Core.Tests.Features.Mentors
 
             var mentorList = new List<Mentor>() { returnMentor };
 
-            var expectedPaginationResponse = new PaginationResponse<MentorSummaryResponse>(
-                mentorList.ToMentorSummaryResponses(), 1, 4);
+            var expectedPaginationResponse = new PaginationResponse<MentorDetailsResponse>(
+                mentorList.ToMentorDetailsResponses(), 1, 4);
 
             var filter = new PaginationRequest(1, 1);
 
@@ -630,7 +630,7 @@ namespace Core.Tests.Features.Mentors
         public async Task GetPaginationAsync_WhenCampaignIdIsSetAndCampaignHasNoMentors_ShouldThrowException()
         {
             //Arrange
-            var pageNum = 2;
+            var pageNum = 1;
             var pageSize = 10;
 
             var filter = new PaginationRequest(pageNum, pageSize);
@@ -640,10 +640,10 @@ namespace Core.Tests.Features.Mentors
                 .ReturnsAsync(0);
 
             //Act
-            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter, Guid.NewGuid());
+            var response = await mentorsServiceMock.GetPaginationAsync(filter, Guid.NewGuid());
 
             //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
+            Assert.Empty(response.Content);
         }
 
         #endregion

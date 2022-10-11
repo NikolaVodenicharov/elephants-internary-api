@@ -19,18 +19,29 @@ namespace Core.Features.Mentors.Support
             return mentor;
         }
 
-        public static MentorSummaryResponse ToMentorSummaryResponse(this Mentor mentor)
+        public static MentorDetailsResponse ToMentorDetailsResponse(this Mentor mentor)
         {
-            var response = new MentorSummaryResponse(mentor.Id, mentor.DisplayName, mentor.Email, 
+            var response = new MentorDetailsResponse(mentor.Id, mentor.DisplayName, mentor.Email, 
                 mentor.Specialities.ToSpecialitySummaryResponses().ToList(),
                 mentor.Campaigns.ToCampaignSummaries().ToList());
 
             return response;
         }
 
-        public static IEnumerable<MentorSummaryResponse> ToMentorSummaryResponses(this IEnumerable<Mentor> mentors)
+        public static IEnumerable<MentorDetailsResponse> ToMentorDetailsResponses(this IEnumerable<Mentor> mentors)
         {
-            var response = mentors.Select(m => m.ToMentorSummaryResponse());
+            var response = mentors.Select(m => m.ToMentorDetailsResponse());
+
+            return response;
+        }
+
+        public static MentorSummaryResponse ToMentorSummaryResponse(this Mentor mentor)
+        {
+            var response = new MentorSummaryResponse(
+                mentor.Id, 
+                mentor.DisplayName, 
+                mentor.Email, 
+                mentor.Specialities.ToSpecialitySummaryResponses().ToList());
 
             return response;
         }

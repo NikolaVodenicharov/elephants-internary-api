@@ -9,13 +9,13 @@ namespace Core.Features.Mentors.Interfaces
     {
         public Task<MentorSummaryResponse> CreateAsync(CreateMentorRequest request);
 
-        public Task<MentorSummaryResponse> UpdateAsync(UpdateMentorRequest request);
+        public Task<MentorDetailsResponse> UpdateAsync(UpdateMentorRequest request);
 
-        public Task<MentorSummaryResponse> GetByIdAsync(Guid id);
+        public Task<MentorDetailsResponse> GetByIdAsync(Guid id);
 
-        public Task<PaginationResponse<MentorSummaryResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null);
+        public Task<PaginationResponse<MentorDetailsResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null);
 
-        public Task<IEnumerable<MentorSummaryResponse>> GetAllAsync();
+        public Task<IEnumerable<MentorDetailsResponse>> GetAllAsync();
 
         public Task<int> GetCountByCampaignIdAsync(Guid campaignId);
 
