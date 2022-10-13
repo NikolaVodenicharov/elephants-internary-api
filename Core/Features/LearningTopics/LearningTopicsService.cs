@@ -12,11 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Core.Features.LearningTopics
 {
-    internal static class Counter
-    {
-        public static int learningTopicCount = -1;
-    }
-
     public class LearningTopicsService : ILearningTopicsService
     {
         private readonly ILearningTopicsRepository learningTopicsRepository;
@@ -48,7 +43,7 @@ namespace Core.Features.LearningTopics
 
             await ValidateDuplicateNameAsync(request.Name);
 
-            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds);
+            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds.Distinct());
             
             var learningTopic = request.ToLearningTopic();
             learningTopic.Specialities = specialities;
@@ -76,7 +71,7 @@ namespace Core.Features.LearningTopics
                 await ValidateDuplicateNameAsync(request.Name);
             }
 
-            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds);
+            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds.Distinct());
 
             existingLearningTopic.Name = request.Name;
             existingLearningTopic.Specialities = specialities;
@@ -118,26 +113,9 @@ namespace Core.Features.LearningTopics
             Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize, learningTopicsServiceLogger,
                 nameof(LearningTopicsService));
 
-            if (Counter.learningTopicCount == -1 || filter.PageNum == 1)
-            {
-                Counter.learningTopicCount = await learningTopicsRepository.GetCountAsync();
-            }
+            var learningTopicCount = await learningTopicsRepository.GetCountAsync();
 
-            if (Counter.learningTopicCount == 0)
-            {
-                if (filter.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    learningTopicsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(LearningTopicsService), 
-                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
-                }
-
-                var emptyPaginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
-                    new List<LearningTopicSummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
-
-                return emptyPaginationResponse;
-            }
-
-            var totalPages = (Counter.learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = PaginationMethods.CalculateTotalPages(learningTopicCount, filter.PageSize.Value);
 
             if (filter.PageNum > totalPages)
             {
@@ -145,7 +123,9 @@ namespace Core.Features.LearningTopics
                     totalPages, filter.PageNum.Value);
             }
 
-            var learningTopics = await learningTopicsRepository.GetAllAsync(filter);
+            var learningTopics = learningTopicCount > 0 ?
+                await learningTopicsRepository.GetAllAsync(filter) :
+                new List<LearningTopic>();
 
             var paginationResponse = new PaginationResponse<LearningTopicSummaryResponse>(
                 learningTopics.ToLearningTopicSummaries(), filter.PageNum.Value, totalPages);
@@ -166,17 +146,11 @@ namespace Core.Features.LearningTopics
             }
         }
 
-        private async Task<ICollection<Speciality>> ValidateAndGetSpecialitiesById(ICollection<Guid> specialityIds)
+        private async Task<ICollection<Speciality>> ValidateAndGetSpecialitiesById(IEnumerable<Guid> specialityIds)
         {
-            if(specialityIds.Count() != specialityIds.Distinct().Count())
-            {
-                learningTopicsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(LearningTopicsService), nameof(LearningTopic),
-                    "specialities", specialityIds);
-            }
-
             var specialities = await specialitiesRepository.GetByIdsAsync(specialityIds);
             
-            if(specialities.Count() != specialityIds.Count())
+            if(specialities.Count != specialityIds.Count())
             {
                 learningTopicsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(LearningTopicsService), 
                     "specialities", specialityIds);

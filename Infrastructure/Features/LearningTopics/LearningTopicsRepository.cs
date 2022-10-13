@@ -5,12 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Features.LearningTopics
 {
-
-    internal static class Counter
-    {
-        public static int learningTopicCount = -1;
-    }
-
     public class LearningTopicsRepository : ILearningTopicsRepository
     {
         private readonly InternaryContext context;
@@ -40,11 +34,6 @@ namespace Infrastructure.Features.LearningTopics
 
         public async Task<IEnumerable<LearningTopic>> GetAllAsync(PaginationRequest? filter = null)
         {
-            if (Counter.learningTopicCount == -1 || filter?.PageNum == 1)
-            {
-                await GetCountAsync();
-            }
-
             var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
             var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
 
@@ -52,7 +41,7 @@ namespace Infrastructure.Features.LearningTopics
                 .LearningTopics
                 .AsNoTracking()
                 .Include(t => t.Specialities)
-                .OrderBy(s => s.Id)
+                .OrderByDescending(s => EF.Property<DateTime>(s, "UpdatedDate"))
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();
@@ -75,8 +64,6 @@ namespace Infrastructure.Features.LearningTopics
         public async Task<int> GetCountAsync()
         {
             var count = await context.LearningTopics.CountAsync();
-
-            Counter.learningTopicCount = count;
 
             return count;
         }

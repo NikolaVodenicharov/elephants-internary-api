@@ -7,7 +7,6 @@ using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Core.Features.Interns
 {

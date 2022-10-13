@@ -13,11 +13,6 @@ using System.Net;
 
 namespace Core.Features.Specialities
 {
-    internal static class Counter
-    {
-        public static int specialitiesCount = -1;
-    }
-
     public class SpecialitiesService : ISpecialitiesService
     {
         private readonly ISpecialitiesRepository specialitiesRepository;
@@ -101,28 +96,9 @@ namespace Core.Features.Specialities
             Guard.EnsureNotNullPagination(filter.PageNum, filter.PageSize,
                 specialitiesServiceLogger, nameof(SpecialitiesService));
 
-            if (Counter.specialitiesCount == -1 || filter.PageNum == 1)
-            {
-                Counter.specialitiesCount = await specialitiesRepository.GetCountAsync();
-            }
+            var specialitiesCount = await specialitiesRepository.GetCountAsync();
 
-            if (Counter.specialitiesCount == 0)
-            {
-                if (filter.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    specialitiesServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(Specialities), 
-                        PaginationConstants.DefaultPageCount, filter.PageNum.Value);
-                }
-
-                var emptyPaginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
-                    new List<SpecialitySummaryResponse>(), filter.PageNum.Value, PaginationConstants.DefaultPageCount);
-
-                specialitiesServiceLogger.LogInformationMethod(nameof(SpecialitiesService), nameof(GetAllAsync), true);
-
-                return emptyPaginationResponse;
-            }
-
-            var totalPages = (Counter.specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = PaginationMethods.CalculateTotalPages(specialitiesCount, filter.PageSize.Value);
 
             if (filter.PageNum > totalPages)
             {
@@ -130,7 +106,9 @@ namespace Core.Features.Specialities
                     totalPages, filter.PageNum.Value);
             }
 
-            var specialities = await specialitiesRepository.GetAllAsync(filter);
+            var specialities = specialitiesCount > 0 ?
+                await specialitiesRepository.GetAllAsync(filter) :
+                new List<SpecialitySummaryResponse>();
 
             var paginationResponse = new PaginationResponse<SpecialitySummaryResponse>(
                 specialities, filter.PageNum.Value, totalPages);

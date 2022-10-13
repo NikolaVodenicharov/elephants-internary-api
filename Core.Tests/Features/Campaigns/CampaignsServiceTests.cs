@@ -396,6 +396,40 @@ namespace Core.Tests.Features.Campaigns
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
+        [Fact]
+        public async Task GetAllAsync_WhenEmptyAndPageNumMoreThanOne_ShouldThrowException()
+        {
+            //Arrange
+            var filter = new PaginationRequest(2, 5);
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(0);
+
+            //Act
+            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+
+            //Arrange
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNoCampaignsAndPageNumIsOne_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 5);
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(0);
+
+            //Act
+            var response = await campaignsServiceMock.GetAllAsync(filter);
+
+            //Arrange
+            Assert.Empty(response.Content);
+        }
+
         #endregion
 
         private CreateCampaignRequest CreateValidCreateCampaign()

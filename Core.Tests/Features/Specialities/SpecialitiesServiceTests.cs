@@ -375,6 +375,40 @@ namespace Core.Tests.Features.Specialities
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
+        [Fact]
+        public async Task GetPaginationAsync_WhenEmptyAndPageNumIsMoreThanOne_ShouldThrowException()
+        {
+            //Arrange
+            var filter = new PaginationRequest(2, 5);
+
+            specialtiesRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(0);
+
+            //Act
+            var action = async () => await specialtiesService.GetPaginationAsync(filter);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenEmptyAndPageNumIsOne_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 5);
+
+            specialtiesRepositoryMock
+                .Setup(x => x.GetCountAsync())
+                .ReturnsAsync(0);
+
+            //Act
+            var response = await specialtiesService.GetPaginationAsync(filter);
+
+            //Assert
+            Assert.Empty(response.Content);
+        }
+
         #endregion
     }
 }

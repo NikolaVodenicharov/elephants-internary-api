@@ -21,6 +21,7 @@ namespace Infrastructure.Features.Interns
                         StatusId = statusId,
                         Name = statusId.ToString()
                     })
+
                 );
         }
     }
