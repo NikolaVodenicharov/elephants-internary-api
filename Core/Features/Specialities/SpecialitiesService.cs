@@ -98,9 +98,7 @@ namespace Core.Features.Specialities
 
             var specialitiesCount = await specialitiesRepository.GetCountAsync();
 
-            var totalPages = specialitiesCount > 0 ?
-                (specialitiesCount + filter.PageSize.Value - 1) / filter.PageSize.Value :
-                PaginationConstants.DefaultPageCount;
+            var totalPages = PaginationMethods.CalculateTotalPages(specialitiesCount, filter.PageSize.Value);
 
             if (filter.PageNum > totalPages)
             {

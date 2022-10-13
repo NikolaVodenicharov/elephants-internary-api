@@ -258,24 +258,6 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task CreateAsync_WhenDuplicateSpecialities_ShouldThrowException()
-        {
-            //Arrange
-            var request = new CreateMentorRequest(mentorDisplayName, mentorEmail, new List<Guid>() { specialityId, specialityId });
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(false);
-
-            //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-
-        }
-
-        [Fact]
         public async Task CreateAsync_WhenNotAllSpecialitiesFound_ShouldThrowException()
         {
             //Arrange
@@ -368,24 +350,6 @@ namespace Core.Tests.Features.Mentors
             Assert.Equal(request.Id, response.Id);
             Assert.NotNull(response.Specialities);
             Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WhenDuplicateSpecialities_ShouldThrowException()
-        {
-            //Arrange
-            var request = new UpdateMentorRequest(id, new List<Guid>() { specialityId, specialityId });
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
-
-            //Act
-            var action = async () => await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-
         }
 
         [Fact]

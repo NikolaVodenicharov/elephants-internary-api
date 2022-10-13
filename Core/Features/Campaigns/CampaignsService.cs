@@ -108,9 +108,7 @@ namespace Core.Features.Campaigns
 
             var campaignCount = await GetCountAsync();
 
-            var totalPages = campaignCount > 0 ?
-                (campaignCount + filter.PageSize.Value - 1) / filter.PageSize.Value :
-                PaginationConstants.DefaultPageCount;
+            var totalPages = PaginationMethods.CalculateTotalPages(campaignCount, filter.PageSize.Value);
 
             if (filter.PageNum > totalPages)
             {

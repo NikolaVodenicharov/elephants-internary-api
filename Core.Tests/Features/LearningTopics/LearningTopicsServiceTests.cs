@@ -145,31 +145,6 @@ namespace Core.Tests.Features.LearningTopics
         }
 
         [Fact]
-        public async Task CreateAsync_WhenSpecialitiesAreDuplicated_ShouldThrowException()
-        {
-            // Arrange
-            var duplicateSpecialities = specialityIds;
-
-            duplicateSpecialities.Add(specialityIds[0]);
-
-            var createLearningTopicRequest = new CreateLearningTopicRequest(name, duplicateSpecialities);
-            
-            learningTopicRepositoryMock
-                .Setup(x => x.ExistsByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync(false);
-            
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<List<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            // Act
-            var action = async () => await learningTopicsService.CreateAsync(createLearningTopicRequest);
-
-            // Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
         public async Task CreateAsync_WhenSpecialitiesNotFound_ShouldThrowException()
         {
             // Arrange
@@ -184,7 +159,7 @@ namespace Core.Tests.Features.LearningTopics
                 .ReturnsAsync(false);
             
             specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<List<Guid>>()))
+                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
                 .ReturnsAsync(specialities);
 
             // Act

@@ -73,12 +73,7 @@ namespace Core.Features.Mentors
                 await GetCountByCampaignIdAsync(campaignId.Value) :
                 await GetCountAsync();
 
-            if (mentorCount == 0)
-            {
-                return ValidateAndGetEmptyResponse(filter.PageNum.Value);
-            }
-
-            var totalPages = (mentorCount + filter.PageSize.Value - 1) / filter.PageSize.Value;
+            var totalPages = PaginationMethods.CalculateTotalPages(mentorCount, filter.PageSize.Value);
 
             if (filter.PageNum > totalPages)
             {
@@ -86,9 +81,9 @@ namespace Core.Features.Mentors
                     filter.PageNum.Value);
             }
 
-            var mentors = campaignId != null ? 
-                await mentorsRepository.GetAllAsync(filter, campaignId) : 
-                await mentorsRepository.GetAllAsync(filter);
+            var mentors = mentorCount > 0 ?
+                await mentorsRepository.GetAllAsync(filter, campaignId) :
+                new List<Mentor>();
 
             var paginationResponse = new PaginationResponse<MentorDetailsResponse>(
                 mentors.ToMentorDetailsResponses(), filter.PageNum.Value, totalPages);
@@ -96,22 +91,6 @@ namespace Core.Features.Mentors
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
             return paginationResponse;
-        }
-
-        private PaginationResponse<MentorDetailsResponse> ValidateAndGetEmptyResponse(int pageNum)
-        {
-            if (pageNum > PaginationConstants.DefaultPageCount)
-            {
-                mentorsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(MentorsService),
-                    PaginationConstants.DefaultPageCount, pageNum);
-            }
-
-            var emptyPaginationResponse = new PaginationResponse<MentorDetailsResponse>(
-                new List<MentorDetailsResponse>(), pageNum, PaginationConstants.DefaultPageCount);
-
-            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
-
-            return emptyPaginationResponse;
         }
 
         public async Task<IEnumerable<MentorDetailsResponse>> GetAllAsync()
@@ -208,13 +187,7 @@ namespace Core.Features.Mentors
 
         private async Task<ICollection<Speciality>> GetSpecialities(IEnumerable<Guid> idList)
         {
-            if (idList.Count() != idList.Distinct().Count())
-            {
-                mentorsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(MentorsService), nameof(Mentor),
-                    "specialities", idList);
-            }
-
-            var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(idList);
+            var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(idList.Distinct());
 
             if (mentorSpecialities.Count != idList.Count())
             {

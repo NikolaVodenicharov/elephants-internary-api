@@ -115,9 +115,7 @@ namespace Core.Features.LearningTopics
 
             var learningTopicCount = await learningTopicsRepository.GetCountAsync();
 
-            var totalPages = learningTopicCount > 0 ?
-                (learningTopicCount + filter.PageSize.Value - 1) / filter.PageSize.Value :
-                PaginationConstants.DefaultPageCount;
+            var totalPages = PaginationMethods.CalculateTotalPages(learningTopicCount, filter.PageSize.Value);
 
             if (filter.PageNum > totalPages)
             {
@@ -150,15 +148,9 @@ namespace Core.Features.LearningTopics
 
         private async Task<ICollection<Speciality>> ValidateAndGetSpecialitiesById(ICollection<Guid> specialityIds)
         {
-            if(specialityIds.Count() != specialityIds.Distinct().Count())
-            {
-                learningTopicsServiceLogger.LogErrorAndThrowExceptionDuplicateEntries(nameof(LearningTopicsService), nameof(LearningTopic),
-                    "specialities", specialityIds);
-            }
-
-            var specialities = await specialitiesRepository.GetByIdsAsync(specialityIds);
+            var specialities = await specialitiesRepository.GetByIdsAsync(specialityIds.Distinct());
             
-            if(specialities.Count() != specialityIds.Count())
+            if(specialities.Count != specialityIds.Count)
             {
                 learningTopicsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(LearningTopicsService), 
                     "specialities", specialityIds);

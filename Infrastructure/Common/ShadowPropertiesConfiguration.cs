@@ -5,11 +5,11 @@ namespace Infrastructure.Common
 {
     internal static class ShadowPropertiesConfiguration
     {
-        public static void ConfigureShadowProperties(this ModelBuilder modelBuilder,
-            List<string> entitiesToIgnore)
+        public static void ConfigureShadowProperties(this ModelBuilder modelBuilder)
         {
+            // Only add shadow properties to entities without data seeding
             var entities = modelBuilder.Model.GetEntityTypes()
-                .Where(e => !entitiesToIgnore.Contains(e.Name.Split(".").Last()));
+                .Where(e => e.GetSeedData()?.Count() == 0);
 
             foreach (var entity in entities)
             {
@@ -30,6 +30,10 @@ namespace Infrastructure.Common
                 if (e.Properties.Any(p => p.Metadata.Name == "CreatedDate"))
                 {
                     e.Property("CreatedDate").CurrentValue = utcNow;
+                }
+
+                if (e.Properties.Any(p => p.Metadata.Name == "UpdatedDate"))
+                {
                     e.Property("UpdatedDate").CurrentValue = utcNow;
                 }
             });
