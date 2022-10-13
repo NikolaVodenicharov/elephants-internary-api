@@ -43,7 +43,7 @@ namespace Core.Features.LearningTopics
 
             await ValidateDuplicateNameAsync(request.Name);
 
-            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds);
+            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds.Distinct());
             
             var learningTopic = request.ToLearningTopic();
             learningTopic.Specialities = specialities;
@@ -71,7 +71,7 @@ namespace Core.Features.LearningTopics
                 await ValidateDuplicateNameAsync(request.Name);
             }
 
-            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds);
+            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds.Distinct());
 
             existingLearningTopic.Name = request.Name;
             existingLearningTopic.Specialities = specialities;
@@ -146,11 +146,11 @@ namespace Core.Features.LearningTopics
             }
         }
 
-        private async Task<ICollection<Speciality>> ValidateAndGetSpecialitiesById(ICollection<Guid> specialityIds)
+        private async Task<ICollection<Speciality>> ValidateAndGetSpecialitiesById(IEnumerable<Guid> specialityIds)
         {
-            var specialities = await specialitiesRepository.GetByIdsAsync(specialityIds.Distinct());
+            var specialities = await specialitiesRepository.GetByIdsAsync(specialityIds);
             
-            if(specialities.Count != specialityIds.Count)
+            if(specialities.Count != specialityIds.Count())
             {
                 learningTopicsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(LearningTopicsService), 
                     "specialities", specialityIds);

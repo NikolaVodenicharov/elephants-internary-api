@@ -50,7 +50,7 @@ namespace Core.Features.Mentors
 
             await CheckEmailAsync(request.Email);
 
-            var mentorSpecialities = await GetSpecialities(request.SpecialityIds);
+            var mentorSpecialities = await GetSpecialities(request.SpecialityIds.Distinct());
 
             var mentor = request.ToMentor();
             mentor.Specialities = mentorSpecialities;
@@ -128,7 +128,7 @@ namespace Core.Features.Mentors
 
             Guard.EnsureNotNull(existingMentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), request.Id);
 
-            var mentorSpecialities = await GetSpecialities(request.SpecialityIds);
+            var mentorSpecialities = await GetSpecialities(request.SpecialityIds.Distinct());
 
             existingMentor.Specialities = mentorSpecialities;
 
@@ -187,7 +187,7 @@ namespace Core.Features.Mentors
 
         private async Task<ICollection<Speciality>> GetSpecialities(IEnumerable<Guid> idList)
         {
-            var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(idList.Distinct());
+            var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(idList);
 
             if (mentorSpecialities.Count != idList.Count())
             {
