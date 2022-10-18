@@ -600,5 +600,30 @@ namespace WebAPI.Tests.Features.Campaigns
         }
 
         #endregion
+
+        #region RemoveMentorAsyncTests
+
+        [Fact]
+        public async Task RemoveMentorAsync_WhenDataIsCorrect_ShouldReturnTrue()
+        {
+            var campaignId = Guid.NewGuid();
+            var mentorId = Guid.NewGuid();
+
+            //Act
+            var actionResult = await campaignsController.RemoveMentorAsync(campaignId, mentorId);
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var response = jsonResult!.Value as CoreResponse<bool>;
+
+            Assert.True(response!.Data);
+        }
+
+        #endregion
     }
 }

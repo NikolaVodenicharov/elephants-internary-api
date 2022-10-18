@@ -22,5 +22,7 @@ namespace Core.Features.Mentors.Interfaces
         public Task<int> GetCountAsync();
 
         public Task AddToCampaignAsync(AddToCampaignRequest request);
+
+        public Task RemoveFromCampaignAsync(Guid campaignId, Guid mentorId);
     }
 }

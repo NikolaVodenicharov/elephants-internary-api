@@ -836,6 +836,86 @@ namespace Core.Tests.Features.Mentors
 
         #endregion
 
+        #region RemoveFromCampaignAsyncTests
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenCampaignNotFound_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(Guid.NewGuid(), Guid.NewGuid());
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorNotFound_ShouldThrowException()
+        {
+            //Arrange
+            var campaign = campaigns.First();
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaign);
+
+            //Act
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(campaign.Id, Guid.NewGuid());
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorNotInCampaign_ShouldThrowException()
+        {
+            //Arrange
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test",
+            };
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaign);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(returnMentor);
+
+            //Act
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(Guid.NewGuid(), Guid.NewGuid());
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorInCampaign_ShouldRemoveMentorFromCampaign()
+        {
+            //Arrange
+            var campaign = campaigns.First();
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaign);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(returnMentor);
+
+            //Act
+            await mentorsServiceMock.RemoveFromCampaignAsync(campaign.Id, returnMentor.Id);
+
+            //Assert
+            var response = await mentorsRepositoryMock.Object.GetByIdAsync(returnMentor.Id);
+
+            Assert.NotNull(response);
+            Assert.DoesNotContain<Campaign>(campaign, response!.Campaigns);
+        }
+
+        #endregion
+
         private CreateMentorRequest CreateValidCreateMentorRequest()
         {
             //Arrange

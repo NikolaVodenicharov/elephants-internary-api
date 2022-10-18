@@ -160,7 +160,7 @@ namespace Core.Features.Mentors
             if (mentor.Campaigns.Contains(campaign))
             {
                 mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is already assigned to" +
-                    " campaign with Id {CampaignId}", nameof(MentorsService), nameof(request.PersonId), nameof(request.CampaignId));
+                    " campaign with Id {CampaignId}", nameof(MentorsService), request.PersonId, request.CampaignId);
 
                 throw new CoreException($"Mentor {mentor.DisplayName} ({mentor.Email}) " +
                     $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
@@ -196,6 +196,34 @@ namespace Core.Features.Mentors
             }
 
             return mentorSpecialities;
+        }
+
+        public async Task RemoveFromCampaignAsync(Guid campaignId, Guid mentorId)
+        {
+            var campaign = await campaignsRepository.GetByIdAsync(campaignId);
+
+            Guard.EnsureNotNull(campaign, mentorsServiceLogger, nameof(MentorsService), 
+                nameof(Campaign), campaignId);
+
+            var mentor = await mentorsRepository.GetByIdAsync(mentorId);
+
+            Guard.EnsureNotNull(mentor, mentorsServiceLogger, nameof(MentorsService),
+                nameof(Mentor), mentorId);
+
+            if (!mentor.Campaigns.Contains(campaign))
+            {
+                mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is not assigned to " +
+                    "campaign with Id {CampaignId}", nameof(MentorsService), mentorId, campaignId);
+
+                throw new CoreException($"{mentor.DisplayName} ({mentor.Email}) is not assigned to " +
+                    $"campaign '{campaign.Name}'", HttpStatusCode.BadRequest);
+            }
+
+            mentor.Campaigns.Remove(campaign);
+
+            await mentorsRepository.SaveTrackingChangesAsync();
+
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(RemoveFromCampaignAsync), true);
         }
     }
 }
