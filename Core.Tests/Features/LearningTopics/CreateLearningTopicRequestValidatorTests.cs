@@ -17,7 +17,6 @@ namespace Core.Tests.Features.LearningTopics
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
-            new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace }
         };
 
         public static IEnumerable<object[]> invalidNames = new List<object[]>

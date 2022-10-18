@@ -12,10 +12,10 @@ namespace Core.Features.Specialities.Support
                 .NotEqual(Guid.Empty);
 
             RuleFor(u => u.Name)
-                .NotNull()
+                .NotEmpty()
                 .MinimumLength(SpecialityValidationConstants.NameMinLength)
                 .MaximumLength(SpecialityValidationConstants.NameMaxLength)
-                .Matches(RegularExpressionPatterns.LettersDotsNumberSignsAndExclamationMarks);
+                .Matches(RegularExpressionPatterns.SpecialityNamePattern);
         }
     }
 }

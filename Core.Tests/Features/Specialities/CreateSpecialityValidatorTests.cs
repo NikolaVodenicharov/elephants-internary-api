@@ -72,7 +72,6 @@ namespace Core.Tests.Features.Specialities
         [Theory]
         [InlineData(NameEdgeCaseTestHelper.NameWithAmpersand)]
         [InlineData(NameEdgeCaseTestHelper.NameWithDash)]
-        [InlineData(NameEdgeCaseTestHelper.NameWithWhiteSpace)]
         [InlineData(NameEdgeCaseTestHelper.NameWithDigit)]
         public void Validator_WhenNameContainsForbiddenSpecialCharacters_ShouldHaveError(string name)
         {
