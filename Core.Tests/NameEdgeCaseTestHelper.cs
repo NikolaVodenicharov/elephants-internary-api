@@ -14,7 +14,6 @@ namespace Core.Tests
         public const string NameWithDash = "NameWith-";
         public const string NameWithNumberSign = "NameWith#";
         public const string NameWithExclamationMark = "NameWith!";
-        public const string NameWithWhiteSpace = "Name with white space";
         public const string NameWithAmpersand = "NameWith&";
 
         public const string FirstNameMock = "John";

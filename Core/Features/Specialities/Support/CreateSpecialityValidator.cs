@@ -9,10 +9,10 @@ namespace Core.Features.Specialities.Support
         public CreateSpecialityValidator()
         {
             RuleFor(c => c.Name)
-                .NotNull()
+                .NotEmpty()
                 .MinimumLength(SpecialityValidationConstants.NameMinLength)
                 .MaximumLength(SpecialityValidationConstants.NameMaxLength)
-                .Matches(RegularExpressionPatterns.LettersDotsNumberSignsAndExclamationMarks);
+                .Matches(RegularExpressionPatterns.SpecialityNamePattern);
         }
     }
 }
