@@ -1,15 +1,19 @@
-﻿using Core.Common;
-using Core.Common.Exceptions;
+﻿using Core.Common.Exceptions;
 using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
+using Core.Features.Campaigns.ResponseModels;
+using Core.Features.Campaigns.Support;
 using Core.Features.Mentors;
-using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
 using Core.Features.Mentors.Support;
+using Core.Features.Persons.Interfaces;
+using Core.Features.Persons.ResponseModels;
 using Core.Features.Specialities.Interfaces;
+using Core.Features.Specialities.ResponseModels;
+using Core.Features.Specialities.Support;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -25,19 +29,27 @@ namespace Core.Tests.Features.Mentors
     public class MentorsServiceTests
     {
         private readonly Guid id = Guid.NewGuid();
-        private readonly string mentorDisplayName = "Iliyan Dimitrov";
-        private readonly string mentorEmail = "iliyan.dimitrov@endava.com";
+        private readonly string displayName = "Display Name";
+        private readonly string email = "iliyan.dimitrov@endava.com";
+        private readonly string ApplicationUrl = "ApplicationUrl";
         private readonly Guid specialityId = Guid.NewGuid();
         private readonly string specialityName = "Backend";
-        private Mock<IMentorsRepository> mentorsRepositoryMock;
-        private Mock<ICampaignsRepository> campaignsRepositoryMock;
-        private Mock<ISpecialitiesRepository> specialitiesRepositoryMock;
-        private MentorsService mentorsServiceMock;
-        private Mentor returnMentor;
-        private Speciality speciality;
-        private List<Speciality> specialities;
-        private List<Guid> specialityIds;
-        private List<Campaign> campaigns;
+        private readonly Mock<IMentorsRepository> mentorsRepositoryMock;
+        private readonly Mock<ICampaignsRepository> campaignsRepositoryMock;
+        private readonly Mock<ISpecialitiesRepository> specialitiesRepositoryMock;
+        private readonly Mock<IIdentityRepository> identityRepositoryMock;
+        private readonly MentorsService mentorsServiceMock;
+        private CreateMentorRequest createMentorRequest = null!;
+        private UpdateMentorRequest updateMentorRequest = null!;
+        private MentorSummaryResponse mentorSummaryResponse = null!;
+        private MentorPaginationResponse mentorPaginationResponse = null!;
+        private MentorDetailsResponse mentorDetailsResponse = null!;
+        private IEnumerable<MentorPaginationResponse> mentorPaginationResponseList = null!;
+        private IdentitySummaryResponse identitySummaryResponse = null!;
+        private Campaign campaignMock = null!;
+        private Speciality specialityMock = null!;
+        private List<Speciality> specialitiesMock = null!;
+        private List<Guid> specialityIds = null!;
 
         public static IEnumerable<object[]> invalidEmails = new List<object[]>
         {
@@ -52,7 +64,6 @@ namespace Core.Tests.Features.Mentors
             new object[] { "invalidexample.co_ukkkk" },
         };
 
-
         public MentorsServiceTests()
         {
             var createMentorRequestValidator = new CreateMentorRequestValidator();
@@ -62,145 +73,37 @@ namespace Core.Tests.Features.Mentors
             mentorsRepositoryMock = new Mock<IMentorsRepository>();
             campaignsRepositoryMock = new Mock<ICampaignsRepository>();
             specialitiesRepositoryMock = new Mock<ISpecialitiesRepository>();
+            identityRepositoryMock = new Mock<IIdentityRepository>();
 
             var mockLogger = new Mock<ILogger<MentorsService>>();
 
             mentorsServiceMock = new MentorsService(
-                mentorsRepositoryMock.Object, campaignsRepositoryMock.Object, specialitiesRepositoryMock.Object, 
-                mockLogger.Object, createMentorRequestValidator, updateMentorRequestValidator, paginationRequestValidator);
+                mentorsRepositoryMock.Object,
+                campaignsRepositoryMock.Object,
+                specialitiesRepositoryMock.Object,
+                identityRepositoryMock.Object,
+                mockLogger.Object,
+                createMentorRequestValidator,
+                updateMentorRequestValidator,
+                paginationRequestValidator);
 
-            speciality = new Speciality()
-            {
-                Id = specialityId,
-                Name = specialityName
-            };
-
-            specialities = new List<Speciality>()
-            {
-                speciality
-            };
-
-            specialityIds = new List<Guid>() { speciality.Id };
-
-            var campaign = new Campaign()
-            {
-                Id = Guid.NewGuid(),
-                Name = "Test Campaign",
-                StartDate =  DateTime.Today.AddDays(5),
-                EndDate =  DateTime.Today.AddDays(35),
-                IsActive = false
-            };
-
-            campaigns = new List<Campaign>() { campaign };
-
-            returnMentor = new Mentor()
-            {
-                Id = id,
-                DisplayName = mentorDisplayName,
-                Email = mentorEmail,
-                Specialities = specialities,
-                Campaigns = campaigns
-            };
+            InitializeMockModels();
         }
 
         #region CreateAsyncTests
-
-        [Fact]
-        public async Task CreateAsync_CallCorrectRepositoryMethod()
-        {
-            //Arrange
-            var request = CreateValidCreateMentorRequest();
-
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(false);
-
-            mentorsRepositoryMock
-                .Setup(x => x.AddAsync(It.IsAny<Mentor>()))
-                .ReturnsAsync(returnMentor);
-
-            //Act
-            await mentorsServiceMock.CreateAsync(request);
-
-            //Assert
-            mentorsRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Mentor>()), Times.Once());
-        }
-
-        [Fact]
-        public async Task CreateAsync_WhenDataIsCorrect_ShouldReturnCorrectData()
-        {
-            //Arrange
-            var request = CreateValidCreateMentorRequest();
-
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(false);
-
-            mentorsRepositoryMock
-                .Setup(x => x.AddAsync(It.IsAny<Mentor>()))
-                .ReturnsAsync(returnMentor);
-
-            //Act
-            var response = await mentorsServiceMock.CreateAsync(request);
-
-            //Assert
-            Assert.NotEqual(Guid.Empty, response.Id);
-            Assert.Equal(mentorDisplayName, response.DisplayName);
-            Assert.Equal(mentorEmail, response.Email);
-            Assert.NotNull(response.Specialities);
-        }
-
-        [Fact]
-        public async Task CreateAsync_WhenEmailIsDuplicated_ShouldThrowException()
-        {
-            //Arrange
-            var request = CreateValidCreateMentorRequest();
-
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(true);
-
-            //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task CreateAsync_WhenDisplayNameIsEmpty_ShouldThrowException()
-        {
-            //Arrange
-            var request = new CreateMentorRequest(string.Empty, mentorEmail, specialityIds);
-
-            //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
 
         [Theory]
         [MemberData(nameof(invalidEmails))]
         public async Task CreateAsync_WhenEmailIsIncorrectFormat_ShouldThrowException(string invalidEmail)
         {
             //Arrange
-            var request = new CreateMentorRequest(mentorDisplayName, invalidEmail, specialityIds);
+            var invalidCreateMentorRequest = new CreateMentorRequest(
+                invalidEmail,
+                specialityIds,
+                ApplicationUrl);
 
             //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
+            var action = async () => await mentorsServiceMock.CreateAsync(invalidCreateMentorRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -210,73 +113,71 @@ namespace Core.Tests.Features.Mentors
         public async Task CreateAsync_WhenEmailAlreadyUsed_ShouldThrowException()
         {
             //Arrange
-            var request = CreateValidCreateMentorRequest();
-
             specialitiesRepositoryMock
                 .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
+                .ReturnsAsync(specialitiesMock);
 
             mentorsRepositoryMock
                 .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
                 .ReturnsAsync(true);
 
             //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
+            var action = async () => await mentorsServiceMock.CreateAsync(createMentorRequest);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]
-        public async Task CreateAsync_WhenEmailNotUsed_ShouldReturnCorrectData()
+        public async Task CreateAsync_WhenValidData_ShouldReturnCorrectData()
         {
             //Arrange
-            var request = CreateValidCreateMentorRequest();
-
             specialitiesRepositoryMock
                 .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
+                .ReturnsAsync(specialitiesMock);
 
             mentorsRepositoryMock
                 .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
                 .ReturnsAsync(false);
 
             mentorsRepositoryMock
-                .Setup(x => x.AddAsync(It.IsAny<Mentor>()))
-                .ReturnsAsync(returnMentor);
+                .Setup(x => x.CreateAsync(It.IsAny<CreateMentorRepoRequest>()))
+                .ReturnsAsync(mentorSummaryResponse);
+
+            identityRepositoryMock
+                .Setup(i => i.SendUserInviteAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(identitySummaryResponse);
 
             //Act
-            var response = await mentorsServiceMock.CreateAsync(request);
+            var response = await mentorsServiceMock.CreateAsync(createMentorRequest);
 
             //Assert
-            Assert.NotNull(response);
-            Assert.NotEqual(Guid.Empty, response.Id);
-            Assert.Equal(request.DisplayName, response.DisplayName);
-            Assert.Equal(request.Email, response.Email);
-            Assert.NotEmpty(response.Specialities);
-            Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
+            Assert.Equal(mentorSummaryResponse.DisplayName, response.DisplayName);
+            Assert.Equal(mentorSummaryResponse.WorkEmail, response.WorkEmail);
         }
 
         [Fact]
-        public async Task CreateAsync_WhenNotAllSpecialitiesFound_ShouldThrowException()
+        public async Task CreateAsync_WhenNotAllSpecialtiesFound_ShouldThrowException()
         {
             //Arrange
-            var request = new CreateMentorRequest(mentorDisplayName, mentorEmail, new List<Guid>() { specialityId, Guid.NewGuid() });
+            specialitiesRepositoryMock
+                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
+                .ReturnsAsync(new List<Speciality>());
 
             mentorsRepositoryMock
                 .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
                 .ReturnsAsync(false);
 
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
+            mentorsRepositoryMock
+                .Setup(x => x.CreateAsync(It.IsAny<CreateMentorRepoRequest>()))
+                .ReturnsAsync(mentorSummaryResponse);
+
 
             //Act
-            var action = async () => await mentorsServiceMock.CreateAsync(request);
+            var action = async () => await mentorsServiceMock.CreateAsync(createMentorRequest);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
-
         }
 
         #endregion
@@ -287,69 +188,34 @@ namespace Core.Tests.Features.Mentors
         public async Task UpdateAsync_WhenDataIsCorrect_ShouldUpdate()
         {
             //Arrange
-            var request = CreateUpdateMentorRequest();
-
             specialitiesRepositoryMock
                 .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
+                .ReturnsAsync(specialitiesMock);
 
             mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(false);
+                .Setup(m => m.UpdateAsync(It.IsAny<UpdateMentorRepoRequest>()))
+                .ReturnsAsync(mentorDetailsResponse);
 
             //Act
-            var response = await mentorsServiceMock.UpdateAsync(request);
+            var response = await mentorsServiceMock.UpdateAsync(updateMentorRequest);
 
             //Assert
-            Assert.NotNull(response);
-            Assert.Equal(request.Id, response.Id);
-            Assert.NotNull(response.Specialities);
-            Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
+            Assert.Equal(mentorDetailsResponse, response);
         }
 
         [Fact]
         public async Task UpdateAsync_WhenMentorNotFound_ShouldThrowException()
         {
             //Arrange
-            var request = CreateUpdateMentorRequest();
+            specialitiesRepositoryMock
+                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
+                .ReturnsAsync(specialitiesMock);
 
             //Act
-            var action = async () => await mentorsServiceMock.UpdateAsync(request);
+            var action = async () => await mentorsServiceMock.UpdateAsync(updateMentorRequest);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WhenMentorExists_ShouldUpdate()
-        {
-            //Arrange
-            var request = CreateUpdateMentorRequest();
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
-
-            specialitiesRepositoryMock
-                .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
-
-            mentorsRepositoryMock
-                .Setup(x => x.IsEmailUsed(It.IsAny<string>()))
-                .ReturnsAsync(false);
-
-            //Act
-            var response = await mentorsServiceMock.UpdateAsync(request);
-
-            //Assert
-            Assert.NotNull(response);
-            Assert.Equal(request.Id, response.Id);
-            Assert.NotNull(response.Specialities);
-            Assert.Equal(request.SpecialityIds.Count(), response.Specialities.Count);
         }
 
         [Fact]
@@ -358,20 +224,15 @@ namespace Core.Tests.Features.Mentors
             //Arrange
             var request = new UpdateMentorRequest(id, new List<Guid>() { specialityId, Guid.NewGuid() });
 
-            mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
-
             specialitiesRepositoryMock
                 .Setup(x => x.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>()))
-                .ReturnsAsync(specialities);
+                .ReturnsAsync(specialitiesMock);
 
             //Act
             var action = async () => await mentorsServiceMock.UpdateAsync(request);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
-
         }
 
         #endregion
@@ -384,7 +245,7 @@ namespace Core.Tests.Features.Mentors
             //Arrange
             mentorsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
+                .ReturnsAsync(mentorDetailsResponse);
 
             //Act
             var response = await mentorsServiceMock.GetByIdAsync(id);
@@ -392,8 +253,9 @@ namespace Core.Tests.Features.Mentors
             //Assert
             Assert.NotNull(response);
             Assert.Equal(id, response.Id);
-            Assert.Equal(mentorDisplayName, response.DisplayName);
-            Assert.Equal(mentorEmail, response.Email);
+            Assert.Equal(mentorDetailsResponse.DisplayName, response.DisplayName);
+            Assert.Equal(mentorDetailsResponse.WorkEmail, response.WorkEmail);
+            Assert.Equal(mentorDetailsResponse.Id, response.Id);
         }
 
         [Fact]
@@ -420,9 +282,9 @@ namespace Core.Tests.Features.Mentors
         public async Task GetPaginationAsync_WhenFilterIsCorrectAndCampaignIdIsNull_ShouldGetData(int pageNum, int pageSize)
         {
             //Arrange
-            var mentorList = new List<Mentor>()
+            var mentorList = new List<MentorPaginationResponse>()
             {
-                returnMentor
+                mentorPaginationResponse
             };
 
             var filter = new PaginationRequest(pageNum, pageSize);
@@ -443,27 +305,14 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Theory]
-        [InlineData(-1)]
-        [InlineData(0)]
-        public async Task GetPaginationAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
+        [InlineData(-1, 1)]
+        [InlineData(0, 1)]
+        [InlineData(1, -1)]
+        [InlineData(1, 0)]
+        public async Task GetPaginationAsync_WhenPageValuesAreInvalid_ShouldThrowException(int pageNum, int pageSize)
         {
             //Arrange
-            var filter = new PaginationRequest(pageNum, 4);
-
-            //Act
-            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        public async Task GetPaginationAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
-        {
-            //Arrange
-            var filter = new PaginationRequest(1, pageSize);
+            var filter = new PaginationRequest(pageNum, pageSize);
 
             //Act
             var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
@@ -478,20 +327,18 @@ namespace Core.Tests.Features.Mentors
             //Arrange
             var newId = Guid.NewGuid();
 
-            var mentorList = new List<Mentor>() { returnMentor };
-
-            var expectedPaginationResponse = new PaginationResponse<MentorDetailsResponse>(
-                mentorList.ToMentorDetailsResponses(), 1, 4);
+            var expectedPaginationResponse = new PaginationResponse<MentorPaginationResponse>(
+                mentorPaginationResponseList, 1, 4);
 
             var filter = new PaginationRequest(1, 1);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(mentorList.Count);
+                .ReturnsAsync(mentorPaginationResponseList.Count);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
-                .ReturnsAsync(mentorList);
+                .ReturnsAsync(mentorPaginationResponseList);
 
             //Act
             var actualPaginationResponse = await mentorsServiceMock.GetPaginationAsync(filter, newId);
@@ -504,110 +351,21 @@ namespace Core.Tests.Features.Mentors
         public async Task GetPaginationAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
         {
             //Arrange
-            var pageNum = 10;
-            var pageSize = 10;
-            var count = 1;
-
-            var mentorList = new List<Mentor>()
-            {
-                returnMentor
-            };
-
-            var filter = new PaginationRequest(pageNum, pageSize);
+            var paginationReguquestInvalidPageNum = new PaginationRequest(10, 10);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>(), null))
-                .ReturnsAsync(mentorList);
+                .ReturnsAsync(mentorPaginationResponseList);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(count);
+                .ReturnsAsync(mentorPaginationResponseList.Count);
 
             //Act
-            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
+            var action = async () => await mentorsServiceMock.GetPaginationAsync(paginationReguquestInvalidPageNum);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task GetPaginationAsync_WhenCampaignIdIsNullAndNoMentorsFoundAndPageNumIsBiggerThanTotalPages_ShouldThrowException()
-        {
-            //Arrange
-            var pageNum = 2;
-            var pageSize = 10;
-
-            var filter = new PaginationRequest(pageNum, pageSize);
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(0);
-
-            //Act
-            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task GetPaginationAsync_WhenCampaignIdIsNullAndNoMentorsFound_ShouldReturnEmptyCollection()
-        {
-            //Arrange
-            var pageNum = 1;
-            var pageSize = 10;
-
-            var filter = new PaginationRequest(pageNum, pageSize);
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(0);
-
-            //Act
-            var response = await mentorsServiceMock.GetPaginationAsync(filter);
-
-            //Assert
-            Assert.Empty(response.Content);
-        }
-
-        [Fact]
-        public async Task GetPaginationAsync_WhenCampaignIdIsSetAndCampaignHasNoMentorsAndPageNumIsBiggerThanTotalPages_ShouldThrowException()
-        {
-            //Arrange
-            var pageNum = 2;
-            var pageSize = 10;
-
-            var filter = new PaginationRequest(pageNum, pageSize);
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(0);
-
-            //Act
-            var action = async () => await mentorsServiceMock.GetPaginationAsync(filter, Guid.NewGuid());
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task GetPaginationAsync_WhenCampaignIdIsSetAndCampaignHasNoMentors_ShouldThrowException()
-        {
-            //Arrange
-            var pageNum = 1;
-            var pageSize = 10;
-
-            var filter = new PaginationRequest(pageNum, pageSize);
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(0);
-
-            //Act
-            var response = await mentorsServiceMock.GetPaginationAsync(filter, Guid.NewGuid());
-
-            //Assert
-            Assert.Empty(response.Content);
         }
 
         #endregion
@@ -628,20 +386,7 @@ namespace Core.Tests.Features.Mentors
         public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var mentor2 = new Mentor()
-            {
-                Id = Guid.NewGuid(),
-                DisplayName = "Ab Cd",
-                Email = "abcd@gmail.com",
-                Specialities = new List<Speciality>(),
-                Campaigns = new List<Campaign>()
-            };
-
-            var mentorList = new List<Mentor>() { returnMentor, mentor2 };
-
-            mentorsRepositoryMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(mentorList.Count);
+            var mentorList = new List<MentorPaginationResponse>() { mentorPaginationResponse };
 
             mentorsRepositoryMock
                 .Setup(x => x.GetAllAsync(null, null))
@@ -651,43 +396,7 @@ namespace Core.Tests.Features.Mentors
             var response = await mentorsServiceMock.GetAllAsync();
 
             //Assert
-            Assert.Equal(mentorList.Count, response.Count());
-        }
-
-        #endregion
-
-        #region GetMentorCountByCampaignIdAsyncTests
-
-        [Fact]
-        public async Task GetMentorCountByCampaignIdAsync_WhenCampaignHasMentors_ShouldReturnCorrectCount()
-        {
-            //Arrange
-            var newId = Guid.NewGuid();
-
-            var mentorList = new List<Mentor>() { returnMentor };
-
-            mentorsRepositoryMock
-                 .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                 .ReturnsAsync(mentorList.Count);
-
-            //Act
-            var count = await mentorsServiceMock.GetCountByCampaignIdAsync(newId);
-
-            //Assert
-            Assert.Equal(mentorList.Count, count);
-        }
-
-        [Fact]
-        public async Task GetMentorCountByCampaignIdAsync_WhenCampaignHasNoMentors_ShouldReturnZeroCount()
-        {
-            //Arrange
-            var newId = Guid.NewGuid();
-
-            //Act
-            var count = await mentorsServiceMock.GetCountByCampaignIdAsync(newId);
-
-            //Assert
-            Assert.Equal(0, count);
+            Assert.Single(response);
         }
 
         #endregion
@@ -710,7 +419,7 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task GetCountAsync_WhenNoMentorsFound_ShouldThrowError()
+        public async Task GetCountAsync_WhenNoMentorsFound_ShouldReturnZero()
         {
             //Act
             var response = await mentorsServiceMock.GetCountAsync();
@@ -724,27 +433,27 @@ namespace Core.Tests.Features.Mentors
         #region AddToCampaignAsyncTests
 
         [Fact]
-        public async Task AssignToCampaignAsync_WhenCampaignNotFound_ShouldThrowError()
+        public async Task AddToCampaignAsync_WhenCampaignNotFound_ShouldThrowError()
         {
             //Arrange
-            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
-            
+            var addMentorToCampaignRequest = new AddMentorToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+
             //Act
-            var action = async() => await mentorsServiceMock.AddToCampaignAsync(request);
+            var action = async () => await mentorsServiceMock.AddToCampaignAsync(addMentorToCampaignRequest);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]
-        public async Task AssignToCampaignAsync_WhenMentorNotFound_ShouldThrowError()
+        public async Task AddToCampaignAsync_WhenMentorNotFound_ShouldThrowError()
         {
             //Arrange
-            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+            var addMentorToCampaignRequest = new AddMentorToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
 
             var campaign = new Campaign()
             {
-                Id = request.CampaignId,
+                Id = addMentorToCampaignRequest.CampaignId,
                 Name = "Test"
             };
 
@@ -753,31 +462,43 @@ namespace Core.Tests.Features.Mentors
                 .ReturnsAsync(campaign);
 
             //Act
-            var action = async () => await mentorsServiceMock.AddToCampaignAsync(request);
+            var action = async () => await mentorsServiceMock.AddToCampaignAsync(addMentorToCampaignRequest);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]
-        public async Task AssignToCampaignAsync_WhenMentorAlreadyAssignedToCampaign_ShouldThrowError()
+        public async Task AddToCampaignAsync_WhenMentorAlreadyAssignedToCampaign_ShouldThrowError()
         {
             //Arrange
-            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+            var addMentorToCampaignRequest = new AddMentorToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaignMock);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(mentorDetailsResponse);
+
+            //Act
+            var action = async () => await mentorsServiceMock.AddToCampaignAsync(addMentorToCampaignRequest);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task AddToCampaignAsync_WhenMentorNotAssignedToCampaign_ShouldAddMentorToCampaign()
+        {
+            //Arrange
+            var addMentorToCampaignRequest = new AddMentorToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
 
             var campaign = new Campaign()
             {
-                Id = request.CampaignId,
+                Id = addMentorToCampaignRequest.CampaignId,
                 Name = "Test"
-            };
-
-            var mentor = new Mentor()
-            {
-                Id = request.PersonId,
-                DisplayName = mentorDisplayName,
-                Email = mentorEmail,
-                Campaigns = new List<Campaign>() { campaign },
-                Specialities = new List<Speciality>()
             };
 
             campaignsRepositoryMock
@@ -786,52 +507,22 @@ namespace Core.Tests.Features.Mentors
 
             mentorsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(mentor);
+                .ReturnsAsync(mentorDetailsResponse);
 
-            //Act
-            var action = async () => await mentorsServiceMock.AddToCampaignAsync(request);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task AssignToCampaignAsync_WhenMentorNotAssignedToCampaign_ShouldAddMentorToCampaign()
-        {
-            //Arrange
-            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
-
-            var campaign = new Campaign()
-            {
-                Id = request.CampaignId,
-                Name = "Test"
-            };
-
-            var mentor = new Mentor()
-            {
-                Id = request.PersonId,
-                DisplayName = mentorDisplayName,
-                Email = mentorEmail,
-                Campaigns = new List<Campaign>(),
-                Specialities = new List<Speciality>()
-            };
-
-            campaignsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaign);
+            AddMentorToCampaignRepoRequest addMentorToCampaignRepoRequest = null!;
 
             mentorsRepositoryMock
-                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(mentor);
+                .Setup(m => m.AddToCampaignAsync(It.IsAny<AddMentorToCampaignRepoRequest>()))
+                .Callback((AddMentorToCampaignRepoRequest request) => addMentorToCampaignRepoRequest = request)
+                .ReturnsAsync(true);
 
             //Act
-            await mentorsServiceMock.AddToCampaignAsync(request);
+            var isAdded = await mentorsServiceMock.AddToCampaignAsync(addMentorToCampaignRequest);
 
             //Arrange
-            var response = await mentorsRepositoryMock.Object.GetByIdAsync(request.PersonId);
-
-            Assert.NotNull(response);
-            Assert.Equal(campaign, response.Campaigns.First());
+            Assert.True(isAdded);
+            Assert.Equal(addMentorToCampaignRequest.CampaignId, addMentorToCampaignRepoRequest.Campaign.Id);
+            Assert.Equal(addMentorToCampaignRequest.MentorId, addMentorToCampaignRepoRequest.MentorId);
         }
 
         #endregion
@@ -852,14 +543,12 @@ namespace Core.Tests.Features.Mentors
         public async Task RemoveFromCampaignAsync_WhenMentorNotFound_ShouldThrowException()
         {
             //Arrange
-            var campaign = campaigns.First();
-
             campaignsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaign);
+                .ReturnsAsync(campaignMock);
 
             //Act
-            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(campaign.Id, Guid.NewGuid());
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(campaignMock.Id, Guid.NewGuid());
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -869,22 +558,21 @@ namespace Core.Tests.Features.Mentors
         public async Task RemoveFromCampaignAsync_WhenMentorNotInCampaign_ShouldThrowException()
         {
             //Arrange
-            var campaign = new Campaign()
-            {
-                Id = Guid.NewGuid(),
-                Name = "Test",
-            };
+            var specialityList = new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() };
+
+            var mentor = new MentorDetailsResponse(Guid.NewGuid(), "Ivan Ivanov", "i.iv@test.com", 
+                new List<CampaignSummaryResponse>(), specialityList);
 
             campaignsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaign);
+                .ReturnsAsync(campaignMock);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
+                .ReturnsAsync(mentor);
 
             //Act
-            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(Guid.NewGuid(), Guid.NewGuid());
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(campaignMock.Id, mentor.Id);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -894,37 +582,94 @@ namespace Core.Tests.Features.Mentors
         public async Task RemoveFromCampaignAsync_WhenMentorInCampaign_ShouldRemoveMentorFromCampaign()
         {
             //Arrange
-            var campaign = campaigns.First();
+            var campaignSummary = campaignMock.ToCampaignSummary();
+
+            var campaignList = new List<CampaignSummaryResponse>() { campaignSummary };
+
+            var specialityList = new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() };
+
+            var mentor = new MentorDetailsResponse(
+                Guid.NewGuid(), "Ivan Ivanov", "i.iv@test.com", campaignList, specialityList);
 
             campaignsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaign);
+                .ReturnsAsync(campaignMock);
 
             mentorsRepositoryMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(returnMentor);
+                .ReturnsAsync(mentor);
+
+            mentorsRepositoryMock.
+                Setup(x => x.RemoveFromCampaignAsync(It.IsAny<Guid>(), It.IsAny<Campaign>()))
+                .ReturnsAsync(true);
 
             //Act
-            await mentorsServiceMock.RemoveFromCampaignAsync(campaign.Id, returnMentor.Id);
+            var isRemoved = await mentorsServiceMock.RemoveFromCampaignAsync(mentor.Id, campaignMock.Id);
 
             //Assert
-            var response = await mentorsRepositoryMock.Object.GetByIdAsync(returnMentor.Id);
+            var response = await mentorsRepositoryMock.Object.GetByIdAsync(mentor.Id);
 
-            Assert.NotNull(response);
-            Assert.DoesNotContain<Campaign>(campaign, response!.Campaigns);
+            Assert.True(isRemoved);
         }
 
         #endregion
 
-        private CreateMentorRequest CreateValidCreateMentorRequest()
+        private void InitializeMockModels()
         {
-            //Arrange
-            return new CreateMentorRequest(mentorDisplayName, mentorEmail, specialityIds);
-        }
+            specialityMock = new Speciality()
+            {
+                Id = specialityId,
+                Name = specialityName
+            };
 
-        private UpdateMentorRequest CreateUpdateMentorRequest()
-        {
-            return new UpdateMentorRequest(id, specialityIds);
+            campaignMock = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Campaign name",
+                StartDate = DateTime.UtcNow.AddDays(1),
+                EndDate = DateTime.UtcNow.AddDays(10),
+                IsActive = true
+            };
+
+            specialitiesMock = new List<Speciality>()
+            {
+                specialityMock
+            };
+
+            specialityIds = new List<Guid>() { specialityMock.Id };
+
+            createMentorRequest = new CreateMentorRequest(
+                email,
+                specialityIds,
+                ApplicationUrl);
+
+            updateMentorRequest = new UpdateMentorRequest(id, specialityIds);
+
+            mentorSummaryResponse = new MentorSummaryResponse(
+                id,
+                displayName,
+                email,
+                new List<SpecialitySummaryResponse>());
+
+            mentorPaginationResponse = new MentorPaginationResponse(
+                id,
+                displayName,
+                email,
+                new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() },
+                new List<CampaignSummaryResponse>() { campaignMock.ToCampaignSummary() });
+
+            mentorDetailsResponse = new MentorDetailsResponse(
+                id,
+                displayName,
+                email,
+                new List<CampaignSummaryResponse>() { campaignMock.ToCampaignSummary() },
+                new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() });
+
+            identitySummaryResponse = new IdentitySummaryResponse(
+                email,
+                displayName);
+
+            mentorPaginationResponseList = new List<MentorPaginationResponse>() { mentorPaginationResponse };
         }
     }
 }

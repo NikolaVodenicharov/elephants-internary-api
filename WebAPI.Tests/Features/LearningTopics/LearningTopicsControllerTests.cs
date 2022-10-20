@@ -26,13 +26,12 @@ namespace WebAPI.Tests.Features.LearningTopics
         private readonly Mock<ILearningTopicsService> learningTopicsService;
         private readonly LearningTopicsController learningTopicsController;
         
-        private Guid id = Guid.NewGuid();
-        private string name = "Test Learning Topic";
+        private readonly Guid id = Guid.NewGuid();
+        private readonly string name = "Test Learning Topic";
 
-        private List<SpecialitySummaryResponse> specialitySummaries;
-        private List<Speciality> specialities;
-        private List<Guid> specialityIds;
-
+        private readonly List<SpecialitySummaryResponse> specialitySummaries;
+        private readonly List<Guid> specialityIds;
+                 
         public static IEnumerable<object[]> validNames = new List<object[]>
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
@@ -79,7 +78,6 @@ namespace WebAPI.Tests.Features.LearningTopics
             var specialitySummary = new SpecialitySummaryResponse(speciality.Id, speciality.Name);
 
             specialityIds = new List<Guid>() { speciality.Id };
-            specialities = new List<Speciality>() { speciality };
             specialitySummaries = new List<SpecialitySummaryResponse>() { specialitySummary };
         }
 
@@ -106,7 +104,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Data!.Id);
             Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
             Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
 
@@ -150,7 +148,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Data!.Id);
             Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
             Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
@@ -178,7 +176,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Data!.Id);
             Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
             Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
@@ -235,7 +233,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Data!.Id);
             Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
             Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
@@ -275,7 +273,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicResponse = jsonResult!.Value as CoreResponse<LearningTopicSummaryResponse>;
 
-            Assert.Equal(learningTopicSummary.Id, learningTopicResponse.Data.Id);
+            Assert.Equal(learningTopicSummary.Id, learningTopicResponse!.Data!.Id);
             Assert.Equal(learningTopicSummary.Name, learningTopicResponse.Data.Name);
             Assert.Equal(learningTopicSummary.Specialities, learningTopicResponse.Data.Specialities);
         }
@@ -298,7 +296,7 @@ namespace WebAPI.Tests.Features.LearningTopics
         }
 
         [Fact]
-        public async void GetAllAsync_WhenNotEmptyAndNoPageParametersSet_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenNotEmptyAndNoPageParametersSet_ShouldReturnCorrectCountElements()
         {
             // Arrange
             var learningTopicSummary = new LearningTopicSummaryResponse(id, name, specialitySummaries);
@@ -326,7 +324,7 @@ namespace WebAPI.Tests.Features.LearningTopics
         }
 
         [Fact]
-        public async void GetAllAsync_WhenEmptyAndNoPageParametersSet_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenEmptyAndNoPageParametersSet_ShouldReturnEmptyCollection()
         {
             // Arrange
             learningTopicsService
@@ -345,7 +343,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learingTopicsResponse = jsonResult!.Value as CoreResponse<IEnumerable<LearningTopicSummaryResponse>>;
 
-            Assert.Empty(learingTopicsResponse.Data);
+            Assert.Empty(learingTopicsResponse!.Data);
         }
 
         [Fact]
@@ -422,7 +420,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<LearningTopicSummaryResponse>>;
 
-            Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
+            Assert.Equal(expectedResponse.Content.Count(), actualResponse!.Data!.Content.Count());
         }
     }
 }

@@ -7,6 +7,7 @@ using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
+using Core.Features.Persons.Entities;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
@@ -46,20 +47,18 @@ namespace Core.Features.Interns
 
         public async Task<InternCampaignSummaryResponse> AddInternCampaignAsync(AddInternCampaignRequest addInternCampaignRequest)
         {
-            await addInternCampaignRequestValidator.ValidateAndThrowAsync(addInternCampaignRequest);
-
-            await ValidateInternIsNotInCampaign(addInternCampaignRequest.InternId, addInternCampaignRequest.CampaignId);
-
-            var intern = await GetValidInternByIdAsync(addInternCampaignRequest.InternId);
+            await AddInternCampaignAsyncValidations(addInternCampaignRequest);
 
             var internCampaign = await CreateInternCampaignAsync(
                 addInternCampaignRequest.CampaignId,
                 addInternCampaignRequest.SpecialityId,
                 addInternCampaignRequest.Justification);
 
-            AddInternCampaingToIntern(intern, internCampaign);
+            var addInternCampaignRepoRequest = new AddInternCampaignRepoRequest(
+                addInternCampaignRequest.InternId,
+                internCampaign);
 
-            await internsRepository.SaveTrackingChangesAsync();
+            await internsRepository.AddInternCampaignAsync(addInternCampaignRepoRequest);
 
             internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(AddInternCampaignAsync), true);
 
@@ -70,13 +69,15 @@ namespace Core.Features.Interns
         {
             await addStateRequestValidator.ValidateAndThrowAsync(addStateRequest);
 
-            var internCampaign = await GetValidInternCampaignAsync(addStateRequest.InternId, addStateRequest.CampaignId);
+            var internCampaign = await GetValidInternCampaignAsync(
+                addStateRequest.InternId, 
+                addStateRequest.CampaignId);
 
             var state = CreateState(addStateRequest.StatusId, addStateRequest.Justification);
 
             internCampaign.States.Add(state);
 
-            await internsRepository.SaveTrackingChangesAsync();
+            await internsRepository.UpdateInternCampaignAsync(internCampaign);
 
             internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(AddStateAsync), true);
 
@@ -93,11 +94,11 @@ namespace Core.Features.Interns
 
             await UpdateSpecialityForInternCampaign(updateInternCampaignRequest.SpecialityId, internCampaign);
 
-            await internsRepository.SaveTrackingChangesAsync();
+            var internCampaignSummaryResponse = await internsRepository.UpdateInternCampaignAsync(internCampaign);
 
             internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(UpdateInternCampaignAsync), true);
 
-            return internCampaign.ToInternCampaignResponse();
+            return internCampaignSummaryResponse;
         }
 
         public async Task<InternCampaign> CreateInternCampaignAsync(Guid campaignId, Guid specialityId, string justificaton)
@@ -108,7 +109,7 @@ namespace Core.Features.Interns
 
             var state = CreateState(StatusEnum.Candidate, justificaton);
 
-            var internIntersection = new InternCampaign()
+            var internCampaign = new InternCampaign()
             {
                 Campaign = campaign,
                 Speciality = speciality,
@@ -117,7 +118,7 @@ namespace Core.Features.Interns
 
             internCampaignsServiceLogger.LogInformationMethod(nameof(InternCampaignsService), nameof(CreateInternCampaignAsync), true);
 
-            return internIntersection;
+            return internCampaign;
         }
 
         public async Task<IEnumerable<StatusResponse>> GetAllStatusAsync()
@@ -139,16 +140,6 @@ namespace Core.Features.Interns
             };
 
             return state;
-        }
-
-        private async Task<Intern> GetValidInternByIdAsync(Guid id)
-        {
-            var intern = await internsRepository.GetByIdAsync(id);
-
-            Guard.EnsureNotNull(intern, internCampaignsServiceLogger, nameof(InternCampaignsService), 
-                nameof(Intern), id);
-
-            return intern;
         }
 
         private async Task<Campaign> GetValidCampaignByIdAsync(Guid id)
@@ -181,16 +172,6 @@ namespace Core.Features.Interns
             return internCampaign;
         }
 
-        private static void AddInternCampaingToIntern(Intern intern, InternCampaign internCampaign)
-        {
-            if (intern.InternCampaigns == null)
-            {
-                intern.InternCampaigns = new List<InternCampaign>();
-            }
-
-            intern.InternCampaigns.Add(internCampaign);
-        }
-
         private async Task UpdateSpecialityForInternCampaign(Guid specialityId, InternCampaign internCampaign)
         {
             var isSpecialityChanged = internCampaign.SpecialityId != specialityId;
@@ -209,17 +190,29 @@ namespace Core.Features.Interns
 
             if (internCampaing != null)
             {
-                var internInCampaignMessage = $"{nameof(Intern)} is already in that campaign.";
+                internCampaignsServiceLogger.LogError(
+                    "[InternCampaignService] Person with id {internId} is already in that campaign with id {campaignId}.", 
+                    internId, 
+                    campaignId);
 
-                LogError(internInCampaignMessage);
-
-                throw new CoreException(internInCampaignMessage, HttpStatusCode.BadRequest);
+                throw new CoreException("Person is already in that campaign.", HttpStatusCode.BadRequest);
             }
         }
 
-        private void LogError(string message)
+        private async Task AddInternCampaignAsyncValidations(AddInternCampaignRequest addInternCampaignRequest)
         {
-            internCampaignsServiceLogger.LogError("[{ServiceName}] {message}", nameof(InternsService), message);
+            await addInternCampaignRequestValidator.ValidateAndThrowAsync(addInternCampaignRequest);
+
+            await ValidateInternIsNotInCampaign(addInternCampaignRequest.InternId, addInternCampaignRequest.CampaignId);
+
+            var internSummaryResponse = await internsRepository.GetByIdAsync(addInternCampaignRequest.InternId);
+
+            Guard.EnsureNotNull(
+                internSummaryResponse, 
+                internCampaignsServiceLogger, 
+                nameof(InternCampaignsService), 
+                nameof(Person), 
+                addInternCampaignRequest.InternId);
         }
     }
 }

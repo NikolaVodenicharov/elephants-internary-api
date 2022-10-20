@@ -1,4 +1,5 @@
 using Microsoft.OpenApi.Models;
+using WebAPI.Common.SettingsModels;
 
 namespace WebAPI.Common.Extensions.Middlewares
 {

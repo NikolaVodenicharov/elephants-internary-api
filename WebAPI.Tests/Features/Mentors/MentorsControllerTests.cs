@@ -6,12 +6,6 @@ using Core.Features.Mentors.ResponseModels;
 using Core.Features.Mentors.Support;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
-using Core.Features.Users.Interfaces;
-using Core.Features.Identity.ResponseModels;
-using Core.Features.Users.Entities;
-using Core.Features.Users.RequestModels;
-using Core.Features.Users.ResponseModels;
-using Core.Features.Campaigns.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,48 +13,51 @@ using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using WebAPI.Common;
-using WebAPI.Features.Mentors.ApiRequestModels;
 using WebAPI.Features.Mentors;
 using WebAPI.Features.Mentors.Support;
 using Xunit;
+using Core.Features.Persons.ResponseModels;
+using WebAPI.Common.SettingsModels;
+using WebAPI.Features.Mentors.ApiRequestModels;
+using System.Linq;
+using Core.Features.Specialities.Interfaces;
+using Core.Features.Campaigns.ResponseModels;
 
 namespace WebAPI.Tests.Features.Mentors
 {
     public class MentorsControllerTests
     {
         private readonly Guid id = Guid.NewGuid();
-        private readonly string displayName = "First Last";
+        private readonly string displayName = "Display name";
         private readonly string email = "first.last@example.bg";
-
         private readonly int validPageNum = 1;
         private readonly int invalidPageNum = -1;
         private readonly int validPageSize = 10;
         private readonly int invalidPageSize = 0;
-
         private readonly Mock<IMentorsService> mentorsServiceMock;
-        private readonly Mock<IUsersService> usersServiceMock;
-        private readonly MentorsController mentorsController;
+        private CreateMentorApiRequest createMentorApiRequest = null!;
+        private SpecialitySummaryResponse specialitySummaryResponse = null!;
+        private List<SpecialitySummaryResponse> specialitySummaryResponses = null!;
+        private List<Guid> specialityIds = null!;
+        private Speciality specialityMock = null!;
+        private List<CampaignSummaryResponse> campaignSummaryResponses = null!;
+        private CampaignSummaryResponse campaignSummaryResponse = null!;
+        private MentorSummaryResponse mentorSummaryResponse = null!;
+        private MentorPaginationResponse mentorPaginationResponse = null!;
+        private MentorDetailsResponse mentorDetailsResponse = null!;
+        private IEnumerable<MentorPaginationResponse> mentorPaginationResponses = null!;
 
-        private readonly SpecialitySummaryResponse specialitySummaryResponse;
-        private Speciality speciality;
-        private List<SpecialitySummaryResponse> specialitySummaries;
-        private List<Guid> specialityIds;
-        private List<CampaignSummaryResponse> campaignSummaries;
-        private IdentitySummaryResponse userIdentitySummary;
-        private MentorDetailsResponse mentorDetails;
+        private readonly MentorsController mentorsController;
 
         public MentorsControllerTests()
         {
-            var createMentorRequestValidator = new CreateMentorRequestValidator();
             var updateMentorRequestValidator = new UpdateMentorRequestValidator();
             var createMentorApiRequestValidator = new CreateMentorApiRequestValidator();
             var paginationRequestValidator = new PaginationRequestValidator();
 
             mentorsServiceMock = new Mock<IMentorsService>();
-            usersServiceMock = new Mock<IUsersService>();
 
             var loggerMock = new Mock<ILogger<MentorsController>>();
 
@@ -71,87 +68,99 @@ namespace WebAPI.Tests.Features.Mentors
             };
 
             var invitationUrlSettings = Options.Create<InvitationUrlSettings>(invitationUrls);
-        
+
             mentorsController = new(
                 mentorsServiceMock.Object,
-                usersServiceMock.Object,
                 loggerMock.Object,
-                createMentorRequestValidator,
                 updateMentorRequestValidator,
                 createMentorApiRequestValidator,
                 paginationRequestValidator,
                 invitationUrlSettings);
 
-            speciality = new Speciality()
+            InitiazlizeMockModels();
+        }
+
+        private void InitiazlizeMockModels()
+        {
+            specialityMock = new Speciality()
             {
                 Id = Guid.NewGuid(),
                 Name = "Backend"
             };
 
-            specialityIds = new List<Guid>() { speciality.Id };
+            specialityIds = new List<Guid>() { specialityMock.Id };
 
-            specialitySummaryResponse = new SpecialitySummaryResponse(speciality.Id, speciality.Name);
+            createMentorApiRequest = new CreateMentorApiRequest(email, specialityIds);
 
-            specialitySummaries = new List<SpecialitySummaryResponse>() { specialitySummaryResponse };
+            specialitySummaryResponse = new SpecialitySummaryResponse(specialityMock.Id, specialityMock.Name);
 
-            var campaignSummary = new CampaignSummaryResponse(
+            specialitySummaryResponses = new List<SpecialitySummaryResponse>() { specialitySummaryResponse };
+
+            mentorSummaryResponse = new MentorSummaryResponse(
+                id,
+                displayName,
+                email,
+                specialitySummaryResponses);
+
+            campaignSummaryResponse = new CampaignSummaryResponse(
                 Guid.NewGuid(),
-                "Test Campaign",
-                DateTime.Today.AddDays(5),
-                DateTime.Today.AddDays(35),
-                false
-            );
+                "Campaign name",
+                DateTime.UtcNow.AddDays(1),
+                DateTime.UtcNow.AddDays(100),
+                true);
 
-            campaignSummaries = new List<CampaignSummaryResponse>() { campaignSummary };
+            campaignSummaryResponses = new List<CampaignSummaryResponse>() { campaignSummaryResponse };
 
-            var identityId = Guid.NewGuid().ToString();
-            userIdentitySummary = new IdentitySummaryResponse(email, displayName);
+            mentorPaginationResponse = new MentorPaginationResponse(id,
+                displayName,
+                email,
+                specialitySummaryResponses,
+                campaignSummaryResponses);
 
-            mentorDetails = new MentorDetailsResponse(id, displayName, email, specialitySummaries, campaignSummaries);
+            mentorDetailsResponse = new MentorDetailsResponse(
+                id,
+                displayName,
+                email,
+                campaignSummaryResponses,
+                specialitySummaryResponses);
+
+            mentorPaginationResponses = new List<MentorPaginationResponse>() { mentorPaginationResponse };
         }
 
         [Fact]
         public async Task CreateAsync_WhenDataIsCorrect_ShouldReturnCorrectData()
         {
             //Arrange
-            var request = new CreateMentorApiRequest(email, specialityIds);
-   
-            var userSummary = new UserSummaryResponse(Guid.NewGuid(), email, RoleEnum.Mentor);
-
-            var mentorSummary = new MentorSummaryResponse(id, displayName, email, specialitySummaries);
-
             mentorsServiceMock
                 .Setup(x => x.CreateAsync(It.IsAny<CreateMentorRequest>()))
-                .ReturnsAsync(mentorSummary);
-            
-            usersServiceMock
-                .Setup(x => x.ExistsByEmailAsync(It.IsAny<string>()))
-                .ReturnsAsync(false);
-            
-            usersServiceMock
-                .Setup(x => x.SendInvitationByEmailAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(userIdentitySummary);
-
-            usersServiceMock
-                .Setup(x => x.CreateAsync(It.IsAny<CreateUserRequest>()))
-                .ReturnsAsync(userSummary);
+                .ReturnsAsync(mentorSummaryResponse);
 
             //Act
-            var actionResult = await mentorsController.CreateAsync(request);
+            var actionResult = await mentorsController.CreateAsync(createMentorApiRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
 
             var jsonResult = actionResult as JsonResult;
 
-            Assert.NotNull(jsonResult);
-
             var createdResponse = jsonResult!.Value as CoreResponse<MentorSummaryResponse>;
 
-            Assert.Equal(mentorSummary.Id, createdResponse.Data.Id);
-            Assert.Equal(mentorSummary.DisplayName, createdResponse.Data.DisplayName);
-            Assert.Equal(mentorSummary.Email, createdResponse.Data.Email);
-            Assert.Equal(mentorSummary.Specialities, createdResponse.Data.Specialities);
+            Assert.Equal(mentorSummaryResponse.Id, createdResponse!.Data!.Id);
+            Assert.Equal(mentorSummaryResponse.DisplayName, createdResponse.Data.DisplayName);
+            Assert.Equal(mentorSummaryResponse.Specialities, createdResponse.Data.Specialities);
+        }
+
+        [Fact]
+        public async Task CreateAsync_WhenNoSpecialtiesArePassed_ShouldThrowException()
+        {
+            // Arrange
+            var invalidRequest = new CreateMentorApiRequest(email, new List<Guid>());
+
+            // Act
+            var action = async () => await mentorsController.CreateAsync(invalidRequest);
+
+            // Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Theory]
@@ -171,31 +180,14 @@ namespace WebAPI.Tests.Features.Mentors
         }
 
         [Fact]
-        public async Task CreateAsync_WhenUserEmailExists_ShouldThrowException()
-        {
-            // Arrange
-            var request = new CreateMentorApiRequest(email, specialityIds);
-            
-            usersServiceMock
-                .Setup(x => x.ExistsByEmailAsync(It.IsAny<string>()))
-                .ReturnsAsync(true);
-            
-            // Act
-            var action = async () => await mentorsController.CreateAsync(request);
-
-            // Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WhenDataIsCorrectShouldReturnCorrectData()
+        public async Task UpdateAsync_WhenDataIsCorrect_ShouldReturnCorrectData()
         {
             //Assert
             var request = new UpdateMentorRequest(id, specialityIds);
 
             mentorsServiceMock
                 .Setup(x => x.UpdateAsync(It.IsAny<UpdateMentorRequest>()))
-                .ReturnsAsync(mentorDetails);
+                .ReturnsAsync(mentorDetailsResponse);
 
             //Act
             var actionResult = await mentorsController.UpdateAsync(id, request);
@@ -209,11 +201,10 @@ namespace WebAPI.Tests.Features.Mentors
 
             var updatedResponse = jsonResult!.Value as CoreResponse<MentorDetailsResponse>;
 
-            Assert.Equal(mentorDetails.Id, updatedResponse.Data.Id);
-            Assert.Equal(mentorDetails.DisplayName, updatedResponse.Data.DisplayName);
-            Assert.Equal(mentorDetails.Email, updatedResponse.Data.Email);
-            Assert.Equal(mentorDetails.Specialities, updatedResponse.Data.Specialities);
-            Assert.Equal(mentorDetails.Campaigns, updatedResponse.Data.Campaigns);
+            Assert.Equal(mentorDetailsResponse.Id, updatedResponse!.Data!.Id);
+            Assert.Equal(mentorDetailsResponse.DisplayName, updatedResponse.Data.DisplayName);
+            Assert.Equal(mentorDetailsResponse.WorkEmail, updatedResponse.Data.WorkEmail);
+            Assert.Equal(mentorDetailsResponse.Specialities, updatedResponse.Data.Specialities);
         }
 
         [Fact]
@@ -233,14 +224,14 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetByIdAsync_WhenIdNotFound_ShouldThrowException()
         {
             //Arrange
-            var newId = Guid.NewGuid();
+            var notExistingId = Guid.NewGuid();
 
             mentorsServiceMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
                 .ThrowsAsync(new CoreException(String.Empty, System.Net.HttpStatusCode.NotFound));
 
             //Act
-            var action = async () => await mentorsController.GetByIdAsync(newId);
+            var action = async () => await mentorsController.GetByIdAsync(notExistingId);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
@@ -252,7 +243,7 @@ namespace WebAPI.Tests.Features.Mentors
             //Arrange
             mentorsServiceMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(mentorDetails);
+                .ReturnsAsync(mentorDetailsResponse);
 
             //Act
             var actionResult = await mentorsController.GetByIdAsync(id);
@@ -266,11 +257,11 @@ namespace WebAPI.Tests.Features.Mentors
 
             var actualResponse = jsonResult!.Value as CoreResponse<MentorDetailsResponse>;
 
-            Assert.Equal(mentorDetails.Id, actualResponse.Data.Id);
-            Assert.Equal(mentorDetails.DisplayName, actualResponse.Data.DisplayName);
-            Assert.Equal(mentorDetails.Email, actualResponse.Data.Email);
-            Assert.Equal(mentorDetails.Specialities, actualResponse.Data.Specialities);
-            Assert.Equal(mentorDetails.Campaigns, actualResponse.Data.Campaigns);
+            Assert.Equal(mentorDetailsResponse.Id, actualResponse!.Data!.Id);
+            Assert.Equal(mentorDetailsResponse.DisplayName, actualResponse.Data.DisplayName);
+            Assert.Equal(mentorDetailsResponse.WorkEmail, actualResponse.Data.WorkEmail);
+            Assert.Equal(mentorDetailsResponse.Specialities, actualResponse.Data.Specialities);
+            Assert.Equal(mentorDetailsResponse.Campaigns, actualResponse.Data.Campaigns);
         }
 
         [Fact]
@@ -297,16 +288,7 @@ namespace WebAPI.Tests.Features.Mentors
         public async Task GetAllAsync_WhenPageParametersSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse = new MentorDetailsResponse(
-                Guid.NewGuid(), "John Smith", "john.smith@gmail.com",
-                specialitySummaries,
-                campaignSummaries);
-
-            var expectedResponseList = new List<MentorDetailsResponse>() {
-                mentorDetails, expectedResponse
-            };
-
-            var expectedPaginationResponse = new PaginationResponse<MentorDetailsResponse>(expectedResponseList, 1, 2);
+            var expectedPaginationResponse = new PaginationResponse<MentorPaginationResponse>(mentorPaginationResponses, 1, 2);
 
             mentorsServiceMock
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), null))
@@ -322,20 +304,22 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(jsonResult);
 
-            var paginationResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
+            var paginationResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorPaginationResponse>>;
 
-            Assert.Equal(expectedResponseList.Count, paginationResponse.Data.Content.Count());
+            Assert.Equal(mentorPaginationResponses.Count(), paginationResponse!.Data!.Content.Count());
         }
 
         [Fact]
         public async Task GetAllAsync_WhenPageParametersSetAndEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var emptyList = new List<MentorDetailsResponse>();
+            var emptyList = new List<MentorPaginationResponse>();
+
+            var paginationResponseMock = new PaginationResponse<MentorPaginationResponse>(emptyList, 1, 1);
 
             mentorsServiceMock
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), null))
-                .ReturnsAsync(new PaginationResponse<MentorDetailsResponse>(emptyList, 1, 1));
+                .ReturnsAsync(paginationResponseMock);
 
             //Act
             var actionResult = await mentorsController.GetAllAsync(validPageNum, validPageSize);
@@ -347,9 +331,9 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(okObjectResult);
 
-            var paginationResponse = okObjectResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
+            var paginationResponse = okObjectResult!.Value as CoreResponse<PaginationResponse<MentorPaginationResponse>>;
 
-            Assert.Empty(paginationResponse.Data.Content);
+            Assert.Empty(paginationResponse!.Data!.Content);
         }
 
         [Fact]
@@ -375,6 +359,11 @@ namespace WebAPI.Tests.Features.Mentors
         [Fact]
         public async Task GetAllAsync_WhenPageParametersNotSetAndEmpty_ShouldReturnEmptyCollection()
         {
+            //Arrange
+            mentorsServiceMock
+                .Setup(x => x.GetAllAsync())
+                .ReturnsAsync(new List<MentorPaginationResponse>());
+
             //Act
             var actionResult = await mentorsController.GetAllAsync();
 
@@ -385,27 +374,18 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(okObjectResult);
 
-            var response = okObjectResult!.Value as CoreResponse<IEnumerable<MentorDetailsResponse>>;
+            var response = okObjectResult!.Value as CoreResponse<IEnumerable<MentorPaginationResponse>>;
 
-            Assert.Empty(response.Data);
+            Assert.Empty(response!.Data);
         }
 
         [Fact]
         public async Task GetAllAsync_WhenPageParametersNotSetAndNotEmpty_ShouldReturnCorrectCountElements()
         {
             //Arrange
-            var expectedResponse = new MentorDetailsResponse(
-                Guid.NewGuid(), "John Smith", "john.smith@gmail.com",
-                specialitySummaries,
-                campaignSummaries);
-
-            var expectedResponseList = new List<MentorDetailsResponse>() {
-                mentorDetails, expectedResponse
-            };
-
             mentorsServiceMock
                 .Setup(x => x.GetAllAsync())
-                .ReturnsAsync(expectedResponseList);
+                .ReturnsAsync(mentorPaginationResponses);
 
             //Act
             var actionResult = await mentorsController.GetAllAsync();
@@ -417,9 +397,9 @@ namespace WebAPI.Tests.Features.Mentors
 
             Assert.NotNull(jsonResult);
 
-            var response = jsonResult!.Value as CoreResponse<IEnumerable<MentorDetailsResponse>>;
+            var response = jsonResult!.Value as CoreResponse<IEnumerable<MentorPaginationResponse>>;
 
-            Assert.Equal(expectedResponseList.Count, response.Data.Count());
+            Assert.Equal(mentorPaginationResponses.Count(), response!.Data!.Count());
         }
     }
 }

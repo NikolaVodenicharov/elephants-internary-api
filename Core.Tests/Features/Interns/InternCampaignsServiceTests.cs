@@ -7,6 +7,7 @@ using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
+using Core.Features.Persons.Entities;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
@@ -27,14 +28,16 @@ namespace Core.Tests.Features.Interns
         private readonly Guid specialityId = Guid.NewGuid();
         private readonly string justification = "Lorem ipsum.";
 
-        private readonly Intern internMock;
-        private readonly Campaign campaignMock;
-        private readonly Speciality specialityMock;
-        private readonly AddInternCampaignRequest addInternCampaignRequestMock;
-        private readonly UpdateInternCampaignRequest updateInternCampaignRequestMock;
-        private readonly AddStateRequest addStateRequestMock;
-        private readonly InternCampaign internCampaignWithStatesMock;
-        private readonly State stateMock;
+        private Person internMock = null!;
+        private Campaign campaignMock = null!;
+        private Speciality specialityMock = null!;
+        private Speciality specialityMock2 = null!;
+        private AddInternCampaignRequest addInternCampaignRequestMock = null!;
+        private UpdateInternCampaignRequest updateInternCampaignRequestMock = null!;
+        private AddStateRequest addStateRequestMock = null!;
+        private InternCampaign internCampaignWithStatesMock = null!;
+        private State stateMock = null!;
+        private InternSummaryResponse internSummaryResponseMock = null!;
 
         private readonly InternCampaignsService internCampaignsService;
         private readonly Mock<IInternsRepository> internsRepositoryMock;
@@ -58,69 +61,12 @@ namespace Core.Tests.Features.Interns
                 new UpdateInternCampaignRequestValidator(),
                 new AddStateRequestValidator());
 
-            internMock = new Intern()
-            {
-                Id = internId,
-                FirstName = "FirstName",
-                LastName = "LastName",
-                PersonalEmail = "FirstLast@gmail.com"
-            };
-
-            campaignMock = new Campaign()
-            {
-                Id = campaignId,
-                Name = "CampaignName",
-                StartDate = DateTime.UtcNow.AddDays(5),
-                EndDate = DateTime.UtcNow.AddDays(50),
-                IsActive = true
-            };
-
-            specialityMock = new Speciality() 
-            { 
-                Id= specialityId,
-                Name = "SpecialityName" 
-            };
-
-            addInternCampaignRequestMock = new AddInternCampaignRequest(
-                 internId,
-                 campaignId,
-                 specialityId,
-                 justification);
-
-            updateInternCampaignRequestMock = new UpdateInternCampaignRequest(
-                internId,
-                campaignId,
-                specialityId);
-
-            addStateRequestMock = new AddStateRequest(
-                internId,
-                campaignId,
-                StatusEnum.Candidate,
-                justification);
-
-            stateMock = new State()
-            {
-                Justification = justification,
-                Created = DateTime.UtcNow,
-                StatusId = StatusEnum.Rejected,
-                InternId = internId,
-                CampaignId = campaignId
-            };
-
-            internCampaignWithStatesMock = new InternCampaign()
-            {
-                Intern = internMock,
-                Campaign = campaignMock,
-                Speciality = specialityMock,
-                SpecialityId = specialityMock.Id,
-                States = new List<State>() { stateMock }
-            };
+            InitializeMockModels();
         }
 
         public static IEnumerable<object[]> AddStateInvalidJustification =>
             new List<object[]>
             {
-                    new object[] { null},
                     new object[] { string.Empty },
                     new object[] { TestHelper.GenerateString(InternValidationConstants.JustificationMaxLength + 1) },
 
@@ -230,47 +176,15 @@ namespace Core.Tests.Features.Interns
 
             internsRepositoryMock
                 .Setup(i => i.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(internMock);
+                .ReturnsAsync(internSummaryResponseMock);
 
             //Act
             var internCampaignResponse = await internCampaignsService.AddInternCampaignAsync(addInternCampaignRequestMock);
 
             //Assert
-            internsRepositoryMock.Verify(i => i.SaveTrackingChangesAsync(), Times.Once());
             Assert.Equal(campaignMock.Id, internCampaignResponse.Campaign.Id);
             Assert.Equal(specialityMock.Id, internCampaignResponse.Speciality.Id);
             Assert.NotNull(internCampaignResponse.StateResponse);
-        }
-
-        [Fact]
-        public async Task AddInternCampaignAsync_WhenInternContainsOtherInternCampaings_ShouldAddToExistingCollection()
-        {
-            campaignsRepositoryMock
-                .Setup(c => c.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaignMock);
-
-            specialitiesRepositoryMock
-                .Setup(s => s.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(specialityMock);
-
-            var internWithCollection = new Intern()
-            {
-                Id = internId,
-                FirstName = "FirstName",
-                LastName = "LastName",
-                PersonalEmail = "FirstLast@gmail.com",
-                InternCampaigns = new List<InternCampaign>() { new InternCampaign(), new InternCampaign()}
-            };
-
-            internsRepositoryMock
-                .Setup(i => i.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(internWithCollection);
-
-            //Act
-            await internCampaignsService.AddInternCampaignAsync(addInternCampaignRequestMock);
-
-            //Assert
-            Assert.Equal(3, internWithCollection.InternCampaigns.Count);
         }
 
         #endregion
@@ -368,46 +282,42 @@ namespace Core.Tests.Features.Interns
                 .Setup(s => s.GetInternCampaignByIdsAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
                 .ReturnsAsync(internCampaignWithStatesMock);
 
+            var updateInternCampaignRequest = new UpdateInternCampaignRequest(
+                internId,
+                campaignId,
+                internCampaignWithStatesMock.SpecialityId);
+
             //Act
-            await internCampaignsService.UpdateInternCampaignAsync(updateInternCampaignRequestMock);
+            await internCampaignsService.UpdateInternCampaignAsync(updateInternCampaignRequest);
 
             //Assert
             specialitiesRepositoryMock.Verify(s => s.GetByIdAsync(It.IsAny<Guid>()), Times.Never());
         }
 
         [Fact]
-        public async Task UpdateInternCampaignAsync_WhenSpecialityIsChanged_ShouldReturnCorrectObject()
+        public async Task UpdateInternCampaignAsync_WhenSpecialityIsChanged_ShouldPassCorrectObject()
         {
-            var internCampaign = new InternCampaign()
-            {
-                Intern = internMock,
-                Campaign = campaignMock,
-                Speciality = specialityMock,
-                SpecialityId = Guid.NewGuid(),
-                States = new List<State>() { stateMock }
-            };
+            //Arrange
+            internsRepositoryMock
+                .Setup(i => i.GetInternCampaignByIdsAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .ReturnsAsync(internCampaignWithStatesMock);
+
+            InternCampaign internCampaignCallback = null!;
 
             internsRepositoryMock
-                .Setup(s => s.GetInternCampaignByIdsAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
-                .ReturnsAsync(internCampaign);
-
-            var updatedSpeciality = new Speciality()
-            {
-                Id = updateInternCampaignRequestMock.SpecialityId,
-                Name = "UpdatedName"
-            };
+                .Setup(i => i.UpdateInternCampaignAsync(It.IsAny<InternCampaign>()))
+                .Callback((InternCampaign ic) => internCampaignCallback = ic);
 
             specialitiesRepositoryMock
                 .Setup(s => s.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(updatedSpeciality);
+                .ReturnsAsync(specialityMock2);
 
             //Act
-            var internCampaignResponse = await internCampaignsService.UpdateInternCampaignAsync(updateInternCampaignRequestMock);
+            await internCampaignsService.UpdateInternCampaignAsync(updateInternCampaignRequestMock);
 
             //Assert
-            internsRepositoryMock.Verify(s => s.SaveTrackingChangesAsync(), Times.Once());
-            Assert.Equal(updatedSpeciality.Id, internCampaignResponse.Speciality.Id);
-            Assert.Equal(updatedSpeciality.Name, internCampaignResponse.Speciality.Name);
+            Assert.Equal(internCampaignWithStatesMock.Campaign.Name, internCampaignCallback.Campaign.Name);
+            Assert.Equal(specialityMock2.Name, internCampaignCallback.Speciality.Name);
         }
 
         #endregion
@@ -571,5 +481,78 @@ namespace Core.Tests.Features.Interns
         }
 
         #endregion
+
+        private void InitializeMockModels()
+        {
+            internMock = new Person()
+            {
+                Id = internId,
+                FirstName = "FirstName",
+                LastName = "LastName",
+                PersonalEmail = "FirstLast@gmail.com"
+            };
+
+            campaignMock = new Campaign()
+            {
+                Id = campaignId,
+                Name = "CampaignName",
+                StartDate = DateTime.UtcNow.AddDays(5),
+                EndDate = DateTime.UtcNow.AddDays(50),
+                IsActive = true
+            };
+
+            specialityMock = new Speciality()
+            {
+                Id = specialityId,
+                Name = "SpecialityName"
+            };
+
+            specialityMock2 = new Speciality()
+            {
+                Id = Guid.NewGuid(),
+                Name = "UpdatedName"
+            };
+
+            addInternCampaignRequestMock = new AddInternCampaignRequest(
+                 internId,
+                 campaignId,
+                 specialityId,
+                 justification);
+
+            updateInternCampaignRequestMock = new UpdateInternCampaignRequest(
+                internId,
+                campaignId,
+                specialityMock2.Id);
+
+            addStateRequestMock = new AddStateRequest(
+                internId,
+                campaignId,
+                StatusEnum.Candidate,
+                justification);
+
+            stateMock = new State()
+            {
+                Justification = justification,
+                Created = DateTime.UtcNow,
+                StatusId = StatusEnum.Rejected,
+                InternId = internId,
+                CampaignId = campaignId
+            };
+
+            internCampaignWithStatesMock = new InternCampaign()
+            {
+                Person = internMock,
+                Campaign = campaignMock,
+                Speciality = specialityMock,
+                SpecialityId = specialityMock.Id,
+                States = new List<State>() { stateMock }
+            };
+
+            internSummaryResponseMock = new InternSummaryResponse(
+                internId,
+                "FirstName",
+                "LastName",
+                "FirstLast@gmail.com");
+        }
     }
 }

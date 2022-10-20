@@ -9,11 +9,9 @@ namespace Core.Tests.Features.Mentors
 {
     public class CreateMentorRequestValidatorTests
     {
-        CreateMentorRequestValidator validator = new();
-
-        private readonly string displayName = "Ivan Ivanov";
-        private readonly string email = "Ivan.Ivanov@endava.com";
-        private List<Guid> specialityIds = new List<Guid>()
+        private readonly CreateMentorRequestValidator validator = new();
+        private readonly string applicationUrl = "ApplicationUrl";
+        private readonly List<Guid> specialityIds = new()
         {
             Guid.NewGuid()
         };
@@ -38,31 +36,11 @@ namespace Core.Tests.Features.Mentors
             new object[] { "random123@example.gov.in" },
         };
 
-        [Fact]
-        public void Validator_WhenDisplayNameIsNotEmpty_ShouldNotHaveError()
-        {
-            var request = new CreateMentorRequest(displayName, email, specialityIds);
-
-            validator
-                .TestValidate(request)
-                .ShouldNotHaveValidationErrorFor(c => c.DisplayName);
-        }
-
-        [Fact]
-        public void Validator_WhenDisplayNameIsEmpty_ShouldHaveError()
-        {
-            var request = new CreateMentorRequest(string.Empty, email, specialityIds);
-
-            validator
-                .TestValidate(request)
-                .ShouldHaveValidationErrorFor(c => c.DisplayName);
-        }
-
         [Theory]
         [MemberData(nameof(invalidEmails))]
         public void Validator_WhenEmailIsInvalid_ShouldHaveError(string invalidEmail)
         {
-            var request = new CreateMentorRequest(displayName, invalidEmail, specialityIds);
+            var request = new CreateMentorRequest(invalidEmail, specialityIds, applicationUrl);
 
             validator
                 .TestValidate(request)
@@ -73,7 +51,7 @@ namespace Core.Tests.Features.Mentors
         [MemberData(nameof(validEmails))]
         public void Validator_WhenEmailIsValid_ShouldNotHaveError(string validEmail)
         {
-            var request = new CreateMentorRequest(displayName, validEmail, specialityIds);
+            var request = new CreateMentorRequest(validEmail, specialityIds, applicationUrl);
 
             validator
                 .TestValidate(request)

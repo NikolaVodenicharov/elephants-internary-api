@@ -1,17 +1,15 @@
 ﻿using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
-using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
-using Core.Features.Mentors.ResponseModels;
-using Core.Features.Mentors.Support;
+using Core.Features.Mentors.RequestModels;
+using Core.Features.Persons.Entities;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,16 +20,14 @@ namespace Infrastructure.Tests.Features.Mentors
 {
     public class MentorsRepositoryTests
     {
-        private readonly Guid id = Guid.NewGuid();
-        private readonly string displayName = "First Last";
         private readonly string email = "first.last@email.com";
+        private readonly string displayName = "Eric Evans";
+        private CreateMentorRepoRequest createMentorRepoRequest = null!;
+        private Campaign campaignMock = null!;
+        private Speciality specialityMock = null!;
+        private List<Speciality> specialitiesMock = null!;
         private readonly InternaryContext context;
         private readonly IMentorsRepository mentorsRepository;
-        private readonly ISpecialitiesRepository specialitiesRepository;
-        private readonly ICampaignsRepository campaignsRepository;
-        private Mentor mentor;
-        private Speciality speciality;
-        private List<Speciality> specialities;
 
         public MentorsRepositoryTests()
         {
@@ -42,98 +38,77 @@ namespace Infrastructure.Tests.Features.Mentors
             context = new InternaryContext(dbOptions.Options);
 
             mentorsRepository = new MentorsRepository(context);
-            specialitiesRepository = new SpecialitiesRepository(context);
-            campaignsRepository = new CampaignsRepository(context);
 
-            speciality = new Speciality()
-            {
-                Id = Guid.NewGuid(),
-                Name = "Testing"
-            };
+            AddInternToContext();
 
-            specialities = new List<Speciality>()
-            {
-                speciality
-            };
-
-            mentor = new Mentor()
-            {
-                Id = id,
-                DisplayName = displayName,
-                Email = email,
-                Specialities = specialities
-            };
+            InitializeMockModels();
         }
 
         [Fact]
-        public async Task AddAsync_AddMentor_ShouldBeAddedToDatabase()
+        public async Task CreateAsync_AddMentor_ShouldBeAddedToDatabase()
         {
             //Act
-            var addedMentor = await mentorsRepository.AddAsync(mentor);
+            var mentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            //Assert
+            var totalCount = await context
+                .Persons
+                .CountAsync();
 
             var count = await mentorsRepository.GetCountAsync();
 
-            //Assert
+            Assert.Equal(2, totalCount);
             Assert.Equal(1, count);
-            Assert.Equal(mentor.DisplayName, addedMentor.DisplayName);
-            Assert.Equal(mentor.Email, addedMentor.Email);
+            Assert.Equal(createMentorRepoRequest.DisplayName, mentorSummaryResponse.DisplayName);
+            Assert.Equal(createMentorRepoRequest.WorkEmail, mentorSummaryResponse.WorkEmail);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        public async Task AddToCampaignAsync_WhenIdNotFound_ShouldReturnFalse()
         {
             //Arrange
-            var filter = new PaginationRequest(1, 10);
+            var addMentorToCampaignRequest = new AddMentorToCampaignRepoRequest(Guid.NewGuid(), campaignMock);
 
             //Act
-            var response = await mentorsRepository.GetAllAsync(filter);
+            var isAdded = await mentorsRepository.AddToCampaignAsync(addMentorToCampaignRequest);
 
             //Assert
-            Assert.Empty(response);
+            Assert.False(isAdded);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task AddToCampaignAsync_WhenIdFound_ShouldReturnSaveChanges()
         {
             //Arrange
-            var mentor2 = new Mentor()
-            {
-                Id = Guid.NewGuid(),
-                DisplayName = "John Doe",
-                Email = "john.doe@email.com"
-            };
+            var mentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
 
-            var filter = new PaginationRequest(1, 3);
+            await context
+                .Campaigns
+                .AddAsync(campaignMock);
 
-            await specialitiesRepository.AddAsync(speciality);
-            await mentorsRepository.AddAsync(mentor);
-            await mentorsRepository.AddAsync(mentor2);
+            var addMentorToCampaignRequest = new AddMentorToCampaignRepoRequest(mentorSummaryResponse.Id, campaignMock);
 
             //Act
-            var response = await mentorsRepository.GetAllAsync(filter);
+            var isAdded = await mentorsRepository.AddToCampaignAsync(addMentorToCampaignRequest);
 
             //Assert
-            Assert.Equal(2, response.Count());
-            Assert.NotNull(response.First().Specialities);
+            Assert.True(isAdded);
         }
 
         [Fact]
         public async Task GetByIdAsync_WhenIdExists_ShouldReturnCorrectObject()
         {
             //Arrange
-            await specialitiesRepository.AddAsync(speciality);
 
-            await mentorsRepository.AddAsync(mentor);
+            var createdMentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
 
             //Act
-            var response = await mentorsRepository.GetByIdAsync(mentor.Id);
+            var mentorSummaryResponse = await mentorsRepository.GetByIdAsync(createdMentorSummaryResponse.Id);
 
             //Assert
-            Assert.NotNull(response);
-            Assert.Equal(mentor.Id, response.Id);
-            Assert.Equal(mentor.DisplayName, response.DisplayName);
-            Assert.Equal(mentor.Email, response.Email);
-            Assert.NotNull(response.Specialities);
+            Assert.Equal(createdMentorSummaryResponse.Id, mentorSummaryResponse!.Id);
+            Assert.Equal(createMentorRepoRequest.DisplayName, mentorSummaryResponse.DisplayName);
+            Assert.Equal(createMentorRepoRequest.WorkEmail, mentorSummaryResponse.WorkEmail);
         }
 
         [Fact]
@@ -147,10 +122,108 @@ namespace Infrastructure.Tests.Features.Mentors
         }
 
         [Fact]
+        public async Task GetDetailsByIdAsync_WhenIdExists_ShouldReturnCorrectObject()
+        {
+            //Arrange
+            var createdMentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            //Act
+            var mentorDetailsResponse = await mentorsRepository.GetByIdAsync(createdMentorSummaryResponse.Id);
+
+            //Assert
+            Assert.Equal(createdMentorSummaryResponse.Id, mentorDetailsResponse!.Id);
+            Assert.Equal(createMentorRepoRequest.DisplayName, mentorDetailsResponse.DisplayName);
+            Assert.Equal(createMentorRepoRequest.WorkEmail, mentorDetailsResponse.WorkEmail);
+            Assert.Equal(createMentorRepoRequest.Specialities.First().Name, mentorDetailsResponse.Specialities.First().Name);
+        }
+
+        [Fact]
+        public async Task GetDetailsByIdAsync_WhenIdNotFound_ShouldReturnNull()
+        {
+            //Act
+            var mentorDetailsResponse = await mentorsRepository.GetByIdAsync(Guid.NewGuid());
+
+            //Assert
+            Assert.Null(mentorDetailsResponse);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WhenFound_ShouldSaveNewDataToDatabase()
+        {
+            //Arrange
+            var mentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            var specialtyMock2 = new Speciality() { Name = "NewSpecialty" };
+            var specialtiesColelction = new List<Speciality>() { specialtyMock2 };
+
+            var updateMentorRepoRequest = new UpdateMentorRepoRequest(
+                mentorSummaryResponse.Id,
+                specialtiesColelction);
+
+            //Act
+            var mentorDetailsResponse = await mentorsRepository.UpdateAsync(updateMentorRepoRequest);
+
+            //Assert
+            Assert.Equal(updateMentorRepoRequest.Id, mentorDetailsResponse!.Id);
+            Assert.Equal(1, mentorDetailsResponse.Specialities.Count);
+            Assert.Equal(specialtyMock2.Name, mentorDetailsResponse.Specialities.First().Name);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WhenNotFound_ShouldReturnNull()
+        {
+            //Arrange
+            var updateMentorRepoRequest = new UpdateMentorRepoRequest(
+                Guid.NewGuid(),
+                new List<Speciality>());
+
+            //Act
+            var mentorDetailsResponse = await mentorsRepository.UpdateAsync(updateMentorRepoRequest);
+
+            //Assert
+            Assert.Null(mentorDetailsResponse);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Arrange
+            var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var mentorsCount = await mentorsRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Empty(mentorsCount);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            var createMentroRepoRequest2 = new CreateMentorRepoRequest(
+                "Some name",
+                "SomeEmail@gmail.com",
+                new List<Speciality>() { specialityMock });
+
+            await mentorsRepository.CreateAsync(createMentroRepoRequest2);
+
+            var filter = new PaginationRequest(1, 3);
+
+            //Act
+            var response = await mentorsRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Equal(2, response.Count());
+        }
+
+        [Fact]
         public async Task GetCountAsync_WhenNotEmpty_ShouldReturnCorrectCount()
         {
             //Arrange
-            await mentorsRepository.AddAsync(mentor);
+            await mentorsRepository.CreateAsync(createMentorRepoRequest);
 
             //Act
             var count = await mentorsRepository.GetCountAsync();
@@ -173,20 +246,20 @@ namespace Infrastructure.Tests.Features.Mentors
         public async Task IsEmailUsed_WhenInUse_ShouldReturnTrue()
         {
             //Arrange
-            await mentorsRepository.AddAsync(mentor);
+            await mentorsRepository.CreateAsync(createMentorRepoRequest);
 
             //Act
-            var response = await mentorsRepository.IsEmailUsed(mentor.Email);
+            var isEmailUsed = await mentorsRepository.IsEmailUsed(createMentorRepoRequest.WorkEmail);
 
             //Assert
-            Assert.True(response);
+            Assert.True(isEmailUsed);
         }
 
         [Fact]
         public async Task IsEmailUsed_WhenNotInUse_ShouldReturnFalse()
         {
             //Arrange
-            await mentorsRepository.AddAsync(mentor);
+            await mentorsRepository.CreateAsync(createMentorRepoRequest);
 
             //Act
             var response = await mentorsRepository.IsEmailUsed("new.email@test.com");
@@ -201,33 +274,45 @@ namespace Infrastructure.Tests.Features.Mentors
             //Arrange
             var filter = new PaginationRequest(1, 10);
 
-            var mentor2 = new Mentor()
+            var mentorMock = new Person()
             {
-                Id = Guid.NewGuid(),
-                DisplayName = "John Doe",
-                Email = "john.doe@email.com",
-                Specialities = new List<Speciality>()
+                DisplayName = "Mentor DisplayName",
+                WorkEmail = "MentorEmail@mgial.com",
+                Campaigns = new List<Campaign>() { campaignMock }
             };
 
-            var campaign = new Campaign()
+            var mentorMock2 = new Person()
             {
-                Id = Guid.NewGuid(),
-                Name = "Test Campaign",
-                StartDate = DateTime.Today.AddDays(2),
-                EndDate = DateTime.Today.AddDays(5),
-                IsActive = true,
-                Mentors = new List<Mentor>() { mentor, mentor2 }
+                DisplayName = "Mentor DisplayName",
+                WorkEmail = "john.doe@email.com",
+                Campaigns = new List<Campaign>() { campaignMock }
             };
 
-            var mentorList = new List<Mentor>() { mentor, mentor2 };
+            var personRole =
+                new PersonRole()
+                {
+                    RoleId = RoleId.Mentor,
+                    Person = mentorMock,
+                };
 
-            await campaignsRepository.AddAsync(campaign);
+            var personRole2 =
+                new PersonRole()
+                {
+                    RoleId = RoleId.Mentor,
+                    Person = mentorMock2,
+                };
+
+            await context
+                .PersonRoles
+                .AddRangeAsync(personRole, personRole2);
+
+            await context.SaveChangesAsync();
 
             //Act
-            var response = await mentorsRepository.GetAllAsync(filter, campaign.Id);
+            var mentors = await mentorsRepository.GetAllAsync(filter, campaignMock.Id);
 
             //Assert
-            Assert.Equal(mentorList.Count(), response.Count());
+            Assert.Equal(2, mentors.Count());
         }
 
         [Fact]
@@ -249,23 +334,31 @@ namespace Infrastructure.Tests.Features.Mentors
         public async Task GetCountByCampaignIdAsync_WhenCampaignHasMentors_ShouldReturnCorrectCount()
         {
             //Arrange
-            var campaign = new Campaign()
+            var mentorMock = new Person()
             {
-                Id = Guid.NewGuid(),
-                Name = "Test Campaign",
-                StartDate = DateTime.Today.AddDays(2),
-                EndDate = DateTime.Today.AddDays(5),
-                IsActive = true,
-                Mentors = new List<Mentor>() { mentor }
+                DisplayName = "Mentor DisplayName",
+                WorkEmail = "MentorEmail@mgial.com",
+                Campaigns = new List<Campaign>() { campaignMock }
             };
 
-            await campaignsRepository.AddAsync(campaign);
+            var personRole =
+                new PersonRole()
+                {
+                    RoleId = RoleId.Mentor,
+                    Person = mentorMock,
+                };
+
+            await context
+                .PersonRoles
+                .AddAsync(personRole);
+
+            await context.SaveChangesAsync();
 
             //Act
-            var response = await mentorsRepository.GetCountByCampaignIdAsync(campaign.Id); ;
+            var mentorsCount = await mentorsRepository.GetCountByCampaignIdAsync(campaignMock.Id);
 
             //Assert
-            Assert.Equal(1, response);
+            Assert.Equal(1, mentorsCount);
         }
 
         [Fact]
@@ -279,6 +372,107 @@ namespace Infrastructure.Tests.Features.Mentors
 
             //Assert
             Assert.Equal(0, response);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorNotFound_ShouldReturnFalse()
+        {
+            //Arrange
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Campaign 1",
+                StartDate = DateTime.Today.AddDays(1),
+                EndDate = DateTime.Today.AddDays(30),
+                IsActive = true
+            };
+
+            //Act 
+            var isRemoved = await mentorsRepository.RemoveFromCampaignAsync(Guid.NewGuid(), campaign);
+
+            //Assert
+            Assert.False(isRemoved);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorFound_ShouldReturnTrue()
+        {
+            //Arrange
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Campaign 1",
+                StartDate = DateTime.Today.AddDays(1),
+                EndDate = DateTime.Today.AddDays(30),
+                IsActive = true
+            };
+
+            await context.Campaigns.AddAsync(campaign);
+
+            var createdMentor = await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            var addMentorToCampaignRepoRequest = new AddMentorToCampaignRepoRequest(createdMentor.Id, campaign);
+
+            await mentorsRepository.AddToCampaignAsync(addMentorToCampaignRepoRequest);
+
+            //Act
+            var isRemoved = await mentorsRepository.RemoveFromCampaignAsync(createdMentor.Id, campaign);
+
+            //Assert
+            Assert.True(isRemoved);
+        }
+
+        // this intern is required so we can check precisely for mentors entities in all persons
+        private void AddInternToContext()
+        {
+            var intern = new Person()
+            {
+                FirstName = "InternFirstName",
+                LastName = "InternLastName",
+                PersonalEmail = "InternEmail@mgial.com",
+            };
+
+            var personRole =
+                new PersonRole()
+                {
+                    RoleId = RoleId.Intern,
+                    Person = intern,
+                };
+
+            context
+                .PersonRoles
+                .Add(personRole);
+
+            context
+                .SaveChanges();
+        }
+
+        private void InitializeMockModels()
+        {
+            specialityMock = new Speciality()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Testing"
+            };
+
+            specialitiesMock = new List<Speciality>()
+            {
+                specialityMock
+            };
+
+            createMentorRepoRequest = new CreateMentorRepoRequest(
+                displayName,
+                email,
+                specialitiesMock);
+
+            campaignMock = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Campaign",
+                StartDate = DateTime.Today.AddDays(2),
+                EndDate = DateTime.Today.AddDays(5),
+                IsActive = true
+            };
         }
     }
 }

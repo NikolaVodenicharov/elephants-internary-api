@@ -1,6 +1,6 @@
 ﻿namespace Core.Common
 {
-    public sealed class RegularExpressionPatterns
+    public static class RegularExpressionPatterns
     {
         // Some.#!
         public const string LettersDotsNumberSignsAndExclamationMarks = "^[a-zA-Z.!#]+$";

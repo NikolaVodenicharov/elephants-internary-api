@@ -1,21 +1,19 @@
-﻿using Core.Common.Exceptions;
-using Core.Common.Pagination;
+﻿using Core.Common.Pagination;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
-using Core.Features.Users.Entities;
-using Core.Features.Users.Interfaces;
-using Core.Features.Users.RequestModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
 using WebAPI.Features.Mentors.ApiRequestModels;
 using Core.Common;
-using Core.Features.Mentors.Entities;
+using Core.Features.Persons.Entities;
+using System.Text.Json;
+using WebAPI.Common.SettingsModels;
+using Microsoft.Extensions.Options;
 
 namespace WebAPI.Features.Mentors
 {
@@ -23,9 +21,7 @@ namespace WebAPI.Features.Mentors
     public class MentorsController : ApiControllerBase
     {
         private readonly IMentorsService mentorsService;
-        private readonly IUsersService usersService;
         private readonly ILogger<MentorsController> mentorsControllerLogger;
-        private readonly IValidator<CreateMentorRequest> createMentorRequestValidator;
         private readonly IValidator<UpdateMentorRequest> updateMentorRequestValidator;
         private readonly IValidator<CreateMentorApiRequest> createMentorApiRequestValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator; 
@@ -33,18 +29,14 @@ namespace WebAPI.Features.Mentors
 
         public MentorsController(
             IMentorsService mentorsService,
-            IUsersService usersService,
             ILogger<MentorsController> mentorsControllerLogger,
-            IValidator<CreateMentorRequest> createMentorRequestValidator,
             IValidator<UpdateMentorRequest> updateMentorRequestValidator,
             IValidator<CreateMentorApiRequest> createMentorApiRequestValidator,
             IValidator<PaginationRequest> paginationRequestValidator,
             IOptions<InvitationUrlSettings> invitationUrlSettings)
         {
             this.mentorsService = mentorsService;
-            this.usersService = usersService;
             this.mentorsControllerLogger = mentorsControllerLogger;
-            this.createMentorRequestValidator = createMentorRequestValidator;
             this.updateMentorRequestValidator = updateMentorRequestValidator;
             this.createMentorApiRequestValidator = createMentorApiRequestValidator;
             this.paginationRequestValidator = paginationRequestValidator;
@@ -54,38 +46,20 @@ namespace WebAPI.Features.Mentors
         [HttpPost]
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<MentorSummaryResponse>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> CreateAsync(CreateMentorApiRequest request)
+        public async Task<IActionResult> CreateAsync(CreateMentorApiRequest createMentorApiRequest)
         {
-            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(CreateAsync));
+            await createMentorApiRequestValidator.ValidateAndThrowAsync(createMentorApiRequest);
 
-            await createMentorApiRequestValidator.ValidateAndThrowAsync(request);
+            var createMentorRequest = new CreateMentorRequest(
+                createMentorApiRequest.Email,
+                createMentorApiRequest.SpecialityIds,
+                invitationUrls.BackOfficeUrl);
 
-            var userExists = await usersService.ExistsByEmailAsync(request.Email);
+            var mentorSummaryResponse = await mentorsService.CreateAsync(createMentorRequest);
 
-            if(userExists)
-            {
-                mentorsControllerLogger.LogErrorAndThrowExceptionValueTaken(nameof(MentorsController), 
-                    nameof(Core.Features.Users.Entities.User),
-                    nameof(Core.Features.Users.Entities.User.Email), 
-                    request.Email);
-            }
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(CreateAsync), nameof(Person), mentorSummaryResponse.Id);
 
-            var invitationResponse = await usersService.SendInvitationByEmailAsync(request.Email, invitationUrls.BackOfficeUrl);
-
-            var mentorRequest = new CreateMentorRequest(
-                invitationResponse.DisplayName, 
-                request.Email, 
-                request.SpecialityIds);
-
-            await createMentorRequestValidator.ValidateAndThrowAsync(mentorRequest);
-
-            var mentor = await mentorsService.CreateAsync(mentorRequest);
-
-            var userRequest = new CreateUserRequest(mentor.Email, RoleEnum.Mentor, mentor.Id);
-            
-            await usersService.CreateAsync(userRequest);
-
-            return CoreResult.Success(mentor);
+            return CoreResult.Success(mentorSummaryResponse);
         }
 
         [HttpPut("{id}")]
@@ -94,7 +68,7 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> UpdateAsync(Guid id, UpdateMentorRequest request)
         {
-            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(UpdateAsync), nameof(Mentor), id);
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(UpdateAsync), nameof(Person), id);
 
             if (id != request.Id)
             {
@@ -114,7 +88,7 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
         {
-            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(GetByIdAsync), nameof(Mentor), id);
+            mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(GetByIdAsync), nameof(Person), id);
 
             var mentor = await mentorsService.GetByIdAsync(id);
 
@@ -122,8 +96,8 @@ namespace WebAPI.Features.Mentors
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<MentorDetailsResponse>>), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(CoreResponse<IEnumerable<MentorDetailsResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<MentorPaginationResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<IEnumerable<MentorPaginationResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {

@@ -11,33 +11,6 @@ namespace Core.Tests.Features.Interns
 {
     public class InternsMappingExtensionTests
     {
-        private readonly Guid id = Guid.NewGuid();
-        private readonly string firstName = "John";
-        private readonly string lastName = "Doe";
-        private readonly string email = "JohnDoe@gmail.com";
-
-        [Fact]
-        public void Intern_ToInternSummaryResponse_ShouldCreateCorrectObject()
-        {
-            //Arrange
-            var intern = new Intern()
-            {
-                Id = id,
-                FirstName = firstName,
-                LastName = lastName,
-                PersonalEmail = email
-            };
-
-            //Act
-            var internSummaryResponse = intern.ToInternSummaryResponse();
-
-            //Assert
-            Assert.Equal(intern.Id, internSummaryResponse.Id);
-            Assert.Equal(intern.FirstName, internSummaryResponse.FirstName);
-            Assert.Equal(intern.LastName, internSummaryResponse.LastName);
-            Assert.Equal(intern.PersonalEmail, internSummaryResponse.Email);
-        }
-
         [Fact]
         public void State_ToStateResponse_ShouldCreateCorrectObject()
         {

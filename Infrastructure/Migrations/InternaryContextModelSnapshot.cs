@@ -22,12 +22,12 @@ namespace Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("CampaignMentors", b =>
+            modelBuilder.Entity("CampaignPerson", b =>
                 {
-                    b.Property<Guid>("CampaignId")
+                    b.Property<Guid>("CampaignsId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("MentorId")
+                    b.Property<Guid>("PersonsId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
@@ -36,11 +36,11 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("CampaignId", "MentorId");
+                    b.HasKey("CampaignsId", "PersonsId");
 
-                    b.HasIndex("MentorId");
+                    b.HasIndex("PersonsId");
 
-                    b.ToTable("CampaignMentors");
+                    b.ToTable("CampaignPerson");
                 });
 
             modelBuilder.Entity("Core.Features.Campaigns.Entities.Campaign", b =>
@@ -74,40 +74,9 @@ namespace Infrastructure.Migrations
                     b.ToTable("Campaigns");
                 });
 
-            modelBuilder.Entity("Core.Features.Interns.Entities.Intern", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
-                    b.Property<string>("PersonalEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Interns");
-                });
-
             modelBuilder.Entity("Core.Features.Interns.Entities.InternCampaign", b =>
                 {
-                    b.Property<Guid>("InternId")
+                    b.Property<Guid>("PersonId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("CampaignId")
@@ -122,7 +91,7 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("InternId", "CampaignId");
+                    b.HasKey("PersonId", "CampaignId");
 
                     b.HasIndex("CampaignId");
 
@@ -166,7 +135,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("InternId", "CampaignId");
 
-                    b.ToTable("State");
+                    b.ToTable("States");
                 });
 
             modelBuilder.Entity("Core.Features.Interns.Entities.Status", b =>
@@ -232,7 +201,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("LearningTopics");
                 });
 
-            modelBuilder.Entity("Core.Features.Mentors.Entities.Mentor", b =>
+            modelBuilder.Entity("Core.Features.Persons.Entities.Person", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -245,41 +214,52 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PersonalEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("WorkEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Mentors");
+                    b.ToTable("Persons");
                 });
 
-            modelBuilder.Entity("Core.Features.Specialties.Entities.Speciality", b =>
+            modelBuilder.Entity("Core.Features.Persons.Entities.PersonRole", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PersonId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(125)
-                        .HasColumnType("nvarchar(125)");
-
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Id");
+                    b.HasKey("RoleId", "PersonId");
 
-                    b.ToTable("Specialties");
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("PersonRoles");
                 });
 
-            modelBuilder.Entity("Core.Features.Users.Entities.Role", b =>
+            modelBuilder.Entity("Core.Features.Persons.Entities.Role", b =>
                 {
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
@@ -310,7 +290,7 @@ namespace Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Core.Features.Users.Entities.User", b =>
+            modelBuilder.Entity("Core.Features.Specialties.Entities.Speciality", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -319,28 +299,17 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("MentorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
+                        .HasMaxLength(125)
+                        .HasColumnType("nvarchar(125)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MentorId")
-                        .IsUnique()
-                        .HasFilter("[MentorId] IS NOT NULL");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("Users");
+                    b.ToTable("Specialties");
                 });
 
             modelBuilder.Entity("LearningTopicSpecialities", b =>
@@ -364,12 +333,12 @@ namespace Infrastructure.Migrations
                     b.ToTable("LearningTopicSpecialities");
                 });
 
-            modelBuilder.Entity("MentorSpecialties", b =>
+            modelBuilder.Entity("PersonSpeciality", b =>
                 {
-                    b.Property<Guid>("MentorId")
+                    b.Property<Guid>("PersonsId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("SpecialityId")
+                    b.Property<Guid>("SpecialitiesId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
@@ -378,28 +347,26 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("MentorId", "SpecialityId");
+                    b.HasKey("PersonsId", "SpecialitiesId");
 
-                    b.HasIndex("SpecialityId");
+                    b.HasIndex("SpecialitiesId");
 
-                    b.ToTable("MentorSpecialties");
+                    b.ToTable("PersonSpeciality");
                 });
 
-            modelBuilder.Entity("CampaignMentors", b =>
+            modelBuilder.Entity("CampaignPerson", b =>
                 {
                     b.HasOne("Core.Features.Campaigns.Entities.Campaign", null)
                         .WithMany()
-                        .HasForeignKey("CampaignId")
+                        .HasForeignKey("CampaignsId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("CampaignId");
+                        .IsRequired();
 
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", null)
+                    b.HasOne("Core.Features.Persons.Entities.Person", null)
                         .WithMany()
-                        .HasForeignKey("MentorId")
+                        .HasForeignKey("PersonsId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("MentorId");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Core.Features.Interns.Entities.InternCampaign", b =>
@@ -410,9 +377,9 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Core.Features.Interns.Entities.Intern", "Intern")
+                    b.HasOne("Core.Features.Persons.Entities.Person", "Person")
                         .WithMany("InternCampaigns")
-                        .HasForeignKey("InternId")
+                        .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -424,7 +391,7 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("Campaign");
 
-                    b.Navigation("Intern");
+                    b.Navigation("Person");
 
                     b.Navigation("Speciality");
                 });
@@ -448,19 +415,21 @@ namespace Infrastructure.Migrations
                     b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("Core.Features.Users.Entities.User", b =>
+            modelBuilder.Entity("Core.Features.Persons.Entities.PersonRole", b =>
                 {
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", "Mentor")
-                        .WithOne()
-                        .HasForeignKey("Core.Features.Users.Entities.User", "MentorId");
+                    b.HasOne("Core.Features.Persons.Entities.Person", "Person")
+                        .WithMany("PersonRoles")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("Core.Features.Users.Entities.Role", "Role")
-                        .WithMany()
+                    b.HasOne("Core.Features.Persons.Entities.Role", "Role")
+                        .WithMany("PersonRoles")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Mentor");
+                    b.Navigation("Person");
 
                     b.Navigation("Role");
                 });
@@ -482,21 +451,19 @@ namespace Infrastructure.Migrations
                         .HasConstraintName("FK_LearningTopic_SpecialityId");
                 });
 
-            modelBuilder.Entity("MentorSpecialties", b =>
+            modelBuilder.Entity("PersonSpeciality", b =>
                 {
-                    b.HasOne("Core.Features.Mentors.Entities.Mentor", null)
+                    b.HasOne("Core.Features.Persons.Entities.Person", null)
                         .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_MentorId");
+                        .HasForeignKey("PersonsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Core.Features.Specialties.Entities.Speciality", null)
                         .WithMany()
-                        .HasForeignKey("SpecialityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_SpecialityId");
+                        .HasForeignKey("SpecialitiesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Core.Features.Campaigns.Entities.Campaign", b =>
@@ -504,14 +471,21 @@ namespace Infrastructure.Migrations
                     b.Navigation("InternCampaigns");
                 });
 
-            modelBuilder.Entity("Core.Features.Interns.Entities.Intern", b =>
-                {
-                    b.Navigation("InternCampaigns");
-                });
-
             modelBuilder.Entity("Core.Features.Interns.Entities.InternCampaign", b =>
                 {
                     b.Navigation("States");
+                });
+
+            modelBuilder.Entity("Core.Features.Persons.Entities.Person", b =>
+                {
+                    b.Navigation("InternCampaigns");
+
+                    b.Navigation("PersonRoles");
+                });
+
+            modelBuilder.Entity("Core.Features.Persons.Entities.Role", b =>
+                {
+                    b.Navigation("PersonRoles");
                 });
 
             modelBuilder.Entity("Core.Features.Specialties.Entities.Speciality", b =>

@@ -1,6 +1,5 @@
-﻿using Core.Features.Mentors.Entities;
-
-using Core.Features.Interns.Entities;
+﻿using Core.Features.Interns.Entities;
+using Core.Features.Persons.Entities;
 
 namespace Core.Features.Campaigns.Entities
 {
@@ -16,8 +15,8 @@ namespace Core.Features.Campaigns.Entities
 
         public bool IsActive { get; set; }
 
-        public ICollection<Mentor> Mentors { get; set; }
+        public ICollection<Person> Persons { get; set; } = null!;
 
-        public IEnumerable<InternCampaign> InternCampaigns { get; set; }
+        public IEnumerable<InternCampaign> InternCampaigns { get; set; } = null!;
     }
 }

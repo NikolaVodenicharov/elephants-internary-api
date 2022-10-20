@@ -1,7 +1,7 @@
-using WebAPI.Common;
 using WebAPI.Common.ErrorHandling;
 using WebAPI.Common.Extensions;
 using WebAPI.Common.Extensions.Middlewares;
+using WebAPI.Common.SettingsModels;
 
 var builder = WebApplication.CreateBuilder(args);
 

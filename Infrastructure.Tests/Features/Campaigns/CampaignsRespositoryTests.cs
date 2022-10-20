@@ -22,7 +22,7 @@ namespace Infrastructure.Tests.Features.Campaigns
         private readonly DateTime startDate = DateTime.Today.AddDays(5);
         private readonly DateTime endDate = DateTime.Today.AddDays(35);
         private readonly bool isActive = true;
-        private Campaign campaign;
+        private readonly Campaign campaign;
 
         public CampaignsRespositoryTests()
         {
@@ -84,7 +84,7 @@ namespace Infrastructure.Tests.Features.Campaigns
             //Assert
             var updatedCampaign = await campaignsRepository.GetByIdAsync(campaignToUpdate.Id);
 
-            Assert.Equal(campaignToUpdate.Id, updatedCampaign.Id);
+            Assert.Equal(campaignToUpdate.Id, updatedCampaign!.Id);
             Assert.Equal(campaignToUpdate.Name, updatedCampaign.Name);
             Assert.Equal(campaignToUpdate.StartDate, updatedCampaign.StartDate);
             Assert.Equal(campaignToUpdate.EndDate, updatedCampaign.EndDate);
@@ -115,7 +115,7 @@ namespace Infrastructure.Tests.Features.Campaigns
 
             //Assert
             Assert.NotNull(response);
-            Assert.Equal(campaign.Id, response.Id);
+            Assert.Equal(campaign.Id, response!.Id);
             Assert.Equal(campaign.Name, response.Name);
             Assert.Equal(campaign.StartDate, response.StartDate);
             Assert.Equal(campaign.EndDate, response.EndDate);

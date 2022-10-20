@@ -1,17 +1,22 @@
 ﻿using Core.Common;
 using Core.Common.Pagination;
 using Core.Features.Interns.Entities;
+using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 
 namespace Core.Features.Interns.Interfaces
 {
-    public interface IInternsRepository : IRepositoryBase
+    public interface IInternsRepository
     {
-        Task<InternSummaryResponse> AddAsync(Intern intern);
+        Task<InternSummaryResponse> CreateAsync(CreateInternRepoRequest createInternWithDetailsRequest);
 
-        Task<bool> ExistsByEmailAsync(string email);
+        Task<InternCampaignSummaryResponse?> AddInternCampaignAsync(AddInternCampaignRepoRequest addInternCampaignRepoRequest);
 
-        Task<Intern?> GetByIdAsync(Guid Id);
+        Task<InternSummaryResponse?> UpdateAsync(UpdateInternRequest updateInternRequest);
+
+        Task<InternSummaryResponse?> GetByIdAsync(Guid Id);
+
+        Task<bool> ExistsByPersonalEmailAsync(string personalEmail);     
 
         Task<InternDetailsResponse?> GetDetailsByIdAsync(Guid id);
         
@@ -22,5 +27,6 @@ namespace Core.Features.Interns.Interfaces
         Task<InternCampaign?> GetInternCampaignByIdsAsync(Guid internId, Guid campaignId);
 
         Task<IEnumerable<StatusResponse>> GetAllStatusAsync();
+        Task<InternCampaignSummaryResponse> UpdateInternCampaignAsync(InternCampaign internCampaign);
     }
 }

@@ -94,15 +94,6 @@ namespace WebAPI.Features.Interns
         {
             internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(GetDetailsByIdAsync));
 
-            if (id == Guid.Empty)
-            {
-                internsControllerLogger.LogError(
-                    "[{ControllerName}] Invalid {EntityName} Id ({Id}) in {MethodName} method.",
-                    nameof(InternsController), nameof(Intern), id, nameof(GetDetailsByIdAsync));
-
-                throw new CoreException($"Invalid {nameof(id)}.", HttpStatusCode.BadRequest);
-            }
-
             var internDetailsResponse = await internsService.GetDetailsByIdAsync(id);
 
             return CoreResult.Success(internDetailsResponse);

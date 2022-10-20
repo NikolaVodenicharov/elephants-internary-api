@@ -14,6 +14,7 @@ using Core.Common.Pagination;
 using WebAPI.Common;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.ResponseModels;
+using Core.Features.Mentors.RequestModels;
 using Core.Common;
 using Core.Features.Campaigns.Entities;
 
@@ -113,7 +114,7 @@ namespace WebAPI.Features.Campaigns
         }
 
         [HttpGet("{id}/mentors")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<MentorDetailsResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<MentorPaginationResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetMentorsByCampaignIdAsync(Guid id, [Required][FromQuery] int pageNum,
@@ -135,10 +136,13 @@ namespace WebAPI.Features.Campaigns
         [HttpGet("{id}/interns")]
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<InternByCampaignSummaryResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetAllInternsByCampaignIdAsync(Guid id, [FromQuery] int pageNum, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetInternsByCampaignAsync(Guid id, [FromQuery] int pageNum, [FromQuery] int pageSize)
         {
-            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetAllInternsByCampaignIdAsync), 
-                nameof(Campaign), id);
+            campaignsControllerLogger.LogInformationMethod(
+                nameof(CampaignsController), 
+                nameof(GetInternsByCampaignAsync), 
+                nameof(Campaign), 
+                id);
 
             var paginationRequest = new PaginationRequest(pageNum, pageSize);
 
@@ -153,7 +157,7 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<bool>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> AddMentorAsync(Guid id, AddToCampaignRequest request)
+        public async Task<IActionResult> AddMentorAsync(Guid id, AddMentorToCampaignRequest request)
         {
             if (id != request.CampaignId)
             {
@@ -174,9 +178,9 @@ namespace WebAPI.Features.Campaigns
         {
             campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(RemoveMentorAsync));
 
-            await mentorsService.RemoveFromCampaignAsync(id, mentorId);
+            var isRemoved = await mentorsService.RemoveFromCampaignAsync(id, mentorId);
 
-            return CoreResult.Success(true);
+            return CoreResult.Success(isRemoved);
         }
     }
 }

@@ -1,3 +1,5 @@
+using WebAPI.Common.SettingsModels;
+
 namespace WebAPI.Common.Extensions.Middlewares
 {
     public static class CorsMiddlewareExtensions
