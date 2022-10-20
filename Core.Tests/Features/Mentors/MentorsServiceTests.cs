@@ -527,6 +527,93 @@ namespace Core.Tests.Features.Mentors
 
         #endregion
 
+        #region RemoveFromCampaignAsyncTests
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenCampaignNotFound_ShouldThrowException()
+        {
+            //Act
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(Guid.NewGuid(), Guid.NewGuid());
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorNotFound_ShouldThrowException()
+        {
+            //Arrange
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaignMock);
+
+            //Act
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(campaignMock.Id, Guid.NewGuid());
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorNotInCampaign_ShouldThrowException()
+        {
+            //Arrange
+            var specialityList = new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() };
+
+            var mentor = new MentorDetailsResponse(Guid.NewGuid(), "Ivan Ivanov", "i.iv@test.com", 
+                new List<CampaignSummaryResponse>(), specialityList);
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaignMock);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(mentor);
+
+            //Act
+            var action = async () => await mentorsServiceMock.RemoveFromCampaignAsync(campaignMock.Id, mentor.Id);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorInCampaign_ShouldRemoveMentorFromCampaign()
+        {
+            //Arrange
+            var campaignSummary = campaignMock.ToCampaignSummary();
+
+            var campaignList = new List<CampaignSummaryResponse>() { campaignSummary };
+
+            var specialityList = new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() };
+
+            var mentor = new MentorDetailsResponse(
+                Guid.NewGuid(), "Ivan Ivanov", "i.iv@test.com", campaignList, specialityList);
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(campaignMock);
+
+            mentorsRepositoryMock
+                .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(mentor);
+
+            mentorsRepositoryMock.
+                Setup(x => x.RemoveFromCampaignAsync(It.IsAny<Guid>(), It.IsAny<Campaign>()))
+                .ReturnsAsync(true);
+
+            //Act
+            var isRemoved = await mentorsServiceMock.RemoveFromCampaignAsync(mentor.Id, campaignMock.Id);
+
+            //Assert
+            var response = await mentorsRepositoryMock.Object.GetByIdAsync(mentor.Id);
+
+            Assert.True(isRemoved);
+        }
+
+        #endregion
+
         private void InitializeMockModels()
         {
             specialityMock = new Speciality()
@@ -552,15 +639,15 @@ namespace Core.Tests.Features.Mentors
             specialityIds = new List<Guid>() { specialityMock.Id };
 
             createMentorRequest = new CreateMentorRequest(
-                email, 
-                specialityIds, 
+                email,
+                specialityIds,
                 ApplicationUrl);
 
             updateMentorRequest = new UpdateMentorRequest(id, specialityIds);
 
             mentorSummaryResponse = new MentorSummaryResponse(
-                id, 
-                displayName, 
+                id,
+                displayName,
                 email,
                 new List<SpecialitySummaryResponse>());
 
@@ -575,11 +662,11 @@ namespace Core.Tests.Features.Mentors
                 id,
                 displayName,
                 email,
-                new List<CampaignSummaryResponse>() { campaignMock.ToCampaignSummary()},
+                new List<CampaignSummaryResponse>() { campaignMock.ToCampaignSummary() },
                 new List<SpecialitySummaryResponse>() { specialityMock.ToSpecialitySummaryResponse() });
 
             identitySummaryResponse = new IdentitySummaryResponse(
-                email,  
+                email,
                 displayName);
 
             mentorPaginationResponseList = new List<MentorPaginationResponse>() { mentorPaginationResponse };

@@ -167,5 +167,26 @@ namespace Infrastructure.Features.Mentors
                 .PersonRoles
                 .Any(personRole => personRole.RoleId == RoleId.Mentor);
         }
+
+        public async Task<bool> RemoveFromCampaignAsync(Guid mentorId, Campaign campaign)
+        {
+            var person = await context
+                .Persons
+                .Include(p => p.Campaigns)
+                .Where(p => p.Id == mentorId)
+                .Where(HasMentorRole())
+                .FirstOrDefaultAsync();
+
+            if (person == null)
+            {
+                return false;
+            }
+
+            person.Campaigns.Remove(campaign);
+
+            await context.SaveChangesAsync();
+
+            return true;
+        }
     }
 }

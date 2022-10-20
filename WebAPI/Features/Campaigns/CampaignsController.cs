@@ -169,6 +169,19 @@ namespace WebAPI.Features.Campaigns
 
             return CoreResult.Success(true);
         }
+
+        [HttpDelete("{id}/mentors/{mentorId}")]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<bool>))]
+        [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
+        public async Task<IActionResult> RemoveMentorAsync(Guid id, Guid mentorId)
+        {
+            campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(RemoveMentorAsync));
+
+            var isRemoved = await mentorsService.RemoveFromCampaignAsync(id, mentorId);
+
+            return CoreResult.Success(isRemoved);
+        }
     }
 }
 

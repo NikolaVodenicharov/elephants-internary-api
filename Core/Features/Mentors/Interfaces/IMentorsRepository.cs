@@ -23,5 +23,7 @@ namespace Core.Features.Mentors.Interfaces
         public Task<int> GetCountAsync();
 
         public Task<bool> IsEmailUsed(string email);
+
+        public Task<bool> RemoveFromCampaignAsync(Guid mentorId, Campaign campaign);
     }
 }

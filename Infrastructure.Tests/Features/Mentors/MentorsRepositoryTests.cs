@@ -374,6 +374,54 @@ namespace Infrastructure.Tests.Features.Mentors
             Assert.Equal(0, response);
         }
 
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorNotFound_ShouldReturnFalse()
+        {
+            //Arrange
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Campaign 1",
+                StartDate = DateTime.Today.AddDays(1),
+                EndDate = DateTime.Today.AddDays(30),
+                IsActive = true
+            };
+
+            //Act 
+            var isRemoved = await mentorsRepository.RemoveFromCampaignAsync(Guid.NewGuid(), campaign);
+
+            //Assert
+            Assert.False(isRemoved);
+        }
+
+        [Fact]
+        public async Task RemoveFromCampaignAsync_WhenMentorFound_ShouldReturnTrue()
+        {
+            //Arrange
+            var campaign = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Campaign 1",
+                StartDate = DateTime.Today.AddDays(1),
+                EndDate = DateTime.Today.AddDays(30),
+                IsActive = true
+            };
+
+            await context.Campaigns.AddAsync(campaign);
+
+            var createdMentor = await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            var addMentorToCampaignRepoRequest = new AddMentorToCampaignRepoRequest(createdMentor.Id, campaign);
+
+            await mentorsRepository.AddToCampaignAsync(addMentorToCampaignRepoRequest);
+
+            //Act
+            var isRemoved = await mentorsRepository.RemoveFromCampaignAsync(createdMentor.Id, campaign);
+
+            //Assert
+            Assert.True(isRemoved);
+        }
+
         // this intern is required so we can check precisely for mentors entities in all persons
         private void AddInternToContext()
         {

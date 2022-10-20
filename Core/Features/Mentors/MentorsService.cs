@@ -183,7 +183,8 @@ namespace Core.Features.Mentors
 
             if (isMentorInCampaign)
             {
-                mentorsServiceLogger.LogError("[MentorsService] Mentor with Id {mentorId} is already assigned to campaign with Id {campaignId}", mentorDetailsResponse.Id, campaign.Id);
+                mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is already assigned to" +
+                    " campaign with Id {CampaignId}", nameof(MentorsService), mentorId, campaign.Id);
 
                 throw new CoreException($"Mentor {mentorDetailsResponse.DisplayName} ({mentorDetailsResponse.WorkEmail}) " +
                     $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
@@ -219,6 +220,31 @@ namespace Core.Features.Mentors
             }
 
             return mentorSpecialities;
+        }
+
+        public async Task<bool> RemoveFromCampaignAsync(Guid campaignId, Guid mentorId)
+        {
+            var campaign = await GetValidCampaign(campaignId);
+
+            var mentor = await mentorsRepository.GetByIdAsync(mentorId);
+
+            Guard.EnsureNotNull(mentor, mentorsServiceLogger, nameof(MentorsService),
+                nameof(Person), mentorId);
+
+            if (!mentor.Campaigns.Any(c => c.Id == campaign.Id))
+            {
+                mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is not assigned to " +
+                    "campaign with Id {CampaignId}", nameof(MentorsService), mentorId, campaignId);
+
+                throw new CoreException($"{mentor.DisplayName} ({mentor.WorkEmail}) is not assigned to " +
+                    $"campaign '{campaign.Name}'", HttpStatusCode.BadRequest);
+            }
+
+            var isRemoved = await mentorsRepository.RemoveFromCampaignAsync(mentorId, campaign);
+
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(RemoveFromCampaignAsync), true);
+
+            return isRemoved;
         }
     }
 }
