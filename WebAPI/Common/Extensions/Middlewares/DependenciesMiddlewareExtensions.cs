@@ -19,19 +19,14 @@ using Core.Features.Interns;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.Support;
-using Core.Features.Users;
-using Core.Features.Users.Interfaces;
-using Core.Features.Users.RequestModels;
-using Core.Features.Users.Support;
-using Core.Features.Identity.Interfaces;
 using FluentValidation;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
 using Infrastructure.Features.LearningTopics;
 using Infrastructure.Features.Interns;
-using Infrastructure.Features.Users;
-using Infrastructure.Features.Identity;
+using Core.Features.Persons.Interfaces;
+using Infrastructure.Features.Persons;
 using WebAPI.Features.Mentors.ApiRequestModels;
 using WebAPI.Features.Mentors.Support;
 
@@ -103,10 +98,7 @@ namespace WebAPI.Common.Extensions.Middlewares
 
         private static void RegisterUsersAndIdentityDependencies(IServiceCollection services)
         {
-            services.AddTransient<IUsersService, UsersService>();
-            services.AddTransient<IUsersRepository, UsersRepository>();
             services.AddTransient<IIdentityRepository, IdentityRepository>();
-            services.AddTransient<IValidator<CreateUserRequest>, CreateUserRequestValidator>();
         }
     }
 }

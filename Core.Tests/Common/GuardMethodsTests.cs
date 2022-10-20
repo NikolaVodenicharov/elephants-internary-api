@@ -4,10 +4,6 @@ using Core.Features.Campaigns.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Core.Tests.Common
@@ -37,37 +33,14 @@ namespace Core.Tests.Common
             Assert.Throws<CoreException>(action);
         }
 
-        [Fact]
-        public void EnsureNotNullPagination_WhenPageNumIsNull_ShouldThrowException()
+        [Theory]
+        [InlineData(null, 1)]
+        [InlineData(1, null)]
+        [InlineData(null, null)]
+        public void EnsureNotNullPagination_WhenPageNumIsNull_ShouldThrowException2(int? pageNum, int? pageSize)
         {
-            //Arrange
-            int? pageNum = null, pageSize = 1;
-
-            //Act
-            var action = delegate () { Guard.EnsureNotNullPagination(pageNum, pageSize, logger, scopeName); };
-
-            //Assert
-            Assert.Throws<CoreException>(action);
-        }
-
-        [Fact]
-        public void EnsyreNotNullPagination_WhenPageSizeIsNull_ShouldThrowException()
-        {
-            //Arrange
-            int? pageNum = 1, pageSize = null;
-
-            //Act
-            var action = delegate () { Guard.EnsureNotNullPagination(pageNum, pageSize, logger, scopeName); };
-
-            //Assert
-            Assert.Throws<CoreException>(action);
-        }
-
-        [Fact]
-        public void EnsureNotNullPagination_WhenPageNummAndPageSizeAreNull_ShouldThrowException()
-        {
-            //Arrange
-            int? pageNum = null, pageSize = null;
+            ////Arrange
+            //int? pageNum = null, pageSize = 1;
 
             //Act
             var action = delegate () { Guard.EnsureNotNullPagination(pageNum, pageSize, logger, scopeName); };

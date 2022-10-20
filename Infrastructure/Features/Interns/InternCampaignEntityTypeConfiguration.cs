@@ -9,12 +9,12 @@ namespace Infrastructure.Features.Interns
         public void Configure(EntityTypeBuilder<InternCampaign> builder)
         {
             builder
-                .HasKey(i => new { i.InternId, i.CampaignId});
+                .HasKey(i => new { i.PersonId, i.CampaignId});
 
             builder
-                .HasOne(i => i.Intern)
+                .HasOne(i => i.Person)
                 .WithMany(intern => intern.InternCampaigns)
-                .HasForeignKey(i => i.InternId);
+                .HasForeignKey(i => i.PersonId);
 
             builder
                 .HasOne(i => i.Campaign)

@@ -6,8 +6,8 @@ using Core.Features.Campaigns.ResponseModels;
 using Core.Features.Campaigns.Support;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Mentors.Interfaces;
-using Core.Features.Mentors.ResponseModels;
-using Core.Features.Specialities.ResponseModels;
+using Core.Features.Interns.ResponseModels;
+using Core.Features.Mentors.RequestModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,8 +19,8 @@ using System.Threading.Tasks;
 using WebAPI.Common;
 using WebAPI.Features.Campaigns;
 using Xunit;
-using Core.Features.Interns.ResponseModels;
-using Core.Common;
+using Core.Features.Specialities.ResponseModels;
+using Core.Features.Mentors.ResponseModels;
 
 namespace WebAPI.Tests.Features.Campaigns
 {
@@ -31,22 +31,20 @@ namespace WebAPI.Tests.Features.Campaigns
         private readonly DateTime campaignStartDate = DateTime.Today;
         private readonly DateTime campaignEndDate = DateTime.Today.AddDays(30);
         private readonly bool campaignIsActive = true;
-
         private readonly int validPageNum = 1;
         private readonly int invalidPageNum = -1;
         private readonly int validPageSize = 10;
         private readonly int invalidPageSize = 0;
-
-        private CreateCampaignRequest createCampaignRequest;
-        private UpdateCampaignRequest updateCampaignRequest;
-        private CampaignSummaryResponse campaignSummary;
-
+        private CreateCampaignRequest createCampaignRequest = null!;
+        private UpdateCampaignRequest updateCampaignRequest = null!;
+        private CampaignSummaryResponse campaignSummaryResponse = null!;
+        private SpecialitySummaryResponse specialtySummaryResponse = null!;
         private readonly Mock<ICampaignsService> campaignsServiceMock;
         private readonly Mock<IMentorsService> mentorsServiceMock;
         private readonly Mock<IInternsService> internsServiceMock;
         private readonly CampaignsController campaignsController;
 
-        public static IEnumerable<object[]> invalidNames =>
+        public static IEnumerable<object[]> InvalidNames =>
             new List<object[]>
             {
                 new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMinLength - 1) },
@@ -56,7 +54,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 new object[] { "-Test-" },
             };
 
-        public static IEnumerable<object[]> invalidDates =>
+        public static IEnumerable<object[]> InvalidDates =>
             new List<object[]>
             {
                 new object[] {DateTime.Today.AddDays(3), DateTime.Today.AddDays(1),},
@@ -84,11 +82,7 @@ namespace WebAPI.Tests.Features.Campaigns
                     loggerMock.Object
                 );
 
-            createCampaignRequest = new CreateCampaignRequest(campaignName, campaignStartDate, campaignEndDate, campaignIsActive);
-
-            updateCampaignRequest = new UpdateCampaignRequest(id, campaignName, campaignStartDate, campaignEndDate, campaignIsActive);
-
-            campaignSummary = new CampaignSummaryResponse(id, campaignName, campaignStartDate, campaignEndDate, campaignIsActive);
+            InitializeMockModels();
         }
 
         #region CreateAsyncTests
@@ -99,7 +93,7 @@ namespace WebAPI.Tests.Features.Campaigns
             //Arrange
             campaignsServiceMock
                 .Setup(x => x.CreateAsync(It.IsAny<CreateCampaignRequest>()))
-                .ReturnsAsync(campaignSummary);
+                .ReturnsAsync(campaignSummaryResponse);
 
             //Act
             var actionResult = await campaignsController.CreateAsync(createCampaignRequest);
@@ -113,15 +107,15 @@ namespace WebAPI.Tests.Features.Campaigns
 
             var createdCampaign = jsonResult!.Value as CoreResponse<CampaignSummaryResponse>;
 
-            Assert.Equal(campaignSummary.Id, createdCampaign.Data.Id);
-            Assert.Equal(campaignSummary.Name, createdCampaign.Data.Name);
-            Assert.Equal(campaignSummary.StartDate, createdCampaign.Data.StartDate);
-            Assert.Equal(campaignSummary.EndDate, createdCampaign.Data.EndDate);
-            Assert.Equal(campaignSummary.IsActive, createdCampaign.Data.IsActive);
+            Assert.Equal(campaignSummaryResponse.Id, createdCampaign!.Data!.Id);
+            Assert.Equal(campaignSummaryResponse.Name, createdCampaign.Data.Name);
+            Assert.Equal(campaignSummaryResponse.StartDate, createdCampaign.Data.StartDate);
+            Assert.Equal(campaignSummaryResponse.EndDate, createdCampaign.Data.EndDate);
+            Assert.Equal(campaignSummaryResponse.IsActive, createdCampaign.Data.IsActive);
         }
 
         [Theory]
-        [MemberData(nameof(invalidNames))]
+        [MemberData(nameof(InvalidNames))]
         public async Task CreateAsync_WhenNameIsInvalid_ShouldThrowException(string invalidName)
         {
             //Arrange
@@ -149,7 +143,7 @@ namespace WebAPI.Tests.Features.Campaigns
         }
 
         [Theory]
-        [MemberData(nameof(invalidDates))]
+        [MemberData(nameof(InvalidDates))]
         public async Task CreateAsync_WhenEndDateIsInvalid_ShouldThrowError(DateTime startDate, DateTime endDate)
         {
             //Arrange
@@ -172,7 +166,7 @@ namespace WebAPI.Tests.Features.Campaigns
             //Arrange
             campaignsServiceMock
                 .Setup(x => x.UpdateAsync(It.IsAny<UpdateCampaignRequest>()))
-                .ReturnsAsync(campaignSummary);
+                .ReturnsAsync(campaignSummaryResponse);
 
             //Act
             var actionResult = await campaignsController.UpdateAsync(updateCampaignRequest.Id, updateCampaignRequest);
@@ -186,11 +180,11 @@ namespace WebAPI.Tests.Features.Campaigns
 
             var createdCampaign = jsonResult!.Value as CoreResponse<CampaignSummaryResponse>;
 
-            Assert.Equal(campaignSummary.Id, createdCampaign.Data.Id);
-            Assert.Equal(campaignSummary.Name, createdCampaign.Data.Name);
-            Assert.Equal(campaignSummary.StartDate, createdCampaign.Data.StartDate);
-            Assert.Equal(campaignSummary.EndDate, createdCampaign.Data.EndDate);
-            Assert.Equal(campaignSummary.IsActive, createdCampaign.Data.IsActive);
+            Assert.Equal(campaignSummaryResponse.Id, createdCampaign!.Data!.Id);
+            Assert.Equal(campaignSummaryResponse.Name, createdCampaign.Data.Name);
+            Assert.Equal(campaignSummaryResponse.StartDate, createdCampaign.Data.StartDate);
+            Assert.Equal(campaignSummaryResponse.EndDate, createdCampaign.Data.EndDate);
+            Assert.Equal(campaignSummaryResponse.IsActive, createdCampaign.Data.IsActive);
         }
 
         [Fact]
@@ -204,7 +198,7 @@ namespace WebAPI.Tests.Features.Campaigns
         }
 
         [Theory]
-        [MemberData(nameof(invalidNames))]
+        [MemberData(nameof(InvalidNames))]
         public async Task UpdateAsync_WhenNameIsInvalid_ShouldThrowException(string invalidName)
         {
             //Arrange
@@ -232,7 +226,7 @@ namespace WebAPI.Tests.Features.Campaigns
         }
 
         [Theory]
-        [MemberData(nameof(invalidDates))]
+        [MemberData(nameof(InvalidDates))]
         public async Task UpdateAsync_WhenEndDateIsInvalid_ShouldThrowException(DateTime startDate, DateTime endDate)
         {
             //Arrange
@@ -272,7 +266,7 @@ namespace WebAPI.Tests.Features.Campaigns
             //Arrange
             campaignsServiceMock
                 .Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaignSummary);
+                .ReturnsAsync(campaignSummaryResponse);
 
             //Act
             var actionResult = await campaignsController.GetByIdAsync(id);
@@ -287,11 +281,11 @@ namespace WebAPI.Tests.Features.Campaigns
             var response = jsonResult!.Value as CoreResponse<CampaignSummaryResponse>;
 
             //Assert
-            Assert.Equal(campaignSummary.Id, response.Data.Id);
-            Assert.Equal(campaignSummary.Name, response.Data.Name);
-            Assert.Equal(campaignSummary.StartDate, response.Data.StartDate);
-            Assert.Equal(campaignSummary.EndDate, response.Data.EndDate);
-            Assert.Equal(campaignSummary.IsActive, response.Data.IsActive);
+            Assert.Equal(campaignSummaryResponse.Id, response!.Data!.Id);
+            Assert.Equal(campaignSummaryResponse.Name, response.Data.Name);
+            Assert.Equal(campaignSummaryResponse.StartDate, response.Data.StartDate);
+            Assert.Equal(campaignSummaryResponse.EndDate, response.Data.EndDate);
+            Assert.Equal(campaignSummaryResponse.IsActive, response.Data.IsActive);
         }
 
         [Fact]
@@ -320,7 +314,7 @@ namespace WebAPI.Tests.Features.Campaigns
             var campaignSummary2 = new CampaignSummaryResponse(Guid.NewGuid(), "Campaign 2", 
                 DateTime.Today.AddDays(40), DateTime.Today.AddDays(71), true);
 
-            var campaignList = new List<CampaignSummaryResponse>() { campaignSummary, campaignSummary2 };
+            var campaignList = new List<CampaignSummaryResponse>() { campaignSummaryResponse, campaignSummary2 };
 
             var expectedResponse = new PaginationResponse<CampaignSummaryResponse>(campaignList, validPageNum, 1);
 
@@ -344,7 +338,7 @@ namespace WebAPI.Tests.Features.Campaigns
 
             var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<CampaignSummaryResponse>>;
 
-            Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
+            Assert.Equal(expectedResponse.Content.Count(), actualResponse!.Data!.Content.Count());
         }
 
         [Fact]
@@ -372,7 +366,7 @@ namespace WebAPI.Tests.Features.Campaigns
 
             var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<CampaignSummaryResponse>>;
 
-            Assert.Empty(actualResponse.Data.Content);
+            Assert.Empty(actualResponse!.Data!.Content);
         }
 
         [Fact]
@@ -412,28 +406,21 @@ namespace WebAPI.Tests.Features.Campaigns
         public async Task GetMentorsByCampaignIdAsync_WhenMentorsFound_ShouldReturnCorrectCount()
         {
             //Arrange
-            var specialtySummary = new SpecialitySummaryResponse(Guid.NewGuid(), "Backend");
+            var mentorPaginationResponse = new MentorPaginationResponse(
+                Guid.NewGuid(), 
+                "John Doe", 
+                "john.doe@endava.com",
+                new List<SpecialitySummaryResponse>() { specialtySummaryResponse },
+                new List<CampaignSummaryResponse>() { campaignSummaryResponse });
 
-            var campaignSummary = new CampaignSummaryResponse(
-                Guid.NewGuid(),
-                "Test Campaign",
-                DateTime.Today.AddDays(5),
-                DateTime.Today.AddDays(35),
-                false
-            );
+            var mentorPaginationResponses = new List<MentorPaginationResponse>() { mentorPaginationResponse };
 
-            var mentorSummary = new MentorDetailsResponse(Guid.NewGuid(), "John Doe", "john.doe@endava.com",
-                new List<SpecialitySummaryResponse>() { specialtySummary },
-                new List<CampaignSummaryResponse>() { campaignSummary } );
-
-            var mentorList = new List<MentorDetailsResponse>() { mentorSummary };
-
-            var expectedResponse = new PaginationResponse<MentorDetailsResponse>(mentorList, validPageNum, 1);
+            var expectedResponse = new PaginationResponse<MentorPaginationResponse>(mentorPaginationResponses, validPageNum, 1);
 
             mentorsServiceMock
                 .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(mentorList.Count);
-            
+                .ReturnsAsync(mentorPaginationResponses.Count);
+
             mentorsServiceMock
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
                 .ReturnsAsync(expectedResponse);
@@ -448,17 +435,17 @@ namespace WebAPI.Tests.Features.Campaigns
 
             Assert.NotNull(jsonResult);
 
-            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorPaginationResponse>>;
 
-            Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
+            Assert.Equal(expectedResponse.Content.Count(), actualResponse!.Data!.Content.Count());
         }
 
         [Fact]
         public async Task GetMentorsByCampaignIdAsync_WhenNoMentorsFound_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var emptyResponse = new PaginationResponse<MentorDetailsResponse>(
-                new List<MentorDetailsResponse>(), validPageNum, 1);
+            var emptyResponse = new PaginationResponse<MentorPaginationResponse>(
+                new List<MentorPaginationResponse>(), validPageNum, 1);
 
             mentorsServiceMock
                 .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
@@ -478,9 +465,9 @@ namespace WebAPI.Tests.Features.Campaigns
 
             Assert.NotNull(jsonResult);
 
-            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorDetailsResponse>>;
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<MentorPaginationResponse>>;
 
-            Assert.Empty(actualResponse.Data.Content);
+            Assert.Empty(actualResponse!.Data!.Content);
         }
 
         [Fact]
@@ -525,7 +512,7 @@ namespace WebAPI.Tests.Features.Campaigns
         public async Task GetAllInternsByCampaignIdAsync_WhenInvalidPage_ShouldThrowException(int pageNum, int pageSize)
         {
             //Act
-            var action = async () => await campaignsController.GetAllInternsByCampaignIdAsync(id, pageNum, pageSize);
+            var action = async () => await campaignsController.GetInternsByCampaignAsync(id, pageNum, pageSize);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -545,7 +532,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(internsByCampaignPaginationResponseMock);
 
             //Act
-            var actionResult = await campaignsController.GetAllInternsByCampaignIdAsync(id, 1, 10);
+            var actionResult = await campaignsController.GetInternsByCampaignAsync(id, 1, 10);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -568,7 +555,7 @@ namespace WebAPI.Tests.Features.Campaigns
         public async Task AddMentorAsync_WhenQueryIdAndModelIdDoesNotMatch_ShouldThrowException()
         {
             //Arrange
-            var request = new AddToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
+            var request = new AddMentorToCampaignRequest(Guid.NewGuid(), Guid.NewGuid());
 
             //Act
             var action = async () => await campaignsController.AddMentorAsync(Guid.NewGuid(), request);
@@ -582,7 +569,7 @@ namespace WebAPI.Tests.Features.Campaigns
         {
             //Arrange
             var newId = Guid.NewGuid();
-            var request = new AddToCampaignRequest(newId, Guid.NewGuid());
+            var request = new AddMentorToCampaignRequest(newId, Guid.NewGuid());
 
             //Act
             var actionResult = await campaignsController.AddMentorAsync(newId, request);
@@ -596,9 +583,34 @@ namespace WebAPI.Tests.Features.Campaigns
 
             var response = jsonResult!.Value as CoreResponse<bool>;
 
-            Assert.True(response.Data);
+            Assert.True(response!.Data);
         }
 
         #endregion
+
+        private void InitializeMockModels()
+        {
+            createCampaignRequest = new CreateCampaignRequest(
+                campaignName,
+                campaignStartDate,
+                campaignEndDate,
+                campaignIsActive);
+
+            updateCampaignRequest = new UpdateCampaignRequest(
+                id,
+                campaignName,
+                campaignStartDate,
+                campaignEndDate,
+                campaignIsActive);
+
+            campaignSummaryResponse = new CampaignSummaryResponse(
+                id,
+                campaignName,
+                campaignStartDate,
+                campaignEndDate,
+                campaignIsActive);
+
+            specialtySummaryResponse = new SpecialitySummaryResponse(Guid.NewGuid(), "Backend");
+        }
     }
 }

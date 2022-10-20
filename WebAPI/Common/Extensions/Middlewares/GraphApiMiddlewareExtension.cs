@@ -1,5 +1,6 @@
 using Microsoft.Graph;
 using Azure.Identity;
+using WebAPI.Common.SettingsModels;
 
 namespace WebAPI.Common.Extensions.Middlewares
 {

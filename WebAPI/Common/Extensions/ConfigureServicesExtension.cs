@@ -1,3 +1,5 @@
+using WebAPI.Common.SettingsModels;
+
 namespace WebAPI.Common.Extensions
 {
     public static class ConfigureServicesExtension

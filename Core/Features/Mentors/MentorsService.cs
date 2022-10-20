@@ -3,11 +3,11 @@ using Core.Common.Exceptions;
 using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
-using Core.Features.Mentors.Entities;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
-using Core.Features.Mentors.Support;
+using Core.Features.Persons.Entities;
+using Core.Features.Persons.Interfaces;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
@@ -21,6 +21,7 @@ namespace Core.Features.Mentors
         private readonly IMentorsRepository mentorsRepository;
         private readonly ICampaignsRepository campaignsRepository;
         private readonly ISpecialitiesRepository specialitiesRepository;
+        private readonly IIdentityRepository identityRepository;
         private readonly ILogger<MentorsService> mentorsServiceLogger;
         private readonly IValidator<CreateMentorRequest> createMentorRequestValidator;
         private readonly IValidator<UpdateMentorRequest> updateMentorRequestValidator;
@@ -30,6 +31,7 @@ namespace Core.Features.Mentors
             IMentorsRepository mentorsRepository,
             ICampaignsRepository campaignsRepository,
             ISpecialitiesRepository specialitiesRepository,
+            IIdentityRepository identityRepository,
             ILogger<MentorsService> mentorsServiceLogger,
             IValidator<CreateMentorRequest> createMentorRequestValidator,
             IValidator<UpdateMentorRequest> updateMentorRequestValidator,
@@ -38,31 +40,34 @@ namespace Core.Features.Mentors
             this.mentorsRepository = mentorsRepository;
             this.campaignsRepository = campaignsRepository;
             this.specialitiesRepository = specialitiesRepository;
+            this.identityRepository = identityRepository;
             this.mentorsServiceLogger = mentorsServiceLogger;
             this.createMentorRequestValidator = createMentorRequestValidator;
             this.updateMentorRequestValidator = updateMentorRequestValidator;
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
-        public async Task<MentorSummaryResponse> CreateAsync(CreateMentorRequest request)
+        public async Task<MentorSummaryResponse> CreateAsync(CreateMentorRequest createMentorRequest)
         {
-            await createMentorRequestValidator.ValidateAndThrowAsync(request);
+            await createMentorRequestValidator.ValidateAndThrowAsync(createMentorRequest);
 
-            await CheckEmailAsync(request.Email);
+            await ValidateNoEmailDuplication(createMentorRequest.Email);
 
-            var mentorSpecialities = await GetSpecialities(request.SpecialityIds.Distinct());
+            var mentorSpecialities = await GetValidSpecialties(createMentorRequest.SpecialityIds.Distinct());
 
-            var mentor = request.ToMentor();
-            mentor.Specialities = mentorSpecialities;
+            var identitySummaryResponse = await identityRepository.SendUserInviteAsync(createMentorRequest.Email, createMentorRequest.ApplicationUrl);
 
-            var createdMentor = await mentorsRepository.AddAsync(mentor);
+            var createMentorRepoRequest = new CreateMentorRepoRequest(
+                identitySummaryResponse.DisplayName,
+                identitySummaryResponse.Email,
+                mentorSpecialities);
 
-            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(CreateAsync), true);
+            var mentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
 
-            return createdMentor.ToMentorSummaryResponse();
+            return mentorSummaryResponse;
         }
 
-        public async Task<PaginationResponse<MentorDetailsResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null)
+        public async Task<PaginationResponse<MentorPaginationResponse>> GetPaginationAsync(PaginationRequest filter, Guid? campaignId = null)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
@@ -77,40 +82,40 @@ namespace Core.Features.Mentors
 
             if (filter.PageNum > totalPages)
             {
-                mentorsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(MentorsService), totalPages, 
+                mentorsServiceLogger.LogErrorAndThrowExceptionPageCount(nameof(MentorsService), totalPages,
                     filter.PageNum.Value);
             }
 
-            var mentors = mentorCount > 0 ?
+            var mentorsPaginationRespose = mentorCount > 0 ?
                 await mentorsRepository.GetAllAsync(filter, campaignId) :
-                new List<Mentor>();
+                new List<MentorPaginationResponse>();
 
-            var paginationResponse = new PaginationResponse<MentorDetailsResponse>(
-                mentors.ToMentorDetailsResponses(), filter.PageNum.Value, totalPages);
+            var paginationResponse = new PaginationResponse<MentorPaginationResponse>(
+                mentorsPaginationRespose, filter.PageNum.Value, totalPages);
 
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetPaginationAsync), true);
 
             return paginationResponse;
         }
 
-        public async Task<IEnumerable<MentorDetailsResponse>> GetAllAsync()
+        public async Task<IEnumerable<MentorPaginationResponse>> GetAllAsync()
         {
             var mentors = await mentorsRepository.GetAllAsync();
 
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetAllAsync), true);
 
-            return mentors.ToMentorDetailsResponses();
+            return mentors;
         }
 
         public async Task<MentorDetailsResponse> GetByIdAsync(Guid id)
         {
-            var mentor = await mentorsRepository.GetByIdAsync(id);
+            var mentorDetailsResponse = await mentorsRepository.GetByIdAsync(id);
 
-            Guard.EnsureNotNull(mentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), id);
+            Guard.EnsureNotNull(mentorDetailsResponse, mentorsServiceLogger, nameof(MentorsService), nameof(Person), id);
 
             mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(GetByIdAsync), true);
 
-            return mentor.ToMentorDetailsResponse();
+            return mentorDetailsResponse;
         }
 
         public async Task<int> GetCountAsync()
@@ -120,25 +125,24 @@ namespace Core.Features.Mentors
             return mentorCount;
         }
 
-        public async Task<MentorDetailsResponse> UpdateAsync(UpdateMentorRequest request)
+        public async Task<MentorDetailsResponse> UpdateAsync(UpdateMentorRequest updateMentorRequest)
         {
-            await updateMentorRequestValidator.ValidateAndThrowAsync(request);
+            await updateMentorRequestValidator.ValidateAndThrowAsync(updateMentorRequest);
 
-            var existingMentor = await mentorsRepository.GetByIdAsync(request.Id);
+            var mentorSpecialities = await GetValidSpecialties(updateMentorRequest.SpecialityIds.Distinct());
 
-            Guard.EnsureNotNull(existingMentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), request.Id);
+            var updateMentorRepoRequest = new UpdateMentorRepoRequest(
+                updateMentorRequest.Id,
+                mentorSpecialities);
 
-            var mentorSpecialities = await GetSpecialities(request.SpecialityIds.Distinct());
+            var mentorDetailsReponse = await mentorsRepository.UpdateAsync(updateMentorRepoRequest);
 
-            existingMentor.Specialities = mentorSpecialities;
+            Guard.EnsureNotNull(mentorDetailsReponse, mentorsServiceLogger, nameof(MentorsService), nameof(Person));
 
-            await mentorsRepository.SaveTrackingChangesAsync();
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(UpdateAsync), true);
 
-            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(UpdateAsync), nameof(Mentor), 
-                request.Id, true);
-
-            return existingMentor.ToMentorDetailsResponse();
-        }  
+            return mentorDetailsReponse;
+        }
 
         public async Task<int> GetCountByCampaignIdAsync(Guid campaignId)
         {
@@ -147,52 +151,71 @@ namespace Core.Features.Mentors
             return count;
         }
 
-        public async Task AddToCampaignAsync(AddToCampaignRequest request)
+        public async Task<bool> AddToCampaignAsync(AddMentorToCampaignRequest addMentorToCampaignRequest)
         {
-            var campaign = await campaignsRepository.GetByIdAsync(request.CampaignId);
+            var campaign = await GetValidCampaign(addMentorToCampaignRequest.CampaignId);
 
-            Guard.EnsureNotNull(campaign, mentorsServiceLogger, nameof(MentorsService), nameof(Campaign), request.CampaignId);
+            await ValidateMentorIsNotInCampaign(campaign, addMentorToCampaignRequest.MentorId);
 
-            var mentor = await mentorsRepository.GetByIdAsync(request.PersonId);
+            var addMentorToCampaignRepoRequest = new AddMentorToCampaignRepoRequest(addMentorToCampaignRequest.MentorId, campaign);
 
-            Guard.EnsureNotNull(mentor, mentorsServiceLogger, nameof(MentorsService), nameof(Mentor), request.PersonId);
+            var isMentorAdded = await mentorsRepository.AddToCampaignAsync(addMentorToCampaignRepoRequest);
 
-            if (mentor.Campaigns.Contains(campaign))
-            {
-                mentorsServiceLogger.LogError("[{ServiceName}] Mentor with Id {MentorId} is already assigned to" +
-                    " campaign with Id {CampaignId}", nameof(MentorsService), nameof(request.PersonId), nameof(request.CampaignId));
+            mentorsServiceLogger.LogInformationMethod(nameof(MentorsService), nameof(AddToCampaignAsync), true);
 
-                throw new CoreException($"Mentor {mentor.DisplayName} ({mentor.Email}) " +
-                    $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
-            }
-
-            mentor.Campaigns.Add(campaign);
-
-            await mentorsRepository.SaveTrackingChangesAsync();
-
-            mentorsServiceLogger.LogInformationAddedToEntity(nameof(MentorsService), nameof(Mentor), request.PersonId,
-                nameof(Campaign), request.CampaignId);
+            return isMentorAdded;
         }
 
-        private async Task CheckEmailAsync(string email)
+        private async Task ValidateMentorIsNotInCampaign(Campaign campaign, Guid mentorId)
+        {
+            var mentorDetailsResponse = await mentorsRepository.GetByIdAsync(mentorId);
+
+            Guard.EnsureNotNull(
+                mentorDetailsResponse,
+                mentorsServiceLogger,
+                nameof(MentorsService),
+                nameof(Person),
+                mentorId);
+
+            var isMentorInCampaign = mentorDetailsResponse
+                .Campaigns
+                .Any(c => c.Id == campaign.Id);
+
+            if (isMentorInCampaign)
+            {
+                mentorsServiceLogger.LogError("[MentorsService] Mentor with Id {mentorId} is already assigned to campaign with Id {campaignId}", mentorDetailsResponse.Id, campaign.Id);
+
+                throw new CoreException($"Mentor {mentorDetailsResponse.DisplayName} ({mentorDetailsResponse.WorkEmail}) " +
+                    $"is already assigned to campaign '{campaign.Name}'.", HttpStatusCode.BadRequest);
+            }
+        }
+
+        private async Task<Campaign> GetValidCampaign(Guid id)
+        {
+            var campaign = await campaignsRepository.GetByIdAsync(id);
+
+            Guard.EnsureNotNull(campaign, mentorsServiceLogger, nameof(MentorsService), nameof(Campaign), id);
+
+            return campaign;
+        }
+
+        private async Task ValidateNoEmailDuplication(string email)
         {
             var isEmailUsed = await mentorsRepository.IsEmailUsed(email);
 
             if (isEmailUsed)
             {
-                mentorsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(MentorsService), nameof(Mentor), 
-                    nameof(Mentor.Email), email);
+                mentorsServiceLogger.LogErrorAndThrowExceptionValueTaken(nameof(MentorsService), nameof(Person), "email", email);
             }
         }
 
-        private async Task<ICollection<Speciality>> GetSpecialities(IEnumerable<Guid> idList)
+        private async Task<ICollection<Speciality>> GetValidSpecialties(IEnumerable<Guid> distinctSpecialtyIds)
         {
-            var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(idList);
+            var mentorSpecialities = await specialitiesRepository.GetByIdsAsync(distinctSpecialtyIds);
 
-            if (mentorSpecialities.Count != idList.Count())
+            if (mentorSpecialities.Count != distinctSpecialtyIds.Count())
             {
-                mentorsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(MentorsService), "specialities",
-                    idList);
+                mentorsServiceLogger.LogErrorAndThrowExceptionNotAllFound(nameof(MentorsService), nameof(Speciality), distinctSpecialtyIds);
             }
 
             return mentorSpecialities;

@@ -3,212 +3,223 @@ using Core.Common.Pagination;
 using Core.Features.Campaigns.Support;
 using Core.Features.Interns.Entities;
 using Core.Features.Interns.Interfaces;
+using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
+using Core.Features.Persons.Entities;
 using Core.Features.Specialities.Support;
+using Infrastructure.Features.Persons.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Features.Interns
 {
     public class InternsRepository : IInternsRepository
     {
         private readonly InternaryContext context;
-        private readonly ILogger<InternsRepository> internsRepositoryLogger;
 
-        public InternsRepository(InternaryContext context, ILogger<InternsRepository> internsRepositoryLogger)
+        public InternsRepository(InternaryContext context)
         {
             this.context = context;
-            this.internsRepositoryLogger = internsRepositoryLogger;
         }
 
-        public async Task<InternSummaryResponse> AddAsync(Intern intern)
+        public async Task<InternSummaryResponse> CreateAsync(CreateInternRepoRequest createInternWithDetailsRequest)
         {
+            var person = new Person()
+            {
+                FirstName = createInternWithDetailsRequest.FirstName,
+                LastName = createInternWithDetailsRequest.LastName,
+                PersonalEmail = createInternWithDetailsRequest.Email,
+                InternCampaigns = new List<InternCampaign>() { createInternWithDetailsRequest.InternCampaign}
+            };
+
+            var personRole =
+                new PersonRole()
+                {
+                    RoleId = RoleId.Intern,
+                    Person = person,
+                };
+
             await context
-                .Interns
-                .AddAsync(intern);
+                .PersonRoles
+                .AddAsync(personRole);
 
             await context.SaveChangesAsync();
-            
-            return intern.ToInternSummaryResponse();
+
+            return person.ToInternSummaryResponse();
         }
 
-        public async Task<bool> ExistsByEmailAsync(string email)
+        public async Task<InternCampaignSummaryResponse?> AddInternCampaignAsync(AddInternCampaignRepoRequest addInternCampaignRepoRequest)
+        {
+            var Person = await context
+                .Persons
+                .Where(p => p.Id == addInternCampaignRepoRequest.InternId)
+                .Where(HasInternRole())
+                .Include(p => p.InternCampaigns)
+                .FirstOrDefaultAsync();
+
+            if (Person == null)
+            {
+                return null;
+            }
+
+            Person.InternCampaigns.Add(addInternCampaignRepoRequest.InternCampaign);
+
+            await context.SaveChangesAsync();
+
+            return addInternCampaignRepoRequest.InternCampaign.ToInternCampaignResponse();
+        }
+
+        public async Task<InternSummaryResponse?> UpdateAsync(UpdateInternRequest updateInternRequest)
+        {
+            var person = await context
+                .Persons
+                .Where(u => u.Id == updateInternRequest.Id)
+                .Where(HasInternRole())
+                .FirstOrDefaultAsync();
+
+            if (person == null)
+            {
+                return null;
+            }
+            
+            person.FirstName = updateInternRequest.FirstName;
+            person.LastName = updateInternRequest.LastName;
+            person.PersonalEmail = updateInternRequest.Email;
+
+            await context.SaveChangesAsync();
+
+            return person.ToInternSummaryResponse();
+        }
+
+        public async Task<InternCampaignSummaryResponse> UpdateInternCampaignAsync(InternCampaign internCampaign)
+        {
+            context
+                .InternCampaigns
+                .Update(internCampaign);
+
+            await context.SaveChangesAsync();
+
+            return internCampaign.ToInternCampaignResponse();
+        }
+
+        public async Task<InternSummaryResponse?> GetByIdAsync(Guid Id)
+        {
+            var person = await context
+                .Persons
+                .Where(p => p.Id == Id)
+                .Where(HasInternRole())
+                .FirstOrDefaultAsync();
+
+            return person?.ToInternSummaryResponse();
+        }
+
+        public async Task<bool> ExistsByPersonalEmailAsync(string personalEmail)
         {
             var exist = await context
-                .Interns
-                .AnyAsync(i => i.PersonalEmail == email);
+                .Persons
+                .AsNoTracking()
+                .AnyAsync(i => i.PersonalEmail == personalEmail);
 
             return exist;
         }
 
-        public Task<Intern?> GetByIdAsync(Guid Id)
-        {
-            var intern = context
-                .Interns
-                .FirstOrDefaultAsync(i => i.Id == Id);
-
-            return intern;
-        }
-
         public async Task<InternDetailsResponse?> GetDetailsByIdAsync(Guid id)
         {
-            var internDetailsResponse = await context
-                .Interns
-                .Where(i => i.Id == id)
-                .Select(i => new InternDetailsResponse(
-                    i.Id,
-                    i.FirstName,
-                    i.LastName,
-                    i.PersonalEmail,
-                    i.InternCampaigns
-                        .Select(internCampaign => new InternCampaignSummaryResponse(
-                            internCampaign
-                                .Campaign
-                                .ToCampaignSummary(),
-                            internCampaign
-                                .Speciality
-                                .ToSpecialitySummaryResponse(),
-                            internCampaign
-                                .States
-                                .OrderByDescending(s => s.Created)
-                                .First()
-                                .ToStateResponse()))
-                        .ToList()))
+            var person = await context
+                .Persons
+                .AsNoTracking()
+                .Where(p => p.Id == id)
+                .Where(HasInternRole())
+                    .Include(p => p.InternCampaigns)
+                        .ThenInclude(ic => ic.Speciality)
+                    .Include(p => p.InternCampaigns)
+                        .ThenInclude(ic => ic.Campaign)
+                    .Include(p => p.InternCampaigns)
+                        .ThenInclude(ic => ic.States)
                 .FirstOrDefaultAsync();
+
+            if (person == null)
+            {
+                return null;
+            }
+
+            var internDetailsResponse = new InternDetailsResponse(
+                person.Id,
+                person.FirstName,
+                person.LastName,
+                person.PersonalEmail,
+                person
+                    .InternCampaigns
+                    .Select(ic => ic.ToInternCampaignResponse()));
 
             return internDetailsResponse;
         }
 
         public async Task<InternCampaign?> GetInternCampaignByIdsAsync(Guid internId, Guid campaignId)
         {
-            var internIntersection = await context
+            var internCampaign = await context
                 .InternCampaigns
-                .Include(ic => ic.Intern)
+                .Where(ic =>
+                    ic.PersonId == internId &&
+                    ic.CampaignId == campaignId &&
+                    ic.Person.PersonRoles.Any(pr => pr.RoleId == RoleId.Intern))
+                .Include(ic => ic.Person)
                 .Include(ic => ic.Campaign)
                 .Include(ic => ic.Speciality)
                 .Include(ic => ic.States)
-                .FirstOrDefaultAsync(i =>
-                    i.InternId == internId &&
-                    i.CampaignId == campaignId);
+                .FirstOrDefaultAsync();
 
-            return internIntersection;
+            return internCampaign;
         }
 
         public async Task<PaginationResponse<InternSummaryResponse>> GetAllAsync(PaginationRequest paginationRequest)
         {
-            Guard.EnsureNotNullPagination(paginationRequest.PageNum, paginationRequest.PageSize, 
-                internsRepositoryLogger, nameof(InternsRepository));
-
-            var elementsCount = await context
-                .Interns
+            int elementsCount = await context
+                .Persons
+                .Where(HasInternRole())
                 .CountAsync();
 
             if (elementsCount == 0)
             {
-                if (paginationRequest.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
-                        PaginationConstants.DefaultPageCount, paginationRequest.PageNum.Value);
-                }
-
-                var zeroElementResult = new PaginationResponse<InternSummaryResponse>(
+                var zeroElementPagination = new PaginationResponse<InternSummaryResponse>(
                     new List<InternSummaryResponse>(),
-                    paginationRequest.PageNum.Value,
+                    paginationRequest!.PageNum!.Value,
                     PaginationConstants.DefaultPageCount);
 
-                return zeroElementResult;
+                return zeroElementPagination;
             }
 
-            var pageCount = CalculatePageCount(paginationRequest.PageSize.Value, elementsCount);
+            var pageCount = CalculatePageCount(paginationRequest!.PageSize!.Value, elementsCount);
 
-            if (paginationRequest.PageNum > pageCount)
-            {
-                internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
-                    pageCount, paginationRequest.PageNum.Value);
-            }
-
-            var skip = CalculateSkipCount(paginationRequest.PageNum.Value, paginationRequest.PageSize.Value);
-
-            var interns = await context
-                .Interns
-                .AsNoTracking()
-                .Skip(skip)
-                .Take(paginationRequest.PageSize.Value)
-                .ToListAsync();
-
-            var internSummaryResponses = interns
-                .Select(i => i.ToInternSummaryResponse())
-                .ToList();
-
-            var paginationResponse = new PaginationResponse<InternSummaryResponse>(
-                internSummaryResponses, 
-                paginationRequest.PageNum.Value, 
-                pageCount);
+            var paginationResponse = await CreatePaginationInterySummaryResponse(paginationRequest, pageCount);
 
             return paginationResponse;
         }
 
         public async Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
         {
-            Guard.EnsureNotNullPagination(paginationRequest.PageNum, paginationRequest.PageSize,
-                internsRepositoryLogger, nameof(InternsRepository));
-
             var elementsCount = await context
                 .InternCampaigns
-                .Where(ic => ic.CampaignId == campaignId)
+                .Where(ic =>
+                    ic.Person.PersonRoles.Any(pr => pr.RoleId == RoleId.Intern) &&
+                    ic.CampaignId == campaignId)
                 .CountAsync();
 
             if (elementsCount == 0)
             {
-                if (paginationRequest.PageNum > PaginationConstants.DefaultPageCount)
-                {
-                    internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
-                        PaginationConstants.DefaultPageCount, paginationRequest.PageNum.Value);
-                }
-
                 var zeroElementResult = new PaginationResponse<InternByCampaignSummaryResponse>(
-                new List<InternByCampaignSummaryResponse>(),
-                paginationRequest.PageNum.Value,
-                PaginationConstants.DefaultPageCount);
+                    new List<InternByCampaignSummaryResponse>(),
+                    paginationRequest!.PageNum!.Value,
+                    PaginationConstants.DefaultPageCount);
 
                 return zeroElementResult;
             }
 
-            int pageCount = CalculatePageCount(paginationRequest.PageSize.Value, elementsCount);
+            int pageCount = CalculatePageCount(paginationRequest!.PageSize!.Value, elementsCount);
 
-            if (paginationRequest.PageNum > pageCount)
-            {
-                internsRepositoryLogger.LogErrorAndThrowExceptionPageCount(nameof(InternsRepository),
-                    pageCount, paginationRequest.PageNum.Value);
-            }
-
-            int skip = CalculateSkipCount(paginationRequest.PageNum.Value, paginationRequest.PageSize.Value);
-
-            var internsByCampaignSummaryResponse = await context
-                .InternCampaigns
-                .AsNoTracking()
-                .Where(ic => ic.CampaignId == campaignId)
-                .Select(ic => new InternByCampaignSummaryResponse(
-                    ic
-                        .Intern
-                        .ToInternSummaryResponse(),
-                    ic
-                        .Speciality
-                        .ToSpecialitySummaryResponse(),
-                    ic
-                        .States
-                        .OrderByDescending(s => s.Created)
-                        .First()
-                        .ToStateResponse()))
-                .Skip(skip)
-                .Take(paginationRequest.PageSize.Value)
-                .ToListAsync();
-
-            var paginationResponse = new PaginationResponse<InternByCampaignSummaryResponse>(
-                internsByCampaignSummaryResponse,
-                paginationRequest.PageNum.Value,
-                pageCount);
+            var paginationResponse = await CreatePaginationInternByCampaignResponse(paginationRequest, campaignId, pageCount);
 
             return paginationResponse;
         }
@@ -224,9 +235,63 @@ namespace Infrastructure.Features.Interns
             return statusResponseCollection;
         }
 
-        public async Task SaveTrackingChangesAsync()
+        private async Task<PaginationResponse<InternSummaryResponse>> CreatePaginationInterySummaryResponse(PaginationRequest paginationRequest, int pageCount)
         {
-            await context.SaveChangesAsync();
+            var skip = CalculateSkipCount(paginationRequest!.PageNum!.Value, paginationRequest!.PageSize!.Value);
+
+            var internSummaryResponses = await context
+                .Persons
+                .Where(HasInternRole())
+                .AsNoTracking()
+                .Select(i => i.ToInternSummaryResponse())
+                .Skip(skip)
+                .Take(paginationRequest.PageSize.Value)
+                .ToListAsync();
+
+            var paginationResponse = new PaginationResponse<InternSummaryResponse>(
+                internSummaryResponses,
+                paginationRequest.PageNum.Value,
+                pageCount);
+
+            return paginationResponse;
+        }
+
+        private async Task<PaginationResponse<InternByCampaignSummaryResponse>> CreatePaginationInternByCampaignResponse(PaginationRequest paginationRequest, Guid campaignId, int pageCount)
+        {
+            int skip = CalculateSkipCount(paginationRequest!.PageNum!.Value, paginationRequest!.PageSize!.Value);
+
+            var internsByCampaignSummaryResponse = await context
+                .InternCampaigns
+                .AsNoTracking()
+                .Where(internCampaign =>
+                    internCampaign.Person.PersonRoles.Any(pr => pr.RoleId == RoleId.Intern) &&
+                    internCampaign.CampaignId == campaignId)
+                .Select(internCampaign => new InternByCampaignSummaryResponse(
+                    internCampaign
+                        .Person
+                        .ToInternSummaryResponse(),
+                    internCampaign
+                        .Speciality
+                        .ToSpecialitySummaryResponse(),
+                    internCampaign
+                        .States
+                        .OrderByDescending(s => s.Created)
+                        .First()
+                        .ToStateResponse()))
+                .Skip(skip)
+                .Take(paginationRequest.PageSize.Value)
+                .ToListAsync();
+
+            var paginationResponse = new PaginationResponse<InternByCampaignSummaryResponse>(
+                internsByCampaignSummaryResponse,
+                paginationRequest.PageNum.Value,
+                pageCount);
+            return paginationResponse;
+        }
+
+        private static Expression<Func<Person, bool>> HasInternRole()
+        {
+            return p => p.PersonRoles.Any(pr => pr.RoleId == RoleId.Intern);
         }
 
         private static int CalculatePageCount(int pageSize, int elementsCount)

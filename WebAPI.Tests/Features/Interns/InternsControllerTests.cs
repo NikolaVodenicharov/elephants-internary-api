@@ -214,7 +214,7 @@ namespace WebAPI.Tests.Features.Interns
                 specialityId,
                 justification);
 
-            CreateInternRequest passedCreateInternRequest = null;
+            CreateInternRequest passedCreateInternRequest = null!;
 
             internsServiceMock
                 .Setup(r => r.CreateAsync(It.IsAny<CreateInternRequest>()))
@@ -301,7 +301,7 @@ namespace WebAPI.Tests.Features.Interns
                 TestHelper.LastNameMock,
                 TestHelper.EmailMock);
 
-            UpdateInternRequest passedUpdateInternRequest = null;
+            UpdateInternRequest passedUpdateInternRequest = null!;
 
             internsServiceMock
                 .Setup(r => r.UpdateAsync(It.IsAny<UpdateInternRequest>()))
@@ -327,16 +327,6 @@ namespace WebAPI.Tests.Features.Interns
         #endregion
 
         #region GetDetailsByIdAsync
-
-        [Fact]
-        public async Task GetDetailsByIdAsync_WhenIdIsEmpty_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await internsController.GetDetailsByIdAsync(Guid.Empty);
-
-            //Assert
-            await Assert.ThrowsAsync<CoreException>(action);
-        }
 
         [Fact]
         public async Task GetDetailsByIdAsync_WhenDataIsValid_ShouldReturnCorrectData()
@@ -645,14 +635,14 @@ namespace WebAPI.Tests.Features.Interns
                 StatusEnum.Rejected,
                 justification);
 
-            var stateResponseMock = new StateResponse(
+            var stateResponseMock2 = new StateResponse(
                 addStateApiRequest.StatusId.ToString(),
                 addStateApiRequest.Justification, 
                 DateTime.UtcNow);
 
             internsCampaignsServiceMock
                 .Setup(i => i.AddStateAsync(It.IsAny<AddStateRequest>()))
-                .ReturnsAsync(stateResponseMock);
+                .ReturnsAsync(stateResponseMock2);
 
             //Act
             var actionResult = await internsController.AddStateAsync(internId, campaignId, addStateApiRequest);
@@ -667,7 +657,7 @@ namespace WebAPI.Tests.Features.Interns
             var coreResponse = jsonResult!.Value as CoreResponse<StateResponse>;
 
             Assert.NotNull(coreResponse);
-            Assert.Equal(stateResponseMock, coreResponse!.Data);
+            Assert.Equal(stateResponseMock2, coreResponse!.Data);
         }
 
         #endregion

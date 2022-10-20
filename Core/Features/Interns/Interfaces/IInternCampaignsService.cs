@@ -6,7 +6,7 @@ namespace Core.Features.Interns.Interfaces
 {
     public interface IInternCampaignsService
     {
-        Task<StateResponse> AddStateAsync(AddStateRequest createStateRequest);
+        Task<StateResponse> AddStateAsync(AddStateRequest addStateRequest);
 
         Task<InternCampaignSummaryResponse> AddInternCampaignAsync(AddInternCampaignRequest addInternCampaignRequest);
 

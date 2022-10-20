@@ -7,17 +7,6 @@ namespace Core.Features.Interns.Support
 {
     public static class InternsMappingExtensions
     {
-        public static InternSummaryResponse ToInternSummaryResponse(this Intern intern)
-        { 
-            var internSummaryResponse = new InternSummaryResponse(
-                intern.Id,
-                intern.FirstName,
-                intern.LastName,
-                intern.PersonalEmail);
-
-            return internSummaryResponse;
-        }
-
         public static StateResponse ToStateResponse(this State state)
         {
             var stateResponse = new StateResponse(
@@ -42,6 +31,7 @@ namespace Core.Features.Interns.Support
                 internCampaign.Speciality.ToSpecialitySummaryResponse(),
                 internCampaign
                     .States
+                    .OrderByDescending(s => s.Created)
                     .First()
                     .ToStateResponse());
 

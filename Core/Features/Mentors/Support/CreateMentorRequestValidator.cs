@@ -8,13 +8,13 @@ namespace Core.Features.Mentors.Support
     {
         public CreateMentorRequestValidator()
         {
-            RuleFor(m => m.DisplayName)
-                .NotEmpty();
-
             RuleFor(m => m.Email)
                 .NotEmpty()
                 .Matches(RegularExpressionPatterns.EmailPattern)
                 .EmailAddress();
+
+            RuleFor(c => c.SpecialityIds)
+                .NotEmpty();
         }
     }
 }
