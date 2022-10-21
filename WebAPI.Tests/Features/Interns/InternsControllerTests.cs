@@ -10,12 +10,14 @@ using Core.Features.Specialities.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebAPI.Common;
+using WebAPI.Common.SettingsModels;
 using WebAPI.Features.Interns;
 using WebAPI.Features.Interns.ApiRequestModels;
 using Xunit;
@@ -30,7 +32,9 @@ namespace WebAPI.Tests.Features.Interns
         private readonly Guid internId = Guid.NewGuid();
         private readonly Guid specialityId = Guid.NewGuid();
         private readonly Guid campaignId = Guid.NewGuid();
+        private readonly string displayName = "John Doe";
         private readonly string justification = "Lorem ipsum.";
+        private readonly string workEmail = "WorkEmail@gmail.com";
         private readonly InternSummaryResponse internSummaryResponseMock;
         private readonly InternDetailsResponse internDetailsResponseMock;
         private readonly StateResponse stateResponseMock;
@@ -44,6 +48,14 @@ namespace WebAPI.Tests.Features.Interns
 
             var internsControllerLoggerMock = new Mock<ILogger<InternsController>>();
 
+            var invitationUrls = new InvitationUrlSettings
+            {
+                BackOfficeUrl = "https://test.com",
+                FrontOfficeUrl = "https://test.com"
+            };
+
+            var invitationUrlSettings = Options.Create<InvitationUrlSettings>(invitationUrls);
+
             internsController = new(
                 internsServiceMock.Object,
                 internsCampaignsServiceMock.Object,
@@ -53,19 +65,22 @@ namespace WebAPI.Tests.Features.Interns
                 new UpdateInternRequestValidator(),
                 new AddInternCampaignRequestValidator(),
                 new UpdateInternCampaignRequestValidator(),
-                new AddStateRequestValidator());
+                new AddStateRequestValidator(),
+                new InviteInternRequestValidator(),
+                invitationUrlSettings);
 
             internSummaryResponseMock = new InternSummaryResponse(
                 internId,
-                TestHelper.FirstNameMock,
-                TestHelper.LastNameMock,
+                TestHelper.FirstNameMock + " " + TestHelper.LastNameMock,
                 TestHelper.EmailMock);
 
             internDetailsResponseMock = new InternDetailsResponse(
                 internId,
+                "DisplayName",
                 TestHelper.FirstNameMock,
                 TestHelper.LastNameMock,
                 TestHelper.EmailMock,
+                "WorkEmail",
                 new List<InternCampaignSummaryResponse>());
 
             stateResponseMock = new StateResponse(
@@ -386,13 +401,13 @@ namespace WebAPI.Tests.Features.Interns
             //Arrange 
             var totalPages = 5;
 
-            var paginationResponseMock = new PaginationResponse<InternSummaryResponse>(
-                new List<InternSummaryResponse>(),
+            var paginationResponseMock = new PaginationResponse<InternListingResponse>(
+                new List<InternListingResponse>(),
                 pageNum,
                 totalPages);
 
             internsServiceMock
-                .Setup(i => i.GetAllAsync(It.IsAny<PaginationRequest>()))
+                .Setup(i => i.GetPaginationAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(paginationResponseMock);
 
             //Act
@@ -405,10 +420,44 @@ namespace WebAPI.Tests.Features.Interns
 
             Assert.NotNull(jsonResult);
 
-            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<InternSummaryResponse>>;
+            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<InternListingResponse>>;
 
             Assert.NotNull(coreResponse);
             Assert.Equal(paginationResponseMock, coreResponse!.Data);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenPageNumAndSizeAreNull_ShouldReturnCorrectData()
+        {
+            //Arrange 
+            var internListingResponsesMock = new List<InternListingResponse>()
+            {
+                new InternListingResponse(
+                    internId,
+                    displayName,
+                    workEmail,
+                    new List<Guid>() { Guid.NewGuid(), Guid.NewGuid() })
+            };
+
+            internsServiceMock
+                .Setup(i => i.GetAllAsync())
+                .ReturnsAsync(internListingResponsesMock);
+
+            //Act
+            var actionResult = await internsController.GetAllAsync();
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var coreResponse = jsonResult!.Value as CoreResponse<IEnumerable<InternListingResponse>>;
+
+            Assert.NotNull(coreResponse);
+            Assert.Single(coreResponse!.Data!);
+            Assert.Equal(2, coreResponse!.Data!.First().CampaignIds.Count());
         }
 
         #endregion
@@ -658,6 +707,46 @@ namespace WebAPI.Tests.Features.Interns
 
             Assert.NotNull(coreResponse);
             Assert.Equal(stateResponseMock2, coreResponse!.Data);
+        }
+
+        [Fact]
+        public async Task AddStateAsync_WhenStatusIsIntern_AndNoEmailIsProvided_ShouldThrowException()
+        {
+            //Arrange
+            var addStateApiRequest = new AddStateApiRequest(
+                StatusEnum.Intern,
+                justification);
+
+            //Act
+            var action = async () => await internsController.AddStateAsync(internId, campaignId, addStateApiRequest);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task AddStateAsync_WhenStatusIsIntern_AndEmailIsProvided_ShouldCallAppropriateMethod()
+        {
+            //Arrange
+            var addStateApiRequest = new AddStateApiRequest(
+                StatusEnum.Intern,
+                justification,
+                workEmail);
+
+            var stateResponseMock2 = new StateResponse(
+                addStateApiRequest.StatusId.ToString(),
+                addStateApiRequest.Justification,
+                DateTime.UtcNow);
+
+            internsCampaignsServiceMock
+                .Setup(i => i.AddStateAsync(It.IsAny<AddStateRequest>()))
+                .ReturnsAsync(stateResponseMock2);
+
+            //Act
+            await internsController.AddStateAsync(internId, campaignId, addStateApiRequest);
+
+            //Assert
+            internsServiceMock.Verify(i => i.InviteAsync(It.IsAny<InviteInternRequest>()), Times.Once);
         }
 
         #endregion

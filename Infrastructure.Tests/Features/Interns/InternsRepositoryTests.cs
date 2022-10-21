@@ -1,5 +1,4 @@
-﻿using Core.Common.Exceptions;
-using Core.Common.Pagination;
+﻿using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Interns.Entities;
 using Core.Features.Interns.RequestModels;
@@ -7,8 +6,6 @@ using Core.Features.Persons.Entities;
 using Core.Features.Specialties.Entities;
 using Infrastructure.Features.Interns;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +16,12 @@ namespace Infrastructure.Tests.Features.Interns
 {
     public class InternsRepositoryTests
     {
+        private readonly Guid mentorId = Guid.NewGuid();
         private readonly string firstNameMock = "John";
         private readonly string lastNameMock = "Doe";
         private readonly string emailMock = "JohnDoe@gmail.com";
+        private readonly string displayName = "John Doe";
+        private readonly string workEmail = "JohnDoe@endava.com";
         private readonly PaginationRequest paginationRequest = new(1, 10);
         private CreateInternRepoRequest createInternRepoRequest1 = null!;
         private CreateInternRepoRequest createInternRepoRequest2 = null!;
@@ -70,8 +70,7 @@ namespace Infrastructure.Tests.Features.Interns
 
             Assert.NotNull(internCampaigns!.States);
             Assert.NotEqual(Guid.Empty, internSummaryResponse.Id);
-            Assert.Equal(createInternRepoRequest1.FirstName, internSummaryResponse.FirstName);
-            Assert.Equal(createInternRepoRequest1.LastName, internSummaryResponse.LastName);
+            Assert.Equal(createInternRepoRequest1.FirstName + " " + createInternRepoRequest1.LastName, internSummaryResponse.DisplayName);
             Assert.Equal(createInternRepoRequest1.Email, internSummaryResponse.Email);
         }
 
@@ -99,17 +98,16 @@ namespace Infrastructure.Tests.Features.Interns
 
             var updateInternRequest = new UpdateInternRequest(
                 createdIntern.Id,
-                createdIntern.FirstName + "AAA",
-                createdIntern.LastName,
-                createdIntern.Email);
+                createInternRepoRequest1.FirstName + "AAA",
+                createInternRepoRequest1.LastName,
+                createInternRepoRequest1.Email);
 
             //Act
             var updatedIntern = await internsRepository.UpdateAsync(updateInternRequest);
 
             //Assert
             Assert.Equal(updateInternRequest.Id, updatedIntern!.Id);
-            Assert.Equal(updateInternRequest.FirstName, updatedIntern.FirstName);
-            Assert.Equal(updateInternRequest.LastName, updatedIntern.LastName);
+            Assert.Equal(updateInternRequest.FirstName + " " + updateInternRequest.LastName, updatedIntern.DisplayName);
             Assert.Equal(updateInternRequest.Email, updatedIntern.Email);
         }
 
@@ -205,6 +203,57 @@ namespace Infrastructure.Tests.Features.Interns
         }
 
         [Fact]
+        public async Task AddIdentity_WhenIdNotFound_ShouldReturnNull()
+        {
+            //Arrange
+            var addInternIdentityRepoRequest = new AddInternIdentityRepoRequest(
+                Guid.NewGuid(),
+                workEmail,
+                displayName);
+
+            //Act
+            var internCampaignSummaryResponse = await internsRepository.AddIdentityAsync(addInternIdentityRepoRequest);
+
+            //Assert
+            Assert.Null(internCampaignSummaryResponse);
+        }
+
+        [Fact]
+        public async Task AddIdentity_WhenIdBelongToMentor_ShouldReturnNull()
+        {
+            //Arrange
+            var addInternIdentityRepoRequest = new AddInternIdentityRepoRequest(
+                mentorId,
+                workEmail,
+                displayName);
+
+            //Act
+            var internCampaignSummaryResponse = await internsRepository.AddIdentityAsync(addInternIdentityRepoRequest);
+
+            //Assert
+            Assert.Null(internCampaignSummaryResponse);
+        }
+
+        [Fact]
+        public async Task AddIdentity_WhenIdFound_ShouldReturnCorrectObject()
+        {
+            //Arrange
+            var createdIntern = await internsRepository.CreateAsync(createInternRepoRequest1);
+
+            var addInternIdentityRepoRequest = new AddInternIdentityRepoRequest(
+                createdIntern.Id,
+                workEmail,
+                displayName);
+
+            //Act
+            var internCampaignSummaryResponse = await internsRepository.AddIdentityAsync(addInternIdentityRepoRequest);
+
+            //Assert
+            Assert.Equal(addInternIdentityRepoRequest.WorkEmail, internCampaignSummaryResponse!.Email);
+            Assert.Equal(addInternIdentityRepoRequest.DisplayName, internCampaignSummaryResponse.DisplayName);
+        }
+
+        [Fact]
         public async Task ExistsByEmailAsync_WhenEmailExist_ShouldReturnTrue()
         {
             //Arrange
@@ -237,8 +286,7 @@ namespace Infrastructure.Tests.Features.Interns
             var internById = await internsRepository.GetByIdAsync(intenrSummaryRepsponse.Id);
 
             //Assert
-            Assert.Equal(createInternRepoRequest1.FirstName, internById!.FirstName);
-            Assert.Equal(createInternRepoRequest1.LastName, internById.LastName);
+            Assert.Equal(createInternRepoRequest1.FirstName + " " + createInternRepoRequest1.LastName, internById!.DisplayName);
             Assert.Equal(createInternRepoRequest1.Email, internById.Email);
 
         }
@@ -257,12 +305,10 @@ namespace Infrastructure.Tests.Features.Interns
         public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
         {
             //Act
-            var paginationResponse = await internsRepository.GetAllAsync(paginationRequest);
+            var internListingResponses = await internsRepository.GetAllAsync();
 
             //Assert
-            Assert.Empty(paginationResponse.Content);
-            Assert.Equal(paginationRequest.PageNum, paginationResponse.PageNum);
-            Assert.Equal(PaginationConstants.DefaultPageCount, paginationResponse.TotalPages);
+            Assert.Empty(internListingResponses);
         }
 
         [Fact]
@@ -273,7 +319,37 @@ namespace Infrastructure.Tests.Features.Interns
             await internsRepository.CreateAsync(createInternRepoRequest2);
 
             //Act
-            var paginationResponse = await internsRepository.GetAllAsync(paginationRequest);
+            var internListingResponses = await internsRepository.GetAllAsync();
+
+            //Assert
+            var personCount = await context.Persons.CountAsync();
+
+            Assert.Equal(3, personCount);   // there is one mentor
+            Assert.Equal(2, internListingResponses.Count());
+            Assert.Single(internListingResponses.First().CampaignIds);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var paginationResponse = await internsRepository.GetPaginationAsync(paginationRequest);
+
+            //Assert
+            Assert.Empty(paginationResponse.Content);
+            Assert.Equal(paginationRequest.PageNum, paginationResponse.PageNum);
+            Assert.Equal(PaginationConstants.DefaultPageCount, paginationResponse.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetPaginationAsync_WhenNotEmpty_ShouldReturnCorrectObject()
+        {
+            //Arrange
+            await internsRepository.CreateAsync(createInternRepoRequest1);
+            await internsRepository.CreateAsync(createInternRepoRequest2);
+
+            //Act
+            var paginationResponse = await internsRepository.GetPaginationAsync(paginationRequest);
 
             //Assert
             var personCount = await context.Persons.CountAsync();
@@ -282,6 +358,27 @@ namespace Infrastructure.Tests.Features.Interns
             Assert.Equal(2, paginationResponse.Content.Count());
             Assert.Equal(paginationRequest.PageNum, paginationResponse.PageNum);
             Assert.Equal(1, paginationResponse.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetPaginationByCampaignIdAsync_WhenNotEmpty_ShouldReturnCorrectObjects()
+        {
+            //Arrange
+            await internsRepository.CreateAsync(createInternRepoRequest1);
+
+            //Act
+            var internsByCampaignSummaryResponse = await internsRepository.GetPaginationByCampaignIdAsync(paginationRequest, campaingMock1.Id);
+
+            Assert.Single(internsByCampaignSummaryResponse.Content);
+        }
+
+        [Fact]
+        public async Task GetPaginationByCampaignIdAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var internsByCampaignSummaryResponse = await internsRepository.GetPaginationByCampaignIdAsync(paginationRequest, campaingMock1.Id);
+
+            Assert.Empty(internsByCampaignSummaryResponse.Content);
         }
 
         [Fact]
@@ -356,27 +453,6 @@ namespace Infrastructure.Tests.Features.Interns
             Assert.Equal(createInternRepoRequest1.InternCampaign.SpecialityId, internDetailsResponse.InternCampaignResponses.First().Speciality.Id);
         }
 
-        [Fact]
-        public async Task GetAllByCampaignIdAsync_WhenNotEmpty_ShouldReturnCorrectObjects()
-        {
-            //Arrange
-            await internsRepository.CreateAsync(createInternRepoRequest1);
-
-            //Act
-            var internsByCampaignSummaryResponse = await internsRepository.GetAllByCampaignIdAsync(paginationRequest, campaingMock1.Id);
-
-            Assert.Single(internsByCampaignSummaryResponse.Content);
-        }
-
-        [Fact]
-        public async Task GetAllByCampaignIdAsync_WhenEmpty_ShouldReturnEmptyCollection()
-        {
-            //Act
-            var internsByCampaignSummaryResponse = await internsRepository.GetAllByCampaignIdAsync(paginationRequest, campaingMock1.Id);
-
-            Assert.Empty(internsByCampaignSummaryResponse.Content);
-        }
-
         private void AddInternAndMentorRoles()
         {
             var roleIntern = new Role() { RoleId = RoleId.Intern, Name = RoleId.Intern.ToString() };
@@ -393,11 +469,12 @@ namespace Infrastructure.Tests.Features.Interns
             context.SaveChanges();
         }
 
-        // this intern is required so we can check precisely for intern entities
+        // this mentor is required so we can check precisely for intern entities
         private void AddMentorToContext()
         {
             var mentorMock = new Person()
             {
+                Id = mentorId,
                 FirstName = "MentorFirstName",
                 LastName = "MentorLastName",
                 WorkEmail = "MentorEmail@mgial.com"

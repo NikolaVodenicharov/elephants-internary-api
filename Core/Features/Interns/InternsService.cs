@@ -7,6 +7,7 @@ using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Persons.Entities;
+using Core.Features.Persons.Interfaces;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
@@ -17,29 +18,35 @@ namespace Core.Features.Interns
     public class InternsService : IInternsService
     {
         private readonly IInternsRepository internsRepository;
+        private readonly IIdentityRepository identityRepository;
         private readonly IInternCampaignsService internCampaignsService;
         private readonly ICampaignsService campaignsService;
         private readonly ILogger<InternsService> internsServiceLogger;
         private readonly IValidator<CreateInternRequest> createInternRequestValidator;
         private readonly IValidator<UpdateInternRequest> updateInternRequestValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
+        private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
 
         public InternsService(
             IInternsRepository internsRepository,
+            IIdentityRepository identityRepository,
             IInternCampaignsService internCampaignsService,
             ICampaignsService campaignsService,
             ILogger<InternsService> internsServiceLogger,
             IValidator<CreateInternRequest> createInternRequestValidator,
             IValidator<UpdateInternRequest> updateInternRequestValidator,
-            IValidator<PaginationRequest> paginationRequestValidator)
+            IValidator<PaginationRequest> paginationRequestValidator,
+            IValidator<InviteInternRequest> inviteInternRequestValidator)
         {
             this.internsRepository = internsRepository;
+            this.identityRepository = identityRepository;
             this.internCampaignsService = internCampaignsService;
             this.campaignsService = campaignsService;
             this.internsServiceLogger = internsServiceLogger;
             this.createInternRequestValidator = createInternRequestValidator;
             this.updateInternRequestValidator = updateInternRequestValidator;
             this.paginationRequestValidator = paginationRequestValidator;
+            this.inviteInternRequestValidator = inviteInternRequestValidator;
         }
 
         public async Task<InternSummaryResponse> CreateAsync(CreateInternRequest createInternRequest)
@@ -68,32 +75,41 @@ namespace Core.Features.Interns
             return updatedInternSumamryResponse;
         }
 
-        public async Task<PaginationResponse<InternSummaryResponse>> GetAllAsync(PaginationRequest paginationRequest)
+        public async Task<IEnumerable<InternListingResponse>> GetAllAsync()
+        {
+            var interns = await internsRepository.GetAllAsync();
+
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetAllAsync), true);
+
+            return interns;
+        }
+
+        public async Task<PaginationResponse<InternListingResponse>> GetPaginationAsync(PaginationRequest paginationRequest)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
 
-            var internPaginationResponse = await internsRepository.GetAllAsync(paginationRequest);
+            var internPaginationResponse = await internsRepository.GetPaginationAsync(paginationRequest);
 
             PaginationResponseValidation(internPaginationResponse);
 
-            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetAllAsync), true);
+            internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetPaginationAsync), true);
 
             return internPaginationResponse;
         }
 
-        public async Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
+        public async Task<PaginationResponse<InternSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
 
             await EnsureCampaignExist(campaignId);
 
-            var internsByCampaignPaginationResponse = await internsRepository.GetAllByCampaignIdAsync(paginationRequest, campaignId);
+            var internSummaryResponseCollection = await internsRepository.GetPaginationByCampaignIdAsync(paginationRequest, campaignId);
 
-            PaginationResponseValidation(internsByCampaignPaginationResponse);
+            PaginationResponseValidation(internSummaryResponseCollection);
 
             internsServiceLogger.LogInformationMethod(nameof(InternsService), nameof(GetAllByCampaignIdAsync), true);
 
-            return internsByCampaignPaginationResponse;
+            return internSummaryResponseCollection;
         }
 
         public async Task<InternDetailsResponse> GetDetailsByIdAsync(Guid id)
@@ -107,6 +123,56 @@ namespace Core.Features.Interns
                 nameof(Person), id, true);
 
             return internDetailsResponse;
+        }
+
+        public async Task<InternSummaryResponse> InviteAsync(InviteInternRequest inviteInternRequest)
+        {
+            await inviteInternRequestValidator.ValidateAndThrowAsync(inviteInternRequest);
+
+            var internDetailsResponse = await internsRepository.GetDetailsByIdAsync(inviteInternRequest.Id);
+
+            Guard.EnsureNotNull(internDetailsResponse, internsServiceLogger, nameof(InternsService), nameof(Person), inviteInternRequest.Id);
+
+            var isRequestEmailAlreadyAdded = internDetailsResponse.WorkEmail == inviteInternRequest.WorkEmail;
+
+            if (isRequestEmailAlreadyAdded)
+            {
+                var InternSummaryResponse = new InternSummaryResponse(
+                    internDetailsResponse.Id,
+                    internDetailsResponse.DisplayName,
+                    internDetailsResponse.WorkEmail);
+
+                return InternSummaryResponse;
+            }
+
+            await ValidateNoEmailDuplicationAsync(inviteInternRequest.WorkEmail);
+
+            var internSummaryResponse = await AddIdentityAsync(inviteInternRequest);
+
+            return internSummaryResponse;
+        }
+
+        private async Task<InternSummaryResponse> AddIdentityAsync(InviteInternRequest inviteInternRequest)
+        {
+            var identitySummaryResponse = await identityRepository.SendUserInviteAsync(
+                inviteInternRequest.WorkEmail,
+                inviteInternRequest.ApplicationUrl);
+
+            var addInternIdentityRepoRequest = new AddInternIdentityRepoRequest(
+                inviteInternRequest.Id,
+                identitySummaryResponse.Email,
+                identitySummaryResponse.DisplayName);
+
+            var internSummaryResponse = await internsRepository.AddIdentityAsync(addInternIdentityRepoRequest);
+
+            Guard.EnsureNotNull(
+                internSummaryResponse,
+                internsServiceLogger,
+                nameof(InternsService),
+                nameof(Person),
+                inviteInternRequest.Id);
+
+            return internSummaryResponse;
         }
 
         private async Task ValidateNoEmailDuplicationAsync(string email)

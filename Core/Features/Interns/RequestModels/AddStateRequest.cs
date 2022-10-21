@@ -6,5 +6,6 @@ namespace Core.Features.Interns.RequestModels
         Guid InternId, 
         Guid CampaignId, 
         StatusEnum StatusId, 
-        string Justification);
+        string Justification,
+        string? WorkEmail = null);
 }

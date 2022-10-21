@@ -12,6 +12,8 @@ namespace Core.Features.Interns.Interfaces
 
         Task<InternCampaignSummaryResponse?> AddInternCampaignAsync(AddInternCampaignRepoRequest addInternCampaignRepoRequest);
 
+        Task<InternSummaryResponse?> AddIdentityAsync(AddInternIdentityRepoRequest addInternIdentityRepoRequest);
+
         Task<InternSummaryResponse?> UpdateAsync(UpdateInternRequest updateInternRequest);
 
         Task<InternSummaryResponse?> GetByIdAsync(Guid Id);
@@ -19,14 +21,17 @@ namespace Core.Features.Interns.Interfaces
         Task<bool> ExistsByPersonalEmailAsync(string personalEmail);     
 
         Task<InternDetailsResponse?> GetDetailsByIdAsync(Guid id);
-        
-        Task<PaginationResponse<InternSummaryResponse>> GetAllAsync(PaginationRequest paginationRequest);
 
-        Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId);
+        Task<IEnumerable<InternListingResponse>> GetAllAsync();
+
+        Task<PaginationResponse<InternListingResponse>> GetPaginationAsync(PaginationRequest paginationRequest);
+
+        Task<PaginationResponse<InternSummaryResponse>> GetPaginationByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId);
 
         Task<InternCampaign?> GetInternCampaignByIdsAsync(Guid internId, Guid campaignId);
 
         Task<IEnumerable<StatusResponse>> GetAllStatusAsync();
+
         Task<InternCampaignSummaryResponse> UpdateInternCampaignAsync(InternCampaign internCampaign);
     }
 }

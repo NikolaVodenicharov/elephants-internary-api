@@ -2,7 +2,6 @@
 {
     public record InternSummaryResponse(
         Guid Id, 
-        string FirstName, 
-        string LastName, 
+        string DisplayName,  
         string Email);
 }

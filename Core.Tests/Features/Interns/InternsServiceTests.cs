@@ -9,11 +9,14 @@ using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
 using Core.Features.Persons.Entities;
+using Core.Features.Persons.Interfaces;
+using Core.Features.Persons.ResponseModels;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -26,12 +29,20 @@ namespace Core.Tests.Features.Interns
         private readonly Guid campaignId = Guid.NewGuid();
         private readonly string justification = "Lorem ipsum.";
         private readonly int pageNum = 1;
-
+        private readonly string applicationUrl = "https://test.com";
+        private readonly string workEmail = "JohnDoe@endava.com"; 
+        private readonly string workEmail2 = "WorkEmailTwo@gmail.com";
+        private readonly string displayName1 = "DisplayNameOne";
+        private readonly string displayName2 = "DisplayNameTwo";
         private readonly Person internMock;
-        private readonly CampaignSummaryResponse campaignSummaryResponse;
+        private readonly CampaignSummaryResponse campaignSummaryResponseMock;
         private readonly InternsService internsService;
         private readonly InternSummaryResponse internSummaryResponseMock;
+        private readonly InternSummaryResponse internSummaryResponseMock2;
+        private readonly InternDetailsResponse internDetailsResponseMock;
         private readonly Mock<IInternsRepository> internsRepositoryMock;
+        private readonly IdentitySummaryResponse identitySummaryResponseMock;
+        private readonly Mock<IIdentityRepository> identityRepositoryMock;
         private readonly Mock<IInternCampaignsService> internCampaignsServiceMock;
         private readonly Mock<ICampaignsService> campaignServiceMock;
         private readonly Mock<ILogger<InternsService>> internsServiceLogger;
@@ -39,18 +50,21 @@ namespace Core.Tests.Features.Interns
         public InternsServiceTests()
         {
             internsRepositoryMock = new Mock<IInternsRepository>();
+            identityRepositoryMock = new Mock<IIdentityRepository>();
             internCampaignsServiceMock = new Mock<IInternCampaignsService>();
             campaignServiceMock = new Mock<ICampaignsService>();
             internsServiceLogger = new Mock<ILogger<InternsService>>();
 
             internsService = new InternsService(
-                internsRepositoryMock.Object, 
+                internsRepositoryMock.Object,
+                identityRepositoryMock.Object,
                 internCampaignsServiceMock.Object,
                 campaignServiceMock.Object,
                 internsServiceLogger.Object,
                 new CreateInternRequestValidator(),
                 new UpdateInternRequestValidator(),
-                new PaginationRequestValidator());
+                new PaginationRequestValidator(),
+                new InviteInternRequestValidator());
 
             internMock = new Person()
             {
@@ -62,16 +76,31 @@ namespace Core.Tests.Features.Interns
 
             internSummaryResponseMock = new InternSummaryResponse(
                 internId,
-                "FirstName",
-                "LastName",
+                "FirstName LastName",
                 "FirstLast@gmail.com");
 
-            campaignSummaryResponse = new CampaignSummaryResponse(
+            campaignSummaryResponseMock = new CampaignSummaryResponse(
                 Guid.NewGuid(),
                 "Campaign 2022",
                 DateTime.UtcNow.AddDays(1),
                 DateTime.UtcNow.AddDays(100),
                 true);
+
+            internSummaryResponseMock2 = new InternSummaryResponse(
+                internId,
+                displayName2,
+                workEmail2);
+
+            internDetailsResponseMock = new InternDetailsResponse(
+                internId,
+                displayName1,
+                NameEdgeCaseTestHelper.FirstNameMock,
+                NameEdgeCaseTestHelper.LastNameMock,
+                NameEdgeCaseTestHelper.EmailMock,
+                workEmail,
+                new List<InternCampaignSummaryResponse>());
+
+            identitySummaryResponseMock = new IdentitySummaryResponse(workEmail2, displayName2);
         }
 
         #region CreateAsyncTests
@@ -395,8 +424,7 @@ namespace Core.Tests.Features.Interns
 
             var updatedInternSumamryResponseMock = new InternSummaryResponse(
                 updateInternRequest.Id,
-                updateInternRequest.FirstName,
-                updateInternRequest.LastName,
+                updateInternRequest.FirstName + " " + updateInternRequest.LastName,
                 updateInternRequest.Email);
 
             internsRepositoryMock
@@ -429,8 +457,7 @@ namespace Core.Tests.Features.Interns
 
             var updatedInternSummaryResponseMock = new InternSummaryResponse(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
+                NameEdgeCaseTestHelper.FirstNameMock + " " + NameEdgeCaseTestHelper.LastNameMock,
                 NameEdgeCaseTestHelper.EmailMock);
 
             internsRepositoryMock
@@ -442,8 +469,6 @@ namespace Core.Tests.Features.Interns
 
             //Assert
             Assert.Equal(updateInternRequest.Id, internSummaryResponse.Id);
-            Assert.Equal(updateInternRequest.FirstName, internSummaryResponse.FirstName);
-            Assert.Equal(updateInternRequest.LastName, internSummaryResponse.LastName);
             Assert.Equal(updateInternRequest.Email, internSummaryResponse.Email);
         }
 
@@ -465,13 +490,6 @@ namespace Core.Tests.Features.Interns
         public async Task GetDetailsByIdAsync_WhenIdFound_ShouldReturnCorrectObject()
         {
             //Arrange
-            var internDetailsResponseMock = new InternDetailsResponse(
-                internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
-                new List<InternCampaignSummaryResponse>());
-
             internsRepositoryMock
                 .Setup(r => r.GetDetailsByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(internDetailsResponseMock);
@@ -487,62 +505,102 @@ namespace Core.Tests.Features.Interns
 
         #region GetAllAsync
 
+        [Fact]
+        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var internListingResponses = await internsService.GetAllAsync();
+
+            //Assert
+            Assert.Empty(internListingResponses);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectObject()
+        {
+            //Arrange
+            var internListingResponsesMock = new List<InternListingResponse>()
+            {
+                new InternListingResponse(
+                    internId,
+                    displayName1,
+                    workEmail,
+                    new List<Guid>() { Guid.NewGuid(), Guid.NewGuid() })
+            };
+
+            internsRepositoryMock
+                .Setup(i => i.GetAllAsync())
+                .ReturnsAsync(internListingResponsesMock);
+
+            //Act
+            var internListingResponses = await internsService.GetAllAsync();
+
+            //Assert
+
+            Assert.Single(internListingResponses);
+            Assert.Equal(2, internListingResponses.First().CampaignIds.Count());
+        }
+
+        #endregion
+
+        #region GetPaginationAsync
+
         [Theory]
         [InlineData(0, 0)]
         [InlineData(-1, 0)]
         [InlineData(0, -1)]
         [InlineData(-1, -1)]
-        public async Task GetAllAsync_WhenPageNumIsInvalid_ShouldThrowExceptionAsync(int pageNum, int pageSize)
+        public async Task GetPaginationAsync_WhenPageNumIsInvalid_ShouldThrowExceptionAsync(int pageNum, int pageSize)
         {
             //Arrange
             var paginationRequest = new PaginationRequest(pageNum, pageSize);
 
             //Act
-            var action = async () => await internsService.GetAllAsync(paginationRequest);
+            var action = async () => await internsService.GetPaginationAsync(paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenPagePageNumBiggerThanTotalPages_ShouldThrowExceptionAsync()
+        public async Task GetPaginationAsync_WhenPagePageNumBiggerThanTotalPages_ShouldThrowExceptionAsync()
         {
             //Arrange
             var paginationRequest = new PaginationRequest(10, 20);
 
-            var invalidPaginationResponse = new PaginationResponse<InternSummaryResponse>(
-                new List<InternSummaryResponse>(),
+            var invalidPaginationResponse = new PaginationResponse<InternListingResponse>(
+                new List<InternListingResponse>(),
                 10,
                 1);
 
             internsRepositoryMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(invalidPaginationResponse);
 
             //Act
-            var action = async () => await internsService.GetAllAsync(paginationRequest);
+            var action = async () => await internsService.GetPaginationAsync(paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenValid_ShouldPassCorrectObject()
+        public async Task GetPaginationAsync_WhenValid_ShouldPassCorrectObject()
         {
             //Arrange 
             var paginationRequest = new PaginationRequest(pageNum, 10);
 
-            var paginationResponseMock = new PaginationResponse<InternSummaryResponse>(
-                new List<InternSummaryResponse>(),
+            var paginationResponseMock = new PaginationResponse<InternListingResponse>(
+                new List<InternListingResponse>(),
                 pageNum, 
                 5);
 
             internsRepositoryMock
-                .Setup(i => i.GetAllAsync(It.IsAny<PaginationRequest>()))
+                .Setup(i => i.GetPaginationAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(paginationResponseMock);
 
             //Act
-            var paginationResponse = await internsService.GetAllAsync(paginationRequest);
+            var paginationResponse = await internsService.GetPaginationAsync(paginationRequest);
 
             //Assert
             Assert.Equal(paginationResponseMock.PageNum, paginationResponse.PageNum);
@@ -551,12 +609,12 @@ namespace Core.Tests.Features.Interns
 
         #endregion
 
-        #region GetAllByCampaignIdAsync
+        #region GetPaginationByCampaignIdAsync
 
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public async Task GetAllByCampaignIdAsync_WhenPageNumIsLessThanMinimum_ShouldThrowExceptionAsync(int pageNum)
+        public async Task GetPaginationByCampaignIdAsync_WhenPageNumIsLessThanMinimum_ShouldThrowExceptionAsync(int pageNum)
         {
             //Arrange
             var paginationRequest = new PaginationRequest(pageNum, 1);
@@ -571,7 +629,7 @@ namespace Core.Tests.Features.Interns
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public async Task GetAllByCampaignIdAsync_WhenPageSizeIsLessThanMinimum_ShouldThrowExceptionAsync(int pageSize)
+        public async Task GetPaginationByCampaignIdAsync_WhenPageSizeIsLessThanMinimum_ShouldThrowExceptionAsync(int pageSize)
         {
             //Arrange
             var paginationRequest = new PaginationRequest(1, pageSize);
@@ -584,22 +642,22 @@ namespace Core.Tests.Features.Interns
         }
 
         [Fact]
-        public async Task GetAllByCampaignIdAsync_WhenValid_ShouldPassCorrectObject()
+        public async Task GetPaginationByCampaignIdAsync_WhenValid_ShouldPassCorrectObject()
         {
             //Arrange 
             var paginationRequest = new PaginationRequest(pageNum, 10);
 
-            var paginationResponseMock = new PaginationResponse<InternByCampaignSummaryResponse>(
-                new List<InternByCampaignSummaryResponse>(),
+            var paginationResponseMock = new PaginationResponse<InternSummaryResponse>(
+                new List<InternSummaryResponse>(),
                 pageNum,
                 5);
 
             campaignServiceMock
                 .Setup(c => c.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(campaignSummaryResponse);
+                .ReturnsAsync(campaignSummaryResponseMock);
 
             internsRepositoryMock
-                .Setup(i => i.GetAllByCampaignIdAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
+                .Setup(i => i.GetPaginationByCampaignIdAsync(It.IsAny<PaginationRequest>(), It.IsAny<Guid>()))
                 .ReturnsAsync(paginationResponseMock);
 
             //Act
@@ -612,5 +670,131 @@ namespace Core.Tests.Features.Interns
         }
 
         #endregion
+
+        #region InviteAsync
+
+        [Theory]
+        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        public async Task InviteAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
+        {
+            //Arrange
+            var inviteInternRequest = new InviteInternRequest(
+                internId,
+                invalidEmail,
+                applicationUrl);
+
+            //Act
+            var action = async () => await internsService.InviteAsync(inviteInternRequest);
+
+            //Assert
+            await Assert.ThrowsAsync<ValidationException>(action);
+        }
+
+        [Fact]
+        public async Task InviteAsync_WhenIdNotFound_ShouldThrowException()
+        {
+            //Arrange
+            var inviteInternRequest = new InviteInternRequest(
+                Guid.NewGuid(),
+                workEmail,
+                applicationUrl);
+
+            //Act
+            var action = async () => await internsService.InviteAsync(inviteInternRequest);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task InviteAsync_WhenRequestEmailAlreadyAdded_ShouldStopInvitationProcess()
+        {
+            //Arrange
+            var inviteInternRequest = new InviteInternRequest(
+                internDetailsResponseMock.Id,
+                internDetailsResponseMock.WorkEmail,
+                applicationUrl);
+
+            internsRepositoryMock
+                .Setup(i => i.GetDetailsByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(internDetailsResponseMock);
+
+            //Act
+            var internSummaryResponse = await internsService.InviteAsync(inviteInternRequest);
+
+            //Assert
+            identityRepositoryMock.Verify(i => i.SendUserInviteAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+
+            internsRepositoryMock.Verify(i => i.AddIdentityAsync(It.IsAny<AddInternIdentityRepoRequest>()), Times.Never);
+
+            Assert.Equal(internDetailsResponseMock.WorkEmail, internSummaryResponse.Email);
+            Assert.Equal(internDetailsResponseMock.DisplayName, internSummaryResponse.DisplayName);
+        }
+
+        [Fact]
+        public async Task InviteAsync_WhenEmailIsUsedByOther_ShouldThrowException()
+        {
+            //Arrange
+            var inviteInternRequest = new InviteInternRequest(
+                internDetailsResponseMock.Id,
+                "AlreadyUsed@gmail.com",
+                applicationUrl);
+
+            internsRepositoryMock
+                .Setup(i => i.GetDetailsByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(internDetailsResponseMock);
+
+            internsRepositoryMock
+                .Setup(i => i.ExistsByPersonalEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            //Act
+            var action = async () => await internsService.InviteAsync(inviteInternRequest);
+
+            //Assert
+            await Assert.ThrowsAsync<CoreException>(action);
+        }
+
+        [Fact]
+        public async Task InviteAsync_WhenDataIsValid_ShouldOverrideDisplayNameAndEmail()
+        {
+            //Arrange
+            var inviteInternRequest = new InviteInternRequest(
+                internDetailsResponseMock.Id,
+                workEmail2,
+                applicationUrl);
+
+            internsRepositoryMock
+                .Setup(i => i.GetDetailsByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(internDetailsResponseMock);
+
+            internsRepositoryMock
+                .Setup(i => i.ExistsByPersonalEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(false);
+
+            identityRepositoryMock
+                .Setup(i => i.SendUserInviteAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(identitySummaryResponseMock);
+
+            AddInternIdentityRepoRequest addInternIdentityRepoRequest = null!;
+
+            internsRepositoryMock
+                .Setup(i => i.AddIdentityAsync(It.IsAny<AddInternIdentityRepoRequest>()))
+                .Callback((AddInternIdentityRepoRequest request) => addInternIdentityRepoRequest = request)
+                .ReturnsAsync(internSummaryResponseMock2);
+
+            //Act
+            var internSummaryResponse = await internsService.InviteAsync(inviteInternRequest);
+
+            //Assert
+            Assert.Equal(identitySummaryResponseMock.DisplayName, addInternIdentityRepoRequest.DisplayName);
+            Assert.Equal(identitySummaryResponseMock.Email, addInternIdentityRepoRequest.WorkEmail);
+
+            Assert.Equal(internSummaryResponseMock2.DisplayName, internSummaryResponse.DisplayName);
+            Assert.Equal(internSummaryResponseMock2.Email, internSummaryResponse.Email);
+        }
+
+        #endregion
+
     }
 }

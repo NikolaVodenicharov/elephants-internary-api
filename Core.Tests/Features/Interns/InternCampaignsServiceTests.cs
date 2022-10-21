@@ -550,8 +550,7 @@ namespace Core.Tests.Features.Interns
 
             internSummaryResponseMock = new InternSummaryResponse(
                 internId,
-                "FirstName",
-                "LastName",
+                "FirstName LastName",
                 "FirstLast@gmail.com");
         }
     }

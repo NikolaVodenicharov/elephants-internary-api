@@ -134,7 +134,7 @@ namespace WebAPI.Features.Campaigns
         }
 
         [HttpGet("{id}/interns")]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<InternByCampaignSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<InternSummaryResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetInternsByCampaignAsync(Guid id, [FromQuery] int pageNum, [FromQuery] int pageSize)
         {
@@ -148,9 +148,9 @@ namespace WebAPI.Features.Campaigns
 
             await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
 
-            var internsByCampaignPaginationResponse = await internService.GetAllByCampaignIdAsync(paginationRequest, id);
+            var InternSummaryResponseCollection = await internService.GetAllByCampaignIdAsync(paginationRequest, id);
 
-            return CoreResult.Success(internsByCampaignPaginationResponse);
+            return CoreResult.Success(InternSummaryResponseCollection);
         }
 
         [HttpPost("{id}/mentors")]

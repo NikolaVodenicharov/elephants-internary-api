@@ -11,11 +11,35 @@ namespace Infrastructure.Features.Persons.Support
     {
         public static InternSummaryResponse ToInternSummaryResponse(this Person user)
         {
+            var email = user.PersonalEmail;
+
+            if (user.WorkEmail != string.Empty)
+            {
+                email = user.WorkEmail;
+            }
+
             var internSummaryResponse = new InternSummaryResponse(
                 user.Id,
-                user.FirstName,
-                user.LastName,
-                user.PersonalEmail);
+                user.DisplayName,
+                email);
+
+            return internSummaryResponse;
+        }
+
+        public static InternListingResponse ToInternListingResponse(this Person user)
+        {
+            var email = user.PersonalEmail;
+
+            if (user.WorkEmail != string.Empty)
+            {
+                email = user.WorkEmail;
+            }
+
+            var internSummaryResponse = new InternListingResponse(
+                user.Id,
+                user.DisplayName,
+                email,
+                user.InternCampaigns.Select(ic => ic.CampaignId).ToList());
 
             return internSummaryResponse;
         }

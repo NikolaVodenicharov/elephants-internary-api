@@ -94,6 +94,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<IValidator<AddStateRequest>, AddStateRequestValidator>();
             services.AddTransient<IValidator<CreateInternRequest>, CreateInternRequestValidator>();
             services.AddTransient<IValidator<UpdateInternRequest>, UpdateInternRequestValidator>();
+            services.AddTransient<IValidator<InviteInternRequest>, InviteInternRequestValidator>();
         }
 
         private static void RegisterUsersAndIdentityDependencies(IServiceCollection services)

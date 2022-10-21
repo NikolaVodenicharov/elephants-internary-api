@@ -13,6 +13,8 @@ using WebAPI.Common;
 using WebAPI.Common.Abstractions;
 using WebAPI.Features.Interns.ApiRequestModels;
 using Core.Common;
+using WebAPI.Common.SettingsModels;
+using Microsoft.Extensions.Options;
 
 namespace WebAPI.Features.Interns
 {
@@ -28,6 +30,8 @@ namespace WebAPI.Features.Interns
         private readonly IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator;
         private readonly IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator;
         private readonly IValidator<AddStateRequest> addStateRequestValidator;
+        private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
+        private readonly InvitationUrlSettings invitationUrls;
 
         public InternsController(
             IInternsService internsService, 
@@ -38,7 +42,9 @@ namespace WebAPI.Features.Interns
             IValidator<UpdateInternRequest> updateInternRequestValidator,
             IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator,
             IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator,
-            IValidator<AddStateRequest> addStateRequestValidator)
+            IValidator<AddStateRequest> addStateRequestValidator,
+            IValidator<InviteInternRequest> inviteInternRequestValidator,
+            IOptions<InvitationUrlSettings> invitationUrlSettings)
         {
             this.internsService = internsService;
             this.internCampaignsService = internCampaignsService;
@@ -49,6 +55,8 @@ namespace WebAPI.Features.Interns
             this.addInternCampaignRequestValidator = addInternCampaignRequestValidator;
             this.updateInternCampaignRequestValidator = updateInternCampaignRequestValidator;
             this.addStateRequestValidator = addStateRequestValidator;
+            this.inviteInternRequestValidator = inviteInternRequestValidator;
+            this.invitationUrls = invitationUrlSettings.Value;
         }
 
         [HttpPost]
@@ -100,17 +108,25 @@ namespace WebAPI.Features.Interns
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<InternSummaryResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<IEnumerable<InternListingResponse>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(CoreResponse<PaginationResponse<InternListingResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum, [Required][FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
         {
             internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(GetAllAsync));
+
+            if (pageNum == null && pageSize == null)
+            {
+                var internListingResponses = await internsService.GetAllAsync();
+
+                return CoreResult.Success(internListingResponses);
+            }
 
             var paginationRequest = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
 
-            var paginationResponse = await internsService.GetAllAsync(paginationRequest);
+            var paginationResponse = await internsService.GetPaginationAsync(paginationRequest);
 
             return CoreResult.Success(paginationResponse);
         }
@@ -162,6 +178,8 @@ namespace WebAPI.Features.Interns
         {
             internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(AddStateAsync));
 
+            await InviteInternIfStatusIntern(id, addStateApiRequest);
+
             var addStateRequest = new AddStateRequest(
                 id,
                 campaignId,
@@ -173,8 +191,7 @@ namespace WebAPI.Features.Interns
             var stateResponse = await internCampaignsService.AddStateAsync(addStateRequest);
 
             return CoreResult.Success(stateResponse);
-        }
-
+        }   
 
         [HttpGet("status")]
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<StatusResponse>>), (int)HttpStatusCode.OK)]
@@ -185,6 +202,23 @@ namespace WebAPI.Features.Interns
             var statusResponseCollelction = await internCampaignsService.GetAllStatusAsync();
 
             return CoreResult.Success(statusResponseCollelction);
+        }
+
+        private async Task InviteInternIfStatusIntern(Guid id, AddStateApiRequest addStateApiRequest)
+        {
+            if (addStateApiRequest.StatusId != StatusEnum.Intern)
+            {
+                return;
+            }
+
+            var inviteInternRequest = new InviteInternRequest(
+                id,
+                addStateApiRequest.WorkEmail!,
+                invitationUrls.BackOfficeUrl);
+
+            inviteInternRequestValidator.ValidateAndThrow(inviteInternRequest);
+
+            await internsService.InviteAsync(inviteInternRequest);
         }
     }
 }

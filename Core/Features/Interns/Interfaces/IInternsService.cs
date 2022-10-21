@@ -9,11 +9,15 @@ namespace Core.Features.Interns.Interfaces
     {
         Task<InternSummaryResponse> CreateAsync(CreateInternRequest createInternRequest);
 
+        Task<InternSummaryResponse> InviteAsync(InviteInternRequest inviteInternRequest);
+
         Task<InternSummaryResponse> UpdateAsync(UpdateInternRequest updateInternRequest);
 
-        Task<PaginationResponse<InternSummaryResponse>> GetAllAsync(PaginationRequest paginationRequest);
+        Task<IEnumerable<InternListingResponse>> GetAllAsync();
 
-        Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId);
+        Task<PaginationResponse<InternListingResponse>> GetPaginationAsync(PaginationRequest paginationRequest);
+
+        Task<PaginationResponse<InternSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId);
 
         Task<InternDetailsResponse> GetDetailsByIdAsync(Guid id);  
     }

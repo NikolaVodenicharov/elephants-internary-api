@@ -1,16 +1,12 @@
-﻿using Core.Common;
-using Core.Common.Pagination;
-using Core.Features.Campaigns.Support;
+﻿using Core.Common.Pagination;
 using Core.Features.Interns.Entities;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Interns.Support;
 using Core.Features.Persons.Entities;
-using Core.Features.Specialities.Support;
 using Infrastructure.Features.Persons.Support;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
 namespace Infrastructure.Features.Interns
@@ -30,8 +26,9 @@ namespace Infrastructure.Features.Interns
             {
                 FirstName = createInternWithDetailsRequest.FirstName,
                 LastName = createInternWithDetailsRequest.LastName,
+                DisplayName = CreateDisplayName(createInternWithDetailsRequest.FirstName, createInternWithDetailsRequest.LastName),
                 PersonalEmail = createInternWithDetailsRequest.Email,
-                InternCampaigns = new List<InternCampaign>() { createInternWithDetailsRequest.InternCampaign}
+                InternCampaigns = new List<InternCampaign>() { createInternWithDetailsRequest.InternCampaign }
             };
 
             var personRole =
@@ -71,6 +68,27 @@ namespace Infrastructure.Features.Interns
             return addInternCampaignRepoRequest.InternCampaign.ToInternCampaignResponse();
         }
 
+        public async Task<InternSummaryResponse?> AddIdentityAsync(AddInternIdentityRepoRequest addInternIdentityRepoRequest)
+        {
+            var person = await context
+                .Persons
+                .Where(HasInternRole())
+                .Where(p => p.Id == addInternIdentityRepoRequest.Id)
+                .FirstOrDefaultAsync();
+
+            if (person == null)
+            {
+                return null;
+            }
+
+            person.DisplayName = addInternIdentityRepoRequest.DisplayName;
+            person.WorkEmail = addInternIdentityRepoRequest.WorkEmail;
+
+            await context.SaveChangesAsync();
+
+            return person.ToInternSummaryResponse();
+        }
+
         public async Task<InternSummaryResponse?> UpdateAsync(UpdateInternRequest updateInternRequest)
         {
             var person = await context
@@ -83,7 +101,9 @@ namespace Infrastructure.Features.Interns
             {
                 return null;
             }
-            
+
+            UpdateDisplayName(updateInternRequest, person);
+
             person.FirstName = updateInternRequest.FirstName;
             person.LastName = updateInternRequest.LastName;
             person.PersonalEmail = updateInternRequest.Email;
@@ -147,16 +167,18 @@ namespace Infrastructure.Features.Interns
 
             var internDetailsResponse = new InternDetailsResponse(
                 person.Id,
+                person.DisplayName,
                 person.FirstName,
                 person.LastName,
                 person.PersonalEmail,
+                person.WorkEmail,
                 person
                     .InternCampaigns
                     .Select(ic => ic.ToInternCampaignResponse()));
 
             return internDetailsResponse;
         }
-
+    
         public async Task<InternCampaign?> GetInternCampaignByIdsAsync(Guid internId, Guid campaignId)
         {
             var internCampaign = await context
@@ -174,7 +196,22 @@ namespace Infrastructure.Features.Interns
             return internCampaign;
         }
 
-        public async Task<PaginationResponse<InternSummaryResponse>> GetAllAsync(PaginationRequest paginationRequest)
+        public async Task<IEnumerable<InternListingResponse>> GetAllAsync()
+        {
+            var interns = await context
+                .Persons
+                .Where(HasInternRole())
+                .Include(p => p.InternCampaigns)
+                .ToListAsync();
+
+            var internListingResponses = interns
+                .Select(i => i.ToInternListingResponse())
+                .ToList();
+
+            return internListingResponses;
+        }
+
+        public async Task<PaginationResponse<InternListingResponse>> GetPaginationAsync(PaginationRequest paginationRequest)
         {
             int elementsCount = await context
                 .Persons
@@ -183,22 +220,20 @@ namespace Infrastructure.Features.Interns
 
             if (elementsCount == 0)
             {
-                var zeroElementPagination = new PaginationResponse<InternSummaryResponse>(
-                    new List<InternSummaryResponse>(),
+                var zeroElementPagination = new PaginationResponse<InternListingResponse>(
+                    new List<InternListingResponse>(),
                     paginationRequest!.PageNum!.Value,
                     PaginationConstants.DefaultPageCount);
 
                 return zeroElementPagination;
             }
 
-            var pageCount = CalculatePageCount(paginationRequest!.PageSize!.Value, elementsCount);
-
-            var paginationResponse = await CreatePaginationInterySummaryResponse(paginationRequest, pageCount);
+            var paginationResponse = await CreatePaginationInternListingResponse(paginationRequest, elementsCount);
 
             return paginationResponse;
         }
 
-        public async Task<PaginationResponse<InternByCampaignSummaryResponse>> GetAllByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
+        public async Task<PaginationResponse<InternSummaryResponse>> GetPaginationByCampaignIdAsync(PaginationRequest paginationRequest, Guid campaignId)
         {
             var elementsCount = await context
                 .InternCampaigns
@@ -209,8 +244,8 @@ namespace Infrastructure.Features.Interns
 
             if (elementsCount == 0)
             {
-                var zeroElementResult = new PaginationResponse<InternByCampaignSummaryResponse>(
-                    new List<InternByCampaignSummaryResponse>(),
+                var zeroElementResult = new PaginationResponse<InternSummaryResponse>(
+                    new List<InternSummaryResponse>(),
                     paginationRequest!.PageNum!.Value,
                     PaginationConstants.DefaultPageCount);
 
@@ -235,28 +270,7 @@ namespace Infrastructure.Features.Interns
             return statusResponseCollection;
         }
 
-        private async Task<PaginationResponse<InternSummaryResponse>> CreatePaginationInterySummaryResponse(PaginationRequest paginationRequest, int pageCount)
-        {
-            var skip = CalculateSkipCount(paginationRequest!.PageNum!.Value, paginationRequest!.PageSize!.Value);
-
-            var internSummaryResponses = await context
-                .Persons
-                .Where(HasInternRole())
-                .AsNoTracking()
-                .Select(i => i.ToInternSummaryResponse())
-                .Skip(skip)
-                .Take(paginationRequest.PageSize.Value)
-                .ToListAsync();
-
-            var paginationResponse = new PaginationResponse<InternSummaryResponse>(
-                internSummaryResponses,
-                paginationRequest.PageNum.Value,
-                pageCount);
-
-            return paginationResponse;
-        }
-
-        private async Task<PaginationResponse<InternByCampaignSummaryResponse>> CreatePaginationInternByCampaignResponse(PaginationRequest paginationRequest, Guid campaignId, int pageCount)
+        private async Task<PaginationResponse<InternSummaryResponse>> CreatePaginationInternByCampaignResponse(PaginationRequest paginationRequest, Guid campaignId, int pageCount)
         {
             int skip = CalculateSkipCount(paginationRequest!.PageNum!.Value, paginationRequest!.PageSize!.Value);
 
@@ -266,27 +280,57 @@ namespace Infrastructure.Features.Interns
                 .Where(internCampaign =>
                     internCampaign.Person.PersonRoles.Any(pr => pr.RoleId == RoleId.Intern) &&
                     internCampaign.CampaignId == campaignId)
-                .Select(internCampaign => new InternByCampaignSummaryResponse(
-                    internCampaign
-                        .Person
-                        .ToInternSummaryResponse(),
-                    internCampaign
-                        .Speciality
-                        .ToSpecialitySummaryResponse(),
-                    internCampaign
-                        .States
-                        .OrderByDescending(s => s.Created)
-                        .First()
-                        .ToStateResponse()))
+                .Select(ic => ic.Person.ToInternSummaryResponse())
                 .Skip(skip)
                 .Take(paginationRequest.PageSize.Value)
                 .ToListAsync();
 
-            var paginationResponse = new PaginationResponse<InternByCampaignSummaryResponse>(
+            var paginationResponse = new PaginationResponse<InternSummaryResponse>(
                 internsByCampaignSummaryResponse,
                 paginationRequest.PageNum.Value,
                 pageCount);
             return paginationResponse;
+        }
+
+        private async Task<PaginationResponse<InternListingResponse>> CreatePaginationInternListingResponse(PaginationRequest paginationRequest, int elementsCount)
+        {
+            var pageCount = CalculatePageCount(paginationRequest!.PageSize!.Value, elementsCount);
+
+            var skip = CalculateSkipCount(paginationRequest!.PageNum!.Value, paginationRequest!.PageSize!.Value);
+
+            var interns = await context
+                .Persons
+                .Where(HasInternRole())
+                .AsNoTracking()
+                .Include(i => i.InternCampaigns)
+                .Skip(skip)
+                .Take(paginationRequest.PageSize.Value)
+                .ToListAsync();
+
+            var internListingResponses = interns
+                .Select(i => i.ToInternListingResponse())
+                .ToList();
+
+            var paginationResponse = new PaginationResponse<InternListingResponse>(
+                internListingResponses,
+                paginationRequest.PageNum.Value,
+                pageCount);
+
+            return paginationResponse;
+        }
+
+        private static string CreateDisplayName(string firstName, string lastName)
+        {
+            return firstName + " " + lastName;
+        }
+
+        private static void UpdateDisplayName(UpdateInternRequest updateInternRequest, Person person)
+        {
+
+            if (person.WorkEmail == string.Empty)
+            {
+                person.DisplayName = CreateDisplayName(updateInternRequest.FirstName, updateInternRequest.LastName);
+            }
         }
 
         private static Expression<Func<Person, bool>> HasInternRole()

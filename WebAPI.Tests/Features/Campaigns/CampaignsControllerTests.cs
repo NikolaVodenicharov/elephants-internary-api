@@ -522,8 +522,8 @@ namespace WebAPI.Tests.Features.Campaigns
         public async Task GetAllInternsByCampaignIdAsync_WhenEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
-            var internsByCampaignPaginationResponseMock = new PaginationResponse<InternByCampaignSummaryResponse>(
-                new List<InternByCampaignSummaryResponse>(),
+            var internsByCampaignPaginationResponseMock = new PaginationResponse<InternSummaryResponse>(
+                new List<InternSummaryResponse>(),
                 1,
                 10);
 
@@ -541,7 +541,7 @@ namespace WebAPI.Tests.Features.Campaigns
 
             Assert.NotNull(jsonResult);
 
-            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<InternByCampaignSummaryResponse>>;
+            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<InternSummaryResponse>>;
 
             Assert.NotNull(coreResponse);
             Assert.Empty(coreResponse!.Data!.Content);
