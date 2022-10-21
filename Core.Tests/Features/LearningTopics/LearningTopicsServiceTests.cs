@@ -52,6 +52,8 @@ namespace Core.Tests.Features.LearningTopics
             var paginationRequestValidator = new PaginationRequestValidator();
             var learningTopicsServiceLoggerMock = new Mock<ILogger<LearningTopicsService>>();
 
+            var learningTopicValidator = new LearningTopicValidator(createLearningTopicValidator, updateLearningTopicValidator);
+
             learningTopicRepositoryMock = new Mock<ILearningTopicsRepository>();
             specialitiesRepositoryMock = new Mock<ISpecialitiesRepository>();
 
@@ -59,8 +61,7 @@ namespace Core.Tests.Features.LearningTopics
                 learningTopicRepositoryMock.Object,
                 specialitiesRepositoryMock.Object,
                 learningTopicsServiceLoggerMock.Object,
-                createLearningTopicValidator,
-                updateLearningTopicValidator,
+                learningTopicValidator,
                 paginationRequestValidator
             );
 

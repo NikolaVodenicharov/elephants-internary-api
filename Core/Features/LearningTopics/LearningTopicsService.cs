@@ -17,29 +17,26 @@ namespace Core.Features.LearningTopics
         private readonly ILearningTopicsRepository learningTopicsRepository;
         private readonly ISpecialitiesRepository specialitiesRepository;
         private readonly ILogger<LearningTopicsService> learningTopicsServiceLogger;
-        private readonly IValidator<CreateLearningTopicRequest> createLearningTopicValidator;
-        private readonly IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator;
+        private readonly ILearningTopicValidator learningTopicValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public LearningTopicsService(
             ILearningTopicsRepository learningTopicsRepository,
             ISpecialitiesRepository specialitiesRepository,
             ILogger<LearningTopicsService> learningTopicsServiceLogger,
-            IValidator<CreateLearningTopicRequest> createLearningTopicValidator,
-            IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator,
+            ILearningTopicValidator learningTopicValidator,
             IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.learningTopicsRepository = learningTopicsRepository;
             this.specialitiesRepository = specialitiesRepository;
             this.learningTopicsServiceLogger = learningTopicsServiceLogger;
-            this.createLearningTopicValidator = createLearningTopicValidator;
-            this.updateLearningTopicValidator = updateLearningTopicValidator;
+            this.learningTopicValidator = learningTopicValidator;
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
         public async Task<LearningTopicSummaryResponse> CreateAsync(CreateLearningTopicRequest request)
         {
-            await createLearningTopicValidator.ValidateAndThrowAsync(request);
+            await learningTopicValidator.ValidateAndThrowAsync(request);
 
             await ValidateDuplicateNameAsync(request.Name);
 
@@ -57,7 +54,7 @@ namespace Core.Features.LearningTopics
 
         public async Task<LearningTopicSummaryResponse> UpdateAsync(UpdateLearningTopicRequest request)
         {
-            await updateLearningTopicValidator.ValidateAndThrowAsync(request);
+            await learningTopicValidator.ValidateAndThrowAsync(request);
 
             var existingLearningTopic = await learningTopicsRepository.GetByIdAsync(request.Id);
 

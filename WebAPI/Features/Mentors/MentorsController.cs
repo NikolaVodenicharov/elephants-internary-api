@@ -22,23 +22,20 @@ namespace WebAPI.Features.Mentors
     {
         private readonly IMentorsService mentorsService;
         private readonly ILogger<MentorsController> mentorsControllerLogger;
-        private readonly IValidator<UpdateMentorRequest> updateMentorRequestValidator;
-        private readonly IValidator<CreateMentorApiRequest> createMentorApiRequestValidator;
+        private readonly IMentorValidator mentorValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator; 
         private readonly InvitationUrlSettings invitationUrls;
 
         public MentorsController(
             IMentorsService mentorsService,
             ILogger<MentorsController> mentorsControllerLogger,
-            IValidator<UpdateMentorRequest> updateMentorRequestValidator,
-            IValidator<CreateMentorApiRequest> createMentorApiRequestValidator,
+            IMentorValidator mentorValidator,
             IValidator<PaginationRequest> paginationRequestValidator,
             IOptions<InvitationUrlSettings> invitationUrlSettings)
         {
             this.mentorsService = mentorsService;
             this.mentorsControllerLogger = mentorsControllerLogger;
-            this.updateMentorRequestValidator = updateMentorRequestValidator;
-            this.createMentorApiRequestValidator = createMentorApiRequestValidator;
+            this.mentorValidator = mentorValidator;
             this.paginationRequestValidator = paginationRequestValidator;
             this.invitationUrls = invitationUrlSettings.Value;
         }
@@ -48,12 +45,12 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> CreateAsync(CreateMentorApiRequest createMentorApiRequest)
         {
-            await createMentorApiRequestValidator.ValidateAndThrowAsync(createMentorApiRequest);
-
             var createMentorRequest = new CreateMentorRequest(
                 createMentorApiRequest.Email,
                 createMentorApiRequest.SpecialityIds,
                 invitationUrls.BackOfficeUrl);
+
+            await mentorValidator.ValidateAndThrowAsync(createMentorRequest);
 
             var mentorSummaryResponse = await mentorsService.CreateAsync(createMentorRequest);
 
@@ -76,7 +73,7 @@ namespace WebAPI.Features.Mentors
                     request.Id, id);
             }
 
-            await updateMentorRequestValidator.ValidateAndThrowAsync(request);
+            await mentorValidator.ValidateAndThrowAsync(request);
 
             var result = await mentorsService.UpdateAsync(request);
 

@@ -1,13 +1,10 @@
-﻿using Core.Common.Exceptions;
-using Core.Common.Pagination;
-using Core.Features.Interns.Entities;
+﻿using Core.Common.Pagination;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
@@ -15,6 +12,7 @@ using WebAPI.Features.Interns.ApiRequestModels;
 using Core.Common;
 using WebAPI.Common.SettingsModels;
 using Microsoft.Extensions.Options;
+using Core.Features.Interns.Entities;
 
 namespace WebAPI.Features.Interns
 {
@@ -25,11 +23,7 @@ namespace WebAPI.Features.Interns
         private readonly IInternCampaignsService internCampaignsService;
         private readonly ILogger<InternsController> internsControllerLogger;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
-        private readonly IValidator<CreateInternRequest> createInternRequestValidator;
-        private readonly IValidator<UpdateInternRequest> updateInternRequestValidator;
-        private readonly IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator;
-        private readonly IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator;
-        private readonly IValidator<AddStateRequest> addStateRequestValidator;
+        private readonly IInternValidator internValidator;
         private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
         private readonly InvitationUrlSettings invitationUrls;
 
@@ -38,11 +32,7 @@ namespace WebAPI.Features.Interns
             IInternCampaignsService internCampaignsService,
             ILogger<InternsController> internsControllerLogger,
             IValidator<PaginationRequest> paginationRequestValidator,
-            IValidator<CreateInternRequest> createInternRequestValidator,
-            IValidator<UpdateInternRequest> updateInternRequestValidator,
-            IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator,
-            IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator,
-            IValidator<AddStateRequest> addStateRequestValidator,
+            IInternValidator internValidator,
             IValidator<InviteInternRequest> inviteInternRequestValidator,
             IOptions<InvitationUrlSettings> invitationUrlSettings)
         {
@@ -50,11 +40,7 @@ namespace WebAPI.Features.Interns
             this.internCampaignsService = internCampaignsService;
             this.internsControllerLogger = internsControllerLogger;
             this.paginationRequestValidator = paginationRequestValidator;
-            this.createInternRequestValidator = createInternRequestValidator;
-            this.updateInternRequestValidator = updateInternRequestValidator;
-            this.addInternCampaignRequestValidator = addInternCampaignRequestValidator;
-            this.updateInternCampaignRequestValidator = updateInternCampaignRequestValidator;
-            this.addStateRequestValidator = addStateRequestValidator;
+            this.internValidator = internValidator;
             this.inviteInternRequestValidator = inviteInternRequestValidator;
             this.invitationUrls = invitationUrlSettings.Value;
         }
@@ -66,7 +52,7 @@ namespace WebAPI.Features.Interns
         {
             internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(CreateAsync));
 
-            await createInternRequestValidator.ValidateAndThrowAsync(createInternRequest);
+            await internValidator.ValidateAndThrowAsync(createInternRequest);
 
             var specialitySummaryResponse = await internsService.CreateAsync(createInternRequest);
 
@@ -87,7 +73,7 @@ namespace WebAPI.Features.Interns
                 updateInternApiRequest.LastName,
                 updateInternApiRequest.Email);
 
-            await updateInternRequestValidator.ValidateAndThrowAsync(updateInternRequest);
+            await internValidator.ValidateAndThrowAsync(updateInternRequest);
 
             var internSummaryResponse = await internsService.UpdateAsync(updateInternRequest);
 
@@ -145,7 +131,7 @@ namespace WebAPI.Features.Interns
                 addInternCampaignApiRequest.SpecialityId,
                 addInternCampaignApiRequest.Justification);
 
-            await addInternCampaignRequestValidator.ValidateAndThrowAsync(addInternCampaignRequest);
+            await internValidator.ValidateAndThrowAsync(addInternCampaignRequest);
 
             var internCampaignResponse = await internCampaignsService.AddInternCampaignAsync(addInternCampaignRequest);
 
@@ -164,7 +150,7 @@ namespace WebAPI.Features.Interns
                 campaignId,
                 updateInternCampaignApiRequest.SpecialityId);
 
-            await updateInternCampaignRequestValidator.ValidateAndThrowAsync(updateInternCampaignRequest);
+            await internValidator.ValidateAndThrowAsync(updateInternCampaignRequest);
 
             var internCampaignResponse = await internCampaignsService.UpdateInternCampaignAsync(updateInternCampaignRequest);
 
@@ -186,7 +172,7 @@ namespace WebAPI.Features.Interns
                 addStateApiRequest.StatusId,
                 addStateApiRequest.Justification);
 
-            await addStateRequestValidator.ValidateAndThrowAsync(addStateRequest);
+            await internValidator.ValidateAndThrowAsync(addStateRequest);
 
             var stateResponse = await internCampaignsService.AddStateAsync(addStateRequest);
 

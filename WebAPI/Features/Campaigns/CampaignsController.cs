@@ -1,7 +1,6 @@
 ﻿using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
-using Core.Common.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,8 +26,7 @@ namespace WebAPI.Features.Campaigns
         private readonly IMentorsService mentorsService;
         private readonly IInternsService internService;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
-        private readonly IValidator<CreateCampaignRequest> createCampaingValidator;
-        private readonly IValidator<UpdateCampaignRequest> updateCampaignValidator;
+        private readonly ICampaignValidator campaignValidator;
         private readonly ILogger<CampaignsController> campaignsControllerLogger;
 
         public CampaignsController(
@@ -36,16 +34,14 @@ namespace WebAPI.Features.Campaigns
             IMentorsService mentorsService,
             IInternsService internService,
             IValidator<PaginationRequest> paginationRequestValidator,
-            IValidator<CreateCampaignRequest> createCampaingValidator, 
-            IValidator<UpdateCampaignRequest> updateCampaignValidator,
+            ICampaignValidator campaignValidator,
             ILogger<CampaignsController> campaignsControllerLogger)
         {
             this.campaignsService = campaignsService;
             this.mentorsService = mentorsService;
             this.internService = internService;
             this.paginationRequestValidator = paginationRequestValidator;
-            this.createCampaingValidator = createCampaingValidator;
-            this.updateCampaignValidator = updateCampaignValidator;
+            this.campaignValidator = campaignValidator;
             this.campaignsControllerLogger = campaignsControllerLogger;
         }
 
@@ -56,7 +52,7 @@ namespace WebAPI.Features.Campaigns
         {
             campaignsControllerLogger.LogInformation(nameof(CampaignsController), nameof(CreateAsync));
 
-            await createCampaingValidator.ValidateAndThrowAsync(model);
+            await campaignValidator.ValidateAndThrowAsync(model);
 
             var result = await campaignsService.CreateAsync(model);
 
@@ -76,7 +72,7 @@ namespace WebAPI.Features.Campaigns
                 campaignsControllerLogger.LogErrorAndThrowExceptionIdMismatch(nameof(CampaignsController), model.Id, id);
             }
             
-            await updateCampaignValidator.ValidateAndThrowAsync(model);
+            await campaignValidator.ValidateAndThrowAsync(model);
 
             var result = await campaignsService.UpdateAsync(model);
 

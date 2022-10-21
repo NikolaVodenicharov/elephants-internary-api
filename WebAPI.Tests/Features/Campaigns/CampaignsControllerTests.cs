@@ -66,6 +66,8 @@ namespace WebAPI.Tests.Features.Campaigns
             var createCampaignRequestValidator = new CreateCampaignRequestValidator();
             var updateCampaignRequestValidator = new UpdateCampaignRequestValidator();
 
+            var campaignValidator = new CampaignValidator(createCampaignRequestValidator, updateCampaignRequestValidator);
+
             var loggerMock = new Mock<ILogger<CampaignsController>>();
 
             campaignsServiceMock = new Mock<ICampaignsService>();
@@ -77,8 +79,7 @@ namespace WebAPI.Tests.Features.Campaigns
                     mentorsServiceMock.Object,
                     internsServiceMock.Object,
                     new PaginationRequestValidator(),
-                    createCampaignRequestValidator,
-                    updateCampaignRequestValidator,
+                    campaignValidator,
                     loggerMock.Object
                 );
 

@@ -1,5 +1,6 @@
 ﻿using Core.Common.Exceptions;
 using Core.Common.Pagination;
+using Core.Features.Mentors.Support;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
@@ -30,6 +31,8 @@ namespace WebAPI.Tests.Features.Specialities
             var updateSpecialityValidator = new UpdateSpecialityValidator();
             var paginationRequestValidator = new PaginationRequestValidator();
 
+            var specialityValidator = new SpecialityValidator(createSpecialityValidator, updateSpecialityValidator);
+
             specialtiesServiceMock = new Mock<ISpecialitiesService>();
 
             var loggerMock = new Mock<ILogger<SpecialitiesController>>();
@@ -37,8 +40,7 @@ namespace WebAPI.Tests.Features.Specialities
             specialtiesController = new(
                 specialtiesServiceMock.Object,
                 loggerMock.Object,
-                createSpecialityValidator,
-                updateSpecialityValidator,
+                specialityValidator,
                 paginationRequestValidator);
         }
 

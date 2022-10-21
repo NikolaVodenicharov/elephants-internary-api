@@ -16,26 +16,23 @@ namespace Core.Features.Campaigns
     {
         private readonly ICampaignsRepository campaignsRepository;
         private readonly ILogger<CampaignsService> campaignsServiceLogger;
-        private readonly IValidator<CreateCampaignRequest> createCampaignValidator;
-        private readonly IValidator<UpdateCampaignRequest> updateCampaignValidator;
+        private readonly ICampaignValidator campaignValidator;
         private readonly IValidator<PaginationRequest> paginationFilterRequestValidator;
 
         public CampaignsService(ICampaignsRepository campaignsRepository, 
             ILogger<CampaignsService> campaignsServiceLogger,
-            IValidator<CreateCampaignRequest> createCampaignValidator, 
-            IValidator<UpdateCampaignRequest> updateCampaignValidator,
+            ICampaignValidator campaignValidator,
             IValidator<PaginationRequest> paginationFilterRequestValidator)
         {
             this.campaignsRepository = campaignsRepository;
             this.campaignsServiceLogger = campaignsServiceLogger;
-            this.createCampaignValidator = createCampaignValidator;
-            this.updateCampaignValidator = updateCampaignValidator;
+            this.campaignValidator = campaignValidator;
             this.paginationFilterRequestValidator = paginationFilterRequestValidator;
         }
 
         public async Task<CampaignSummaryResponse> CreateAsync(CreateCampaignRequest model)
         {
-            await createCampaignValidator.ValidateAndThrowAsync(model);
+            await campaignValidator.ValidateAndThrowAsync(model);
 
             var isExist = await campaignsRepository.ExistsByNameAsync(model.Name);
 
@@ -56,7 +53,7 @@ namespace Core.Features.Campaigns
 
         public async Task<CampaignSummaryResponse> UpdateAsync(UpdateCampaignRequest model)
         {
-            await updateCampaignValidator.ValidateAndThrowAsync(model);
+            await campaignValidator.ValidateAndThrowAsync(model);
 
             var existingCampaign = await campaignsRepository.GetByIdAsync(model.Id);
 

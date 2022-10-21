@@ -53,9 +53,11 @@ namespace WebAPI.Tests.Features.Mentors
 
         public MentorsControllerTests()
         {
+            var createMentorRequestValidator = new CreateMentorRequestValidator();
             var updateMentorRequestValidator = new UpdateMentorRequestValidator();
-            var createMentorApiRequestValidator = new CreateMentorApiRequestValidator();
             var paginationRequestValidator = new PaginationRequestValidator();
+
+            var mentorValidator = new MentorValidator(createMentorRequestValidator, updateMentorRequestValidator);
 
             mentorsServiceMock = new Mock<IMentorsService>();
 
@@ -72,8 +74,7 @@ namespace WebAPI.Tests.Features.Mentors
             mentorsController = new(
                 mentorsServiceMock.Object,
                 loggerMock.Object,
-                updateMentorRequestValidator,
-                createMentorApiRequestValidator,
+                mentorValidator,
                 paginationRequestValidator,
                 invitationUrlSettings);
 

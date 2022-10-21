@@ -1,5 +1,4 @@
 ﻿using Core.Common;
-using Core.Common.Exceptions;
 using Core.Common.Pagination;
 using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
@@ -10,8 +9,6 @@ using Core.Features.Persons.Entities;
 using Core.Features.Persons.Interfaces;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
 
 namespace Core.Features.Interns
 {
@@ -22,8 +19,7 @@ namespace Core.Features.Interns
         private readonly IInternCampaignsService internCampaignsService;
         private readonly ICampaignsService campaignsService;
         private readonly ILogger<InternsService> internsServiceLogger;
-        private readonly IValidator<CreateInternRequest> createInternRequestValidator;
-        private readonly IValidator<UpdateInternRequest> updateInternRequestValidator;
+        private readonly IInternValidator internValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
 
@@ -33,8 +29,7 @@ namespace Core.Features.Interns
             IInternCampaignsService internCampaignsService,
             ICampaignsService campaignsService,
             ILogger<InternsService> internsServiceLogger,
-            IValidator<CreateInternRequest> createInternRequestValidator,
-            IValidator<UpdateInternRequest> updateInternRequestValidator,
+            IInternValidator internValidator,
             IValidator<PaginationRequest> paginationRequestValidator,
             IValidator<InviteInternRequest> inviteInternRequestValidator)
         {
@@ -43,15 +38,14 @@ namespace Core.Features.Interns
             this.internCampaignsService = internCampaignsService;
             this.campaignsService = campaignsService;
             this.internsServiceLogger = internsServiceLogger;
-            this.createInternRequestValidator = createInternRequestValidator;
-            this.updateInternRequestValidator = updateInternRequestValidator;
+            this.internValidator = internValidator;
             this.paginationRequestValidator = paginationRequestValidator;
             this.inviteInternRequestValidator = inviteInternRequestValidator;
         }
 
         public async Task<InternSummaryResponse> CreateAsync(CreateInternRequest createInternRequest)
         {
-            await createInternRequestValidator.ValidateAndThrowAsync(createInternRequest);
+            await internValidator.ValidateAndThrowAsync(createInternRequest);
 
             await ValidateNoEmailDuplicationAsync(createInternRequest.Email);
 
@@ -204,7 +198,7 @@ namespace Core.Features.Interns
 
         private async Task UpdateAsyncValidations(UpdateInternRequest updateInternRequest)
         {
-            await updateInternRequestValidator.ValidateAndThrowAsync(updateInternRequest);
+            await internValidator.ValidateAndThrowAsync(updateInternRequest);
 
             var internSummaryResponse = await internsRepository.GetByIdAsync(updateInternRequest.Id);
 

@@ -1,4 +1,3 @@
-using Core.Common.Exceptions;
 using Core.Features.LearningTopics.Interfaces;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.ResponseModels;
@@ -18,21 +17,18 @@ namespace WebAPI.Features.LearningTopics
     public class LearningTopicsController : ApiControllerBase
     {
         private readonly ILearningTopicsService learningTopicsService;
-        private readonly IValidator<CreateLearningTopicRequest> createLearningTopicValidator;
-        private readonly IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator;
+        private readonly ILearningTopicValidator learningTopicValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly ILogger<LearningTopicsController> learningTopicsControllerLogger;
         
         public LearningTopicsController(
             ILearningTopicsService learningTopicsService,
-            IValidator<CreateLearningTopicRequest> createLearningTopicValidator,
-            IValidator<UpdateLearningTopicRequest> updateLearningTopicValidator,
+            ILearningTopicValidator learningTopicValidator,
             IValidator<PaginationRequest> paginationRequestValidator,
             ILogger<LearningTopicsController> learningTopicsControllerLogger)
         {
             this.learningTopicsService = learningTopicsService;
-            this.createLearningTopicValidator = createLearningTopicValidator;
-            this.updateLearningTopicValidator = updateLearningTopicValidator;
+            this.learningTopicValidator = learningTopicValidator;
             this.paginationRequestValidator = paginationRequestValidator;
             this.learningTopicsControllerLogger = learningTopicsControllerLogger;
         }
@@ -44,7 +40,7 @@ namespace WebAPI.Features.LearningTopics
         {
             learningTopicsControllerLogger.LogInformationMethod(nameof(LearningTopicsController), nameof(CreateAsync));
 
-            await createLearningTopicValidator.ValidateAndThrowAsync(request);
+            await learningTopicValidator.ValidateAndThrowAsync(request);
 
             var learningTopicResponse = await learningTopicsService.CreateAsync(request);
 
@@ -65,7 +61,7 @@ namespace WebAPI.Features.LearningTopics
                     request.Id, id);
             }
 
-            await updateLearningTopicValidator.ValidateAndThrowAsync(request);
+            await learningTopicValidator.ValidateAndThrowAsync(request);
 
             var learningTopicResult = await learningTopicsService.UpdateAsync(request);
 

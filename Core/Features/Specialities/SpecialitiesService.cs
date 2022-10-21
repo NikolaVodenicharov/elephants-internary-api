@@ -1,5 +1,4 @@
 ﻿using Core.Common;
-using Core.Common.Exceptions;
 using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
@@ -8,8 +7,6 @@ using Core.Features.Specialities.Support;
 using Core.Features.Specialties.Entities;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
 
 namespace Core.Features.Specialities
 {
@@ -17,21 +14,18 @@ namespace Core.Features.Specialities
     {
         private readonly ISpecialitiesRepository specialitiesRepository;
         private readonly ILogger<SpecialitiesService> specialitiesServiceLogger;
-        private readonly IValidator<CreateSpecialityRequest> createSpecialityValidator;
-        private readonly IValidator<UpdateSpecialityRequest> updateSpecialityValidator;
+        private readonly ISpecialityValidator specialityValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public SpecialitiesService(
             ISpecialitiesRepository specialitiesRepository,
             ILogger<SpecialitiesService> specialitiesServiceLogger,
-            IValidator<CreateSpecialityRequest> createSpecialityValidator,
-            IValidator<UpdateSpecialityRequest> updateSpecialityValidator,
+            ISpecialityValidator specialityValidator,
             IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.specialitiesRepository = specialitiesRepository;
             this.specialitiesServiceLogger = specialitiesServiceLogger;
-            this.createSpecialityValidator = createSpecialityValidator;
-            this.updateSpecialityValidator = updateSpecialityValidator;
+            this.specialityValidator = specialityValidator;
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
@@ -120,7 +114,7 @@ namespace Core.Features.Specialities
 
         private async Task ValidateCreateSpecialityAsync(CreateSpecialityRequest createSpecialityRequest)
         {
-            await createSpecialityValidator.ValidateAndThrowAsync(createSpecialityRequest);
+            await specialityValidator.ValidateAndThrowAsync(createSpecialityRequest);
 
             var isNameExist = await specialitiesRepository.ExistsByNameAsync(createSpecialityRequest.Name);
 
@@ -133,7 +127,7 @@ namespace Core.Features.Specialities
 
         private async Task ValidateUpdateSpecialityAsync(UpdateSpecialityRequest updateSpecialityRequest)
         {
-            await updateSpecialityValidator.ValidateAndThrowAsync(updateSpecialityRequest);
+            await specialityValidator.ValidateAndThrowAsync(updateSpecialityRequest);
 
             var isNameTaken = await specialitiesRepository.IsNameTakenByOtherAsync(updateSpecialityRequest.Name, 
                 updateSpecialityRequest.Id);

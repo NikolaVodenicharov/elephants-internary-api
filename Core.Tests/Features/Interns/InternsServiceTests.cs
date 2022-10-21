@@ -1,6 +1,5 @@
 ﻿using Core.Common.Exceptions;
 using Core.Common.Pagination;
-using Core.Features.Campaigns.Entities;
 using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.ResponseModels;
 using Core.Features.Interns;
@@ -55,14 +54,24 @@ namespace Core.Tests.Features.Interns
             campaignServiceMock = new Mock<ICampaignsService>();
             internsServiceLogger = new Mock<ILogger<InternsService>>();
 
+            var createInternRequestValidator = new CreateInternRequestValidator();
+            var updateInternRequestValidator = new UpdateInternRequestValidator();
+            var addInternCampaignequestValidator = new AddInternCampaignRequestValidator();
+            var updateInternCampaignRequestValidator = new UpdateInternCampaignRequestValidator();
+            var addStateRequestValidator = new AddStateRequestValidator();
+
+            var internValidator = new InternValidator(
+                createInternRequestValidator, updateInternRequestValidator,
+                addInternCampaignequestValidator,
+                updateInternCampaignRequestValidator, addStateRequestValidator);
+
             internsService = new InternsService(
                 internsRepositoryMock.Object,
                 identityRepositoryMock.Object,
                 internCampaignsServiceMock.Object,
                 campaignServiceMock.Object,
                 internsServiceLogger.Object,
-                new CreateInternRequestValidator(),
-                new UpdateInternRequestValidator(),
+                internValidator,
                 new PaginationRequestValidator(),
                 new InviteInternRequestValidator());
 

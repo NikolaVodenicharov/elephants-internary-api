@@ -56,7 +56,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ICampaignsRepository, CampaignsRepository>();
             services.AddTransient<IValidator<CreateCampaignRequest>, CreateCampaignRequestValidator>();
             services.AddTransient<IValidator<UpdateCampaignRequest>, UpdateCampaignRequestValidator>();
-            
+            services.AddTransient<ICampaignValidator, CampaignValidator>();
         }
 
         private static void RegisterMentorDependencies(IServiceCollection services)
@@ -66,6 +66,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<IValidator<CreateMentorRequest>, CreateMentorRequestValidator>();
             services.AddTransient<IValidator<UpdateMentorRequest>, UpdateMentorRequestValidator>();
             services.AddTransient<IValidator<CreateMentorApiRequest>, CreateMentorApiRequestValidator>();
+            services.AddTransient<IMentorValidator, MentorValidator>();
         }
 
         private static void RegisterSpecialityDependencies(IServiceCollection services)
@@ -74,6 +75,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ISpecialitiesRepository, SpecialitiesRepository>();
             services.AddTransient<IValidator<CreateSpecialityRequest>, CreateSpecialityValidator>();
             services.AddTransient<IValidator<UpdateSpecialityRequest>, UpdateSpecialityValidator>();
+            services.AddTransient<ISpecialityValidator, SpecialityValidator>();
         }
 
         private static void RegisterLearningTopicsDependencies(IServiceCollection services)
@@ -82,6 +84,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<ILearningTopicsRepository, LearningTopicsRepository>();
             services.AddTransient<IValidator<CreateLearningTopicRequest>, CreateLearningTopicRequestValidator>();
             services.AddTransient<IValidator<UpdateLearningTopicRequest>, UpdateLearningTopicRequestValidator>();
+            services.AddTransient<ILearningTopicValidator, LearningTopicValidator>();
         }
 
         private static void RegisterInternDependencies(IServiceCollection services)
@@ -95,6 +98,7 @@ namespace WebAPI.Common.Extensions.Middlewares
             services.AddTransient<IValidator<CreateInternRequest>, CreateInternRequestValidator>();
             services.AddTransient<IValidator<UpdateInternRequest>, UpdateInternRequestValidator>();
             services.AddTransient<IValidator<InviteInternRequest>, InviteInternRequestValidator>();
+            services.AddTransient<IInternValidator, InternValidator>();
         }
 
         private static void RegisterUsersAndIdentityDependencies(IServiceCollection services)

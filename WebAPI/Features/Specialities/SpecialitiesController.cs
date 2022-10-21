@@ -1,5 +1,4 @@
-﻿using Core.Common.Exceptions;
-using Core.Common.Pagination;
+﻿using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
@@ -19,21 +18,18 @@ namespace WebAPI.Features.Specialities
     {
         private readonly ISpecialitiesService specialitiesService;
         private readonly ILogger<SpecialitiesController> specialitiesControllerLogger;
-        private readonly IValidator<CreateSpecialityRequest> createSpecialityValidator;
-        private readonly IValidator<UpdateSpecialityRequest> updateSpecialityValidator;
+        private readonly ISpecialityValidator specialityValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public SpecialitiesController(
             ISpecialitiesService specialitiesService,
             ILogger<SpecialitiesController> specialitiesControllerLogger,
-            IValidator<CreateSpecialityRequest> createSpecialityValidator,
-            IValidator<UpdateSpecialityRequest> updateSpecialityValidator,
+            ISpecialityValidator specialityValidator,
             IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.specialitiesService = specialitiesService;
             this.specialitiesControllerLogger = specialitiesControllerLogger;
-            this.createSpecialityValidator = createSpecialityValidator;
-            this.updateSpecialityValidator = updateSpecialityValidator;
+            this.specialityValidator = specialityValidator;
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
@@ -44,7 +40,7 @@ namespace WebAPI.Features.Specialities
         {
             specialitiesControllerLogger.LogInformationMethod(nameof(SpecialitiesController), nameof(CreateAsync));
 
-            await createSpecialityValidator.ValidateAndThrowAsync(createSpecialityRequest);
+            await specialityValidator.ValidateAndThrowAsync(createSpecialityRequest);
 
             var specialitySummaryResponse = await specialitiesService.CreateAsync(createSpecialityRequest);
 
@@ -65,7 +61,7 @@ namespace WebAPI.Features.Specialities
                     updateSpecialityRequest.Id, id);
             }
 
-            await updateSpecialityValidator.ValidateAndThrowAsync(updateSpecialityRequest);
+            await specialityValidator.ValidateAndThrowAsync(updateSpecialityRequest);
 
             var specialitySummaryResponse = await specialitiesService.UpdateAsync(updateSpecialityRequest);
 

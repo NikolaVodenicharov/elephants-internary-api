@@ -10,9 +10,7 @@ using Core.Features.Interns.Support;
 using Core.Features.Persons.Entities;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialties.Entities;
-using FluentValidation;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace Core.Features.Interns
@@ -23,26 +21,20 @@ namespace Core.Features.Interns
         private readonly ICampaignsRepository campaignRepository;
         private readonly ISpecialitiesRepository specialitiesRepository;
         private readonly ILogger<InternCampaignsService> internCampaignsServiceLogger;
-        private readonly IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator;
-        private readonly IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator;
-        private readonly IValidator<AddStateRequest> addStateRequestValidator;
+        private readonly IInternValidator internValidator;
 
         public InternCampaignsService(
             IInternsRepository internsRepository,
             ICampaignsRepository campaignRepository,
             ISpecialitiesRepository specialitiesRepository, 
             ILogger<InternCampaignsService> internsServiceLogger,
-            IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator,
-            IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator,
-            IValidator<AddStateRequest> addStateRequestValidator)
+            IInternValidator internValidator)
         {
             this.internsRepository = internsRepository;
             this.campaignRepository = campaignRepository;
             this.specialitiesRepository = specialitiesRepository;
             this.internCampaignsServiceLogger = internsServiceLogger;
-            this.addInternCampaignRequestValidator = addInternCampaignRequestValidator;
-            this.updateInternCampaignRequestValidator = updateInternCampaignRequestValidator;
-            this.addStateRequestValidator = addStateRequestValidator;
+            this.internValidator = internValidator;
         }
 
         public async Task<InternCampaignSummaryResponse> AddInternCampaignAsync(AddInternCampaignRequest addInternCampaignRequest)
@@ -67,7 +59,7 @@ namespace Core.Features.Interns
 
         public async Task<StateResponse> AddStateAsync(AddStateRequest addStateRequest)
         {
-            await addStateRequestValidator.ValidateAndThrowAsync(addStateRequest);
+            await internValidator.ValidateAndThrowAsync(addStateRequest);
 
             var internCampaign = await GetValidInternCampaignAsync(
                 addStateRequest.InternId, 
@@ -86,7 +78,7 @@ namespace Core.Features.Interns
 
         public async Task<InternCampaignSummaryResponse> UpdateInternCampaignAsync(UpdateInternCampaignRequest updateInternCampaignRequest)
         {
-            await updateInternCampaignRequestValidator.ValidateAndThrowAsync(updateInternCampaignRequest);
+            await internValidator.ValidateAndThrowAsync(updateInternCampaignRequest);
 
             var internCampaign = await GetValidInternCampaignAsync(
                 updateInternCampaignRequest.InternId,
@@ -201,7 +193,7 @@ namespace Core.Features.Interns
 
         private async Task AddInternCampaignAsyncValidations(AddInternCampaignRequest addInternCampaignRequest)
         {
-            await addInternCampaignRequestValidator.ValidateAndThrowAsync(addInternCampaignRequest);
+            await internValidator.ValidateAndThrowAsync(addInternCampaignRequest);
 
             await ValidateInternIsNotInCampaign(addInternCampaignRequest.InternId, addInternCampaignRequest.CampaignId);
 

@@ -70,6 +70,8 @@ namespace Core.Tests.Features.Mentors
             var updateMentorRequestValidator = new UpdateMentorRequestValidator();
             var paginationRequestValidator = new PaginationRequestValidator();
 
+            var mentorValidator = new MentorValidator(createMentorRequestValidator, updateMentorRequestValidator);
+
             mentorsRepositoryMock = new Mock<IMentorsRepository>();
             campaignsRepositoryMock = new Mock<ICampaignsRepository>();
             specialitiesRepositoryMock = new Mock<ISpecialitiesRepository>();
@@ -83,8 +85,7 @@ namespace Core.Tests.Features.Mentors
                 specialitiesRepositoryMock.Object,
                 identityRepositoryMock.Object,
                 mockLogger.Object,
-                createMentorRequestValidator,
-                updateMentorRequestValidator,
+                mentorValidator,
                 paginationRequestValidator);
 
             InitializeMockModels();

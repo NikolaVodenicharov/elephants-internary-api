@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Interns\Support\" />
     <Folder Include="Logs\" />
   </ItemGroup>
 

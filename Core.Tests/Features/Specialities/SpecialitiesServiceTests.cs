@@ -1,5 +1,6 @@
 ﻿using Core.Common.Exceptions;
 using Core.Common.Pagination;
+using Core.Features.Mentors.Support;
 using Core.Features.Specialities;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
@@ -36,13 +37,13 @@ namespace Core.Tests.Features.Specialities
             updateSpecialityValidator = new UpdateSpecialityValidator();
             paginationRequestValidator = new PaginationRequestValidator();
 
+            var specialityValidator = new SpecialityValidator(createSpecialityValidator, updateSpecialityValidator);
 
             var loggerMock = new Mock<ILogger<SpecialitiesService>>();
 
             specialtiesService = new SpecialitiesService(specialtiesRepositoryMock.Object, 
                 loggerMock.Object, 
-                createSpecialityValidator, 
-                updateSpecialityValidator,
+                specialityValidator,
                 paginationRequestValidator);
         }
 

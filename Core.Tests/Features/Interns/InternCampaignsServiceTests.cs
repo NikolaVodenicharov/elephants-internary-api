@@ -52,14 +52,23 @@ namespace Core.Tests.Features.Interns
             specialitiesRepositoryMock = new Mock<ISpecialitiesRepository>();
             internCampaignsServiceLoggerMock = new Mock<ILogger<InternCampaignsService>>();
 
+            var createInternRequestValidator = new CreateInternRequestValidator();
+            var updateInternRequestValidator = new UpdateInternRequestValidator();
+            var addInternCampaignequestValidator = new AddInternCampaignRequestValidator();
+            var updateInternCampaignRequestValidator = new UpdateInternCampaignRequestValidator();
+            var addStateRequestValidator = new AddStateRequestValidator();
+
+            var internValidator = new InternValidator(
+                createInternRequestValidator, updateInternRequestValidator,
+                addInternCampaignequestValidator,
+                updateInternCampaignRequestValidator, addStateRequestValidator);
+
             internCampaignsService = new InternCampaignsService(
                 internsRepositoryMock.Object,
                 campaignsRepositoryMock.Object,
                 specialitiesRepositoryMock.Object,
                 internCampaignsServiceLoggerMock.Object,
-                new AddInternCampaignRequestValidator(),
-                new UpdateInternCampaignRequestValidator(),
-                new AddStateRequestValidator());
+                internValidator);
 
             InitializeMockModels();
         }

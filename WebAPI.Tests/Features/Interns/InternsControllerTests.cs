@@ -56,16 +56,20 @@ namespace WebAPI.Tests.Features.Interns
 
             var invitationUrlSettings = Options.Create<InvitationUrlSettings>(invitationUrls);
 
+            var internValidator = new InternValidator(
+                new CreateInternRequestValidator(),
+                new UpdateInternRequestValidator(),
+                new AddInternCampaignRequestValidator(),
+                new UpdateInternCampaignRequestValidator(),
+                new AddStateRequestValidator());
+
+
             internsController = new(
                 internsServiceMock.Object,
                 internsCampaignsServiceMock.Object,
                 internsControllerLoggerMock.Object,
                 new PaginationRequestValidator(),
-                new CreateInternRequestValidator(),
-                new UpdateInternRequestValidator(),
-                new AddInternCampaignRequestValidator(),
-                new UpdateInternCampaignRequestValidator(),
-                new AddStateRequestValidator(),
+                internValidator,
                 new InviteInternRequestValidator(),
                 invitationUrlSettings);
 

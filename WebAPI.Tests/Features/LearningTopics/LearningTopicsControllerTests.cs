@@ -61,10 +61,12 @@ namespace WebAPI.Tests.Features.LearningTopics
             
             learningTopicsService = new Mock<ILearningTopicsService>();
 
+            var learningTopicValidator = new LearningTopicValidator(
+                createLearningTopicValidator, updateLearningTopicValidator);
+
             learningTopicsController = new LearningTopicsController(
                 learningTopicsService.Object,
-                createLearningTopicValidator,
-                updateLearningTopicValidator,
+                learningTopicValidator,
                 paginationRequestValidator,
                 learningTopicsControllerLogger.Object
             );

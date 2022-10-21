@@ -23,8 +23,7 @@ namespace Core.Features.Mentors
         private readonly ISpecialitiesRepository specialitiesRepository;
         private readonly IIdentityRepository identityRepository;
         private readonly ILogger<MentorsService> mentorsServiceLogger;
-        private readonly IValidator<CreateMentorRequest> createMentorRequestValidator;
-        private readonly IValidator<UpdateMentorRequest> updateMentorRequestValidator;
+        private readonly IMentorValidator mentorValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
 
         public MentorsService(
@@ -33,8 +32,7 @@ namespace Core.Features.Mentors
             ISpecialitiesRepository specialitiesRepository,
             IIdentityRepository identityRepository,
             ILogger<MentorsService> mentorsServiceLogger,
-            IValidator<CreateMentorRequest> createMentorRequestValidator,
-            IValidator<UpdateMentorRequest> updateMentorRequestValidator,
+            IMentorValidator mentorValidator,
             IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.mentorsRepository = mentorsRepository;
@@ -42,14 +40,13 @@ namespace Core.Features.Mentors
             this.specialitiesRepository = specialitiesRepository;
             this.identityRepository = identityRepository;
             this.mentorsServiceLogger = mentorsServiceLogger;
-            this.createMentorRequestValidator = createMentorRequestValidator;
-            this.updateMentorRequestValidator = updateMentorRequestValidator;
+            this.mentorValidator = mentorValidator;
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
         public async Task<MentorSummaryResponse> CreateAsync(CreateMentorRequest createMentorRequest)
         {
-            await createMentorRequestValidator.ValidateAndThrowAsync(createMentorRequest);
+            await mentorValidator.ValidateAndThrowAsync(createMentorRequest);
 
             await ValidateNoEmailDuplication(createMentorRequest.Email);
 
@@ -127,7 +124,7 @@ namespace Core.Features.Mentors
 
         public async Task<MentorDetailsResponse> UpdateAsync(UpdateMentorRequest updateMentorRequest)
         {
-            await updateMentorRequestValidator.ValidateAndThrowAsync(updateMentorRequest);
+            await mentorValidator.ValidateAndThrowAsync(updateMentorRequest);
 
             var mentorSpecialities = await GetValidSpecialties(updateMentorRequest.SpecialityIds.Distinct());
 

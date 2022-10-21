@@ -47,12 +47,14 @@ namespace Core.Tests.Features.Campaigns
             var updateCampaignValidator = new UpdateCampaignRequestValidator();
             var filterCampaignsRequestValidator = new PaginationRequestValidator();
 
+            var campaignValidator = new CampaignValidator(createCampaignValidator, updateCampaignValidator);
+
             campaignsRepositoryMock = new Mock<ICampaignsRepository>();
 
             var mockLogger = new Mock<ILogger<CampaignsService>>();
 
             campaignsServiceMock = new CampaignsService(campaignsRepositoryMock.Object, mockLogger.Object,
-                createCampaignValidator, updateCampaignValidator, filterCampaignsRequestValidator);
+                campaignValidator, filterCampaignsRequestValidator);
 
             returnCampaign = new Campaign
             {
