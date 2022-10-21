@@ -1,19 +1,21 @@
+using Core.Common.Exceptions;
+using Core.Common;
+using Core.Common.Pagination;
+using Core.Features.LearningTopics.Entities;
 using Core.Features.LearningTopics.Interfaces;
 using Core.Features.LearningTopics.RequestModels;
 using Core.Features.LearningTopics.ResponseModels;
+using Core.Features.Persons.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
-using Core.Common.Pagination;
-using Core.Common;
-using Core.Features.LearningTopics.Entities;
+using WebAPI.Common.Authorization;
 
 namespace WebAPI.Features.LearningTopics
 {
-    [Authorize]
+    [CustomAuthorize(RoleId.Administrator)]
     public class LearningTopicsController : ApiControllerBase
     {
         private readonly ILearningTopicsService learningTopicsService;

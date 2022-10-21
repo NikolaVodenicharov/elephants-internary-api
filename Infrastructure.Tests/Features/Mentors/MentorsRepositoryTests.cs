@@ -422,6 +422,77 @@ namespace Infrastructure.Tests.Features.Mentors
             Assert.True(isRemoved);
         }
 
+        [Fact]
+        public async Task IsMentor_WhenPersonIsMentor_ShouldReturnTrue()
+        {
+            // Arrange
+            var mentorSummaryResponse = await mentorsRepository.CreateAsync(createMentorRepoRequest);
+
+            // Act
+            var response = await mentorsRepository.IsMentorByIdAsync(mentorSummaryResponse.Id);
+
+            // Assert
+            Assert.True(response);
+        }
+
+        [Fact]
+        public async Task IsMentor_WhenPersonIsNotMentor_ShouldReturnFalse()
+        {
+            // Act
+            var response = await mentorsRepository.IsMentorByIdAsync(Guid.NewGuid());
+
+            // Assert
+            Assert.False(response);
+        }
+        
+        [Fact]
+        public async Task AddMentorRoleByIdAsync_WhenDataIsCorrect_ShouldReturnCorrectObject()
+        {
+            // Arrange
+            var person = new Person()
+            {
+                DisplayName = "Jane Doe",
+                WorkEmail = "Jane.Doe@test.com",
+            };
+
+            var personRole = new PersonRole()
+            {
+                RoleId = RoleId.Administrator,
+                Person = person
+            };
+
+            await context.PersonRoles.AddAsync(personRole);
+
+            await context.Specialties.AddRangeAsync(specialitiesMock);
+
+            await context.SaveChangesAsync();
+
+            var admin = await context.Persons.FirstOrDefaultAsync(a => a.WorkEmail == person.WorkEmail);
+
+            var addRoleMentorRequest = new AddMentorRoleRepoRequest(admin!.Id, specialitiesMock);
+
+            // Act
+            var mentorSummaryResponse = await mentorsRepository.AddMentorRoleByIdAsync(addRoleMentorRequest);
+
+            // Assert
+            Assert.NotNull(mentorSummaryResponse);
+            Assert.Equal(admin.Id, mentorSummaryResponse?.Id);
+            Assert.Equal(specialitiesMock.Count, mentorSummaryResponse?.Specialities.Count());
+        }
+        
+        [Fact]
+        public async Task AddMentorRoleByIdAsync_WhenPersonNotFound_ShouldReturnNull()
+        {
+            // Arrange
+            var addMentorRequest = new AddMentorRoleRepoRequest(Guid.NewGuid(), specialitiesMock);
+            
+            // Act
+            var mentor = await mentorsRepository.AddMentorRoleByIdAsync(addMentorRequest);
+
+            // Assert
+            Assert.Null(mentor);
+        }
+
         // this intern is required so we can check precisely for mentors entities in all persons
         private void AddInternToContext()
         {

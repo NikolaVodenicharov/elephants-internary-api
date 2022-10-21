@@ -44,5 +44,17 @@ namespace Core.Common
 
             throw new CoreException(message.ToString(), HttpStatusCode.BadRequest);
         }
+
+        public static void EnsureNotNullAuthorization<T>([NotNull] T? value, string entityName)
+        {
+            if (value != null)
+            {
+                return;
+            }
+            
+            var message = $"Unauthorized. Required {entityName} was not found";
+
+            throw new CoreException(message, HttpStatusCode.Unauthorized);
+        }
     }
 }

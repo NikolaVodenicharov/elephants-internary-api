@@ -154,6 +154,42 @@ namespace Infrastructure.Features.Mentors
             return count;
         }
 
+        public async Task<bool> IsMentorByIdAsync(Guid id)
+        {
+            return await context
+                .Persons
+                .Include(m => m.PersonRoles)
+                .Where(HasMentorRole())
+                .AnyAsync(u => u.Id == id);
+        }
+
+        public async Task<MentorSummaryResponse?> AddMentorRoleByIdAsync(AddMentorRoleRepoRequest addMentorRoleRepoRequest)
+        {
+            var person = await context
+                .Persons
+                .Include(p => p.Specialities)
+                .FirstOrDefaultAsync(p => p.Id == addMentorRoleRepoRequest.PersonId);
+            
+            if (person == null)
+            {
+                return null;
+            }
+
+            person.Specialities = addMentorRoleRepoRequest.Specialities.ToList();
+            
+            var mentorRole = new PersonRole()
+            {
+                RoleId = RoleId.Mentor,
+                Person = person
+            };
+
+            await context.PersonRoles.AddAsync(mentorRole);
+            
+            await context.SaveChangesAsync();
+
+            return person.ToMentorSummaryResponse();
+        }
+
         private static Expression<Func<Person, bool>> HasCampaign(Guid campaignId)
         {
             return person => person

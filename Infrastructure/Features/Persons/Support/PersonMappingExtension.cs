@@ -1,8 +1,10 @@
-﻿using Core.Features.Campaigns.ResponseModels;
+using Core.Features.Admins.ResponseModels;
+using Core.Features.Campaigns.ResponseModels;
 using Core.Features.Campaigns.Support;
 using Core.Features.Interns.ResponseModels;
 using Core.Features.Mentors.ResponseModels;
 using Core.Features.Persons.Entities;
+using Core.Features.Persons.ResponseModels;
 using Core.Features.Specialities.Support;
 
 namespace Infrastructure.Features.Persons.Support
@@ -87,6 +89,27 @@ namespace Infrastructure.Features.Persons.Support
                 specialties);
 
             return internSummaryResponse;
+        }
+
+        public static AdminSummaryResponse ToAdminSummaryResponse(this Person person)
+        {
+            var adminSummaryResponse = new AdminSummaryResponse(
+                person.Id,
+                person.DisplayName,
+                person.WorkEmail
+            );
+
+            return adminSummaryResponse;
+        }
+
+        public static PersonRolesSummaryResponse ToPersonRolesSummaryResponse(this Person person)
+        {
+            var userSummaryResponse = new PersonRolesSummaryResponse(
+                person.Id,
+                person.PersonRoles.Select(r => r.RoleId).ToList()
+            );
+
+            return userSummaryResponse;
         }
     }
 }

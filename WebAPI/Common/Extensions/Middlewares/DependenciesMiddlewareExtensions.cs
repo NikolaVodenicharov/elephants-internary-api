@@ -1,4 +1,8 @@
 ﻿using Core.Common.Pagination;
+using Core.Features.Admins;
+using Core.Features.Admins.Interfaces;
+using Core.Features.Admins.RequestModels;
+using Core.Features.Admins.Support;
 using Core.Features.Campaigns;
 using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
@@ -19,7 +23,9 @@ using Core.Features.Interns;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.Support;
+using Core.Features.Persons;
 using FluentValidation;
+using Infrastructure.Features.Admins;
 using Infrastructure.Features.Campaigns;
 using Infrastructure.Features.Mentors;
 using Infrastructure.Features.Specialities;
@@ -42,12 +48,13 @@ namespace WebAPI.Common.Extensions.Middlewares
             RegisterSpecialityDependencies(services);
             RegisterLearningTopicsDependencies(services);
             RegisterInternDependencies(services);
+            RegisterUsersAndIdentityDependencies(services);
+            RegisterAdminDependencies(services);
         }
 
         private static void RegisterCommonDependencies(IServiceCollection services)
         {
             services.AddTransient<IValidator<PaginationRequest>, PaginationRequestValidator>();
-            RegisterUsersAndIdentityDependencies(services);
         }
 
         private static void RegisterCampaignDependencies(IServiceCollection services)
@@ -104,6 +111,17 @@ namespace WebAPI.Common.Extensions.Middlewares
         private static void RegisterUsersAndIdentityDependencies(IServiceCollection services)
         {
             services.AddTransient<IIdentityRepository, IdentityRepository>();
+            services.AddTransient<IPersonsRepository, PersonsRepository>();
+            services.AddTransient<IPersonsService, PersonsService>();
+        }
+
+        private static void RegisterAdminDependencies(IServiceCollection services)
+        {
+            services.AddTransient<IAdminsService, AdminsService>();
+            services.AddTransient<IAdminsRepository, AdminsRepository>();
+            services.AddTransient<IValidator<CreateAdminRequest>, CreateAdminRequestValidator>();
+            services.AddTransient<IValidator<AddMentorRoleRequest>, AddMentorRoleRequestValidator>();
+            services.AddTransient<IAdminValidator, AdminValidator>();
         }
     }
 }

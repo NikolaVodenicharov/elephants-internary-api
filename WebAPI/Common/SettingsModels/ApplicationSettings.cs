@@ -9,5 +9,6 @@ namespace WebAPI.Common.SettingsModels
         public string TokenUrl { get; set; } = string.Empty;
         public string ApiScope { get; set; } = string.Empty;
         public string ApiScopeDescription { get; set; } = string.Empty;
+        public string AdministratorsGroup { get; set; } = string.Empty; 
     }
 }

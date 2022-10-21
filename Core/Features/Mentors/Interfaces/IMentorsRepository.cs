@@ -25,5 +25,9 @@ namespace Core.Features.Mentors.Interfaces
         public Task<bool> IsEmailUsed(string email);
 
         public Task<bool> RemoveFromCampaignAsync(Guid mentorId, Campaign campaign);
+
+        public Task<bool> IsMentorByIdAsync(Guid id);
+
+        public Task<MentorSummaryResponse?> AddMentorRoleByIdAsync(AddMentorRoleRepoRequest addMentorRoleRepoRequest);
     }
 }

@@ -1,23 +1,23 @@
-﻿using Core.Common.Pagination;
+using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Mentors.Interfaces;
 using Core.Features.Mentors.RequestModels;
 using Core.Features.Mentors.ResponseModels;
+using Core.Features.Persons.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using System.Net;
+using System.Text.Json;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
-using WebAPI.Features.Mentors.ApiRequestModels;
-using Core.Common;
-using Core.Features.Persons.Entities;
-using System.Text.Json;
+using WebAPI.Common.Authorization;
 using WebAPI.Common.SettingsModels;
-using Microsoft.Extensions.Options;
+using WebAPI.Features.Mentors.ApiRequestModels;
 
 namespace WebAPI.Features.Mentors
 {
-    [Authorize]
+    [CustomAuthorize(RoleId.Administrator)]
     public class MentorsController : ApiControllerBase
     {
         private readonly IMentorsService mentorsService;

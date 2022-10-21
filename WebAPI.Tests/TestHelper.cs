@@ -20,6 +20,7 @@ namespace WebAPI.Tests
 
         public const string FirstNameMock = "John";
         public const string LastNameMock = "Doe";
+        public const string DisplayNameMock = "John Doe";
         public const string EmailMock = "John.Doe@endava.com";
 
         public static IEnumerable<object[]> InvalidEmails = new List<object[]>

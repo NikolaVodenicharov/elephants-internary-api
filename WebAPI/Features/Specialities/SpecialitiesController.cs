@@ -1,19 +1,21 @@
-﻿using Core.Common.Pagination;
+using Core.Common;
+using Core.Common.Pagination;
 using Core.Features.Specialities.Interfaces;
 using Core.Features.Specialities.RequestModels;
 using Core.Features.Specialities.ResponseModels;
 using Core.Features.Specialties.Entities;
+using Core.Features.Persons.Entities;
 using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using WebAPI.Common;
 using WebAPI.Common.Abstractions;
-using Core.Common;
+using WebAPI.Common.Authorization;
+
 
 namespace WebAPI.Features.Specialities
 {
-    [Authorize]
+    [CustomAuthorize(RoleId.Administrator)]
     public class SpecialitiesController : ApiControllerBase
     {
         private readonly ISpecialitiesService specialitiesService;

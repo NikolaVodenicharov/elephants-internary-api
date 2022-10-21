@@ -1,3 +1,4 @@
+using WebAPI.Common.Authorization;
 using WebAPI.Common.ErrorHandling;
 using WebAPI.Common.Extensions;
 using WebAPI.Common.Extensions.Middlewares;
@@ -48,6 +49,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<ErrorHandlerMiddleware>();
+
+app.UseMiddleware<JwtMiddleware>();
 
 app.MapControllers();
 

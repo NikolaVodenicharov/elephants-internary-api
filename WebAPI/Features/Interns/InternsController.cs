@@ -1,22 +1,24 @@
-﻿using Core.Common.Pagination;
+using Core.Common;
+using Core.Common.Exceptions;
+using Core.Common.Pagination;
+using Core.Features.Interns.Entities;
 using Core.Features.Interns.Interfaces;
 using Core.Features.Interns.RequestModels;
 using Core.Features.Interns.ResponseModels;
+using Core.Features.Persons.Entities;
 using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Net;
 using WebAPI.Common;
-using WebAPI.Common.Abstractions;
-using WebAPI.Features.Interns.ApiRequestModels;
-using Core.Common;
 using WebAPI.Common.SettingsModels;
-using Microsoft.Extensions.Options;
-using Core.Features.Interns.Entities;
+using WebAPI.Common.Abstractions;
+using WebAPI.Common.Authorization;
+using WebAPI.Features.Interns.ApiRequestModels;
 
 namespace WebAPI.Features.Interns
 {
-    [Authorize]
+    [CustomAuthorize(RoleId.Administrator)]
     public class InternsController : ApiControllerBase
     {
         private readonly IInternsService internsService;

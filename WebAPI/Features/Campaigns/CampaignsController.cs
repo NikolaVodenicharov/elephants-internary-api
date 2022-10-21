@@ -1,25 +1,26 @@
-﻿using Core.Features.Campaigns.Interfaces;
+﻿using Core.Common;
+using Core.Common.Pagination;
+using Core.Features.Campaigns.Entities;
+using Core.Features.Campaigns.Interfaces;
 using Core.Features.Campaigns.RequestModels;
 using Core.Features.Campaigns.ResponseModels;
+using Core.Features.Interns.Interfaces;
+using Core.Features.Interns.ResponseModels;
+using Core.Features.Mentors.Interfaces;
+using Core.Features.Mentors.RequestModels;
+using Core.Features.Mentors.ResponseModels;
+using Core.Features.Persons.Entities;
 using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
-using WebAPI.Common.Abstractions;
-using Core.Features.Mentors.Interfaces;
-using Core.Features.Mentors.ResponseModels;
-using Core.Common.Pagination;
 using WebAPI.Common;
-using Core.Features.Interns.Interfaces;
-using Core.Features.Interns.ResponseModels;
-using Core.Features.Mentors.RequestModels;
-using Core.Common;
-using Core.Features.Campaigns.Entities;
+using WebAPI.Common.Abstractions;
+using WebAPI.Common.Authorization;
 
 namespace WebAPI.Features.Campaigns
 {
-    [Authorize]
+    [CustomAuthorize(RoleId.Administrator)]
     public class CampaignsController : ApiControllerBase
     {
         private readonly ICampaignsService campaignsService;
