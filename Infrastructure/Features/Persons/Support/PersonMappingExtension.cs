@@ -102,6 +102,17 @@ namespace Infrastructure.Features.Persons.Support
             return adminSummaryResponse;
         }
 
+        public static AdminListingResponse ToAdminListingResponse(this Person person)
+        {
+            var adminListingResponse = new AdminListingResponse(
+                   person.Id,
+                   person.DisplayName,
+                   person.WorkEmail,
+                   person.PersonRoles.Any(pr => pr.RoleId == RoleId.Mentor));
+
+            return adminListingResponse;
+        }
+
         public static PersonRolesSummaryResponse ToPersonRolesSummaryResponse(this Person person)
         {
             var userSummaryResponse = new PersonRolesSummaryResponse(

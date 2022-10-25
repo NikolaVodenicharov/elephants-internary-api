@@ -72,7 +72,7 @@ namespace WebAPI.Features.Admins
         }
 
         [HttpGet]
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<AdminSummaryResponse>>))]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<AdminListingResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
         public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum,
             [Required][FromQuery] int pageSize)

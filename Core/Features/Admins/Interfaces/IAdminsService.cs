@@ -11,7 +11,7 @@ namespace Core.Features.Admins.Interfaces
 
         Task<AdminSummaryResponse?> GetByIdAsync(Guid id);
 
-        Task<PaginationResponse<AdminSummaryResponse>> GetAllAsync(PaginationRequest filter);
+        Task<PaginationResponse<AdminListingResponse>> GetAllAsync(PaginationRequest filter);
 
         Task<MentorSummaryResponse> AddAsMentorAsync(AddMentorRoleRequest addMentorRoleRequest);
     }

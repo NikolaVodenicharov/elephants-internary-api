@@ -10,7 +10,7 @@ namespace Core.Features.Admins.Interfaces
 
         Task<AdminSummaryResponse?> GetByIdAsync(Guid id);
 
-        Task<IEnumerable<AdminSummaryResponse>> GetAllAsync(PaginationRequest filter);
+        Task<IEnumerable<AdminListingResponse>> GetAllAsync(PaginationRequest filter);
 
         Task<int> GetCountAsync();
 

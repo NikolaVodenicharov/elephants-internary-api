@@ -52,7 +52,7 @@ namespace Infrastructure.Features.Admins
             return admin?.ToAdminSummaryResponse();
         }
 
-        public async Task<IEnumerable<AdminSummaryResponse>> GetAllAsync(PaginationRequest filter)
+        public async Task<IEnumerable<AdminListingResponse>> GetAllAsync(PaginationRequest filter)
         {
             var skip = (filter.PageNum!.Value - 1) * filter.PageSize!.Value;
             var take = filter.PageSize.Value;
@@ -61,13 +61,17 @@ namespace Infrastructure.Features.Admins
                 .Persons
                 .AsNoTracking()
                 .Where(p => p.PersonRoles.Any(r => r.RoleId == RoleId.Administrator))
+                .Include(p => p.PersonRoles)
                 .OrderByDescending(s => EF.Property<DateTime>(s, "CreatedDate"))
-                .Select(p => p.ToAdminSummaryResponse())
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();
-            
-            return admins;
+
+            var adminListing = admins
+                .Select(a => a.ToAdminListingResponse())
+                .ToList();
+
+            return adminListing;
         }
 
         public async Task<int> GetCountAsync()

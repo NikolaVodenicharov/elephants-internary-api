@@ -173,15 +173,16 @@ namespace WebAPI.Tests.Features.Admins
         public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
         {
             // Arrange
-            var additionalAdmin = new AdminSummaryResponse(
+            var additionalAdmin = new AdminListingResponse(
                 Guid.NewGuid(),
                 "Jane Doe",
-                "Jane.Doe@test.com"
+                "Jane.Doe@test.com",
+                true
             );
 
-            var adminsList = new List<AdminSummaryResponse>() { adminSummaryResponse, additionalAdmin };
+            var adminsList = new List<AdminListingResponse>() { additionalAdmin };
 
-            var adminsPaginationResponse = new PaginationResponse<AdminSummaryResponse>(adminsList, pageNum, defaultTotalPages);
+            var adminsPaginationResponse = new PaginationResponse<AdminListingResponse>(adminsList, pageNum, defaultTotalPages);
 
             adminsServiceMock
                 .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
@@ -197,7 +198,7 @@ namespace WebAPI.Tests.Features.Admins
 
             Assert.NotNull(jsonResult);
 
-            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<AdminSummaryResponse>>;
+            var coreResponse = jsonResult!.Value as CoreResponse<PaginationResponse<AdminListingResponse>>;
 
             Assert.Equal(adminsPaginationResponse.Content.Count(), coreResponse!.Data!.Content.Count());
         }
@@ -206,8 +207,8 @@ namespace WebAPI.Tests.Features.Admins
         public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
         {
             // Arrange
-            var emptyPaginationResponse = new PaginationResponse<AdminSummaryResponse>(
-                new List<AdminSummaryResponse>(), pageNum, defaultTotalPages);
+            var emptyPaginationResponse = new PaginationResponse<AdminListingResponse>(
+                new List<AdminListingResponse>(), pageNum, defaultTotalPages);
 
             adminsServiceMock
                 .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
@@ -223,7 +224,7 @@ namespace WebAPI.Tests.Features.Admins
 
             Assert.NotNull(jsonResult);
 
-            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<AdminSummaryResponse>>;
+            var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<AdminListingResponse>>;
 
             Assert.Empty(actualResponse!.Data!.Content);
         }

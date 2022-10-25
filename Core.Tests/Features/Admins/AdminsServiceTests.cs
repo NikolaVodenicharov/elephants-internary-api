@@ -215,13 +215,14 @@ namespace Core.Tests.Features.Admins
             // Arrange
             var paginationRequest = new PaginationRequest(2, 5);
 
-            var additionalAdmin = new AdminSummaryResponse(
+            var additionalAdmin = new AdminListingResponse(
                 Guid.NewGuid(),
                 "Jane Doe",
-                "Jane.Doe@test.com"
+                "Jane.Doe@test.com",
+                true
             );
 
-            var adminsSummaries = new List<AdminSummaryResponse>() { adminSummaryResponse, additionalAdmin };
+            var adminsListings = new List<AdminListingResponse>() { additionalAdmin };
             
             adminsRepostitoryMock
                 .Setup(x => x.GetCountAsync())
@@ -229,13 +230,13 @@ namespace Core.Tests.Features.Admins
             
             adminsRepostitoryMock
                 .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
-                .ReturnsAsync(adminsSummaries);
+                .ReturnsAsync(adminsListings);
 
             // Act
             var admins = await adminsService.GetAllAsync(paginationRequest);
 
             // Assert
-            Assert.Equal(adminsSummaries.Count, admins.Content.Count());
+            Assert.Equal(adminsListings.Count, admins.Content.Count());
         }
 
         [Fact]

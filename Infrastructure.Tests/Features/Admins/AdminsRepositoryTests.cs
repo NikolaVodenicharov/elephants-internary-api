@@ -95,6 +95,7 @@ namespace Infrastructure.Tests.Features.Admins
 
             // Assert
             Assert.Equal(2, paginationResponse.Count());
+            Assert.False(paginationResponse.First().IsMentor);
         }
         
         [Fact]
@@ -127,14 +128,11 @@ namespace Infrastructure.Tests.Features.Admins
         [Fact]
         public async Task GetCountAsync_WhenEmpty_ShouldReturnZero()
         {
-            // Arrange
-            var paginationRequest = new PaginationRequest(1, 5);
-
             // Act
-            var paginationResponse = await adminsRepository.GetAllAsync(paginationRequest);
+            var count = await adminsRepository.GetCountAsync();
             
             // Assert
-            Assert.Empty(paginationResponse);
+            Assert.Equal(0, count);
         }
 
         [Fact]

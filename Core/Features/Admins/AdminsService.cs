@@ -80,7 +80,7 @@ namespace Core.Features.Admins
             return admin;
         }
 
-        public async Task<PaginationResponse<AdminSummaryResponse>> GetAllAsync(PaginationRequest filter)
+        public async Task<PaginationResponse<AdminListingResponse>> GetAllAsync(PaginationRequest filter)
         {
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
@@ -98,9 +98,9 @@ namespace Core.Features.Admins
 
             var admins = adminsCount > 0 ?
                 await adminsRepository.GetAllAsync(filter) :
-                new List<AdminSummaryResponse>();
+                new List<AdminListingResponse>();
             
-            var paginationResponse = new PaginationResponse<AdminSummaryResponse>(
+            var paginationResponse = new PaginationResponse<AdminListingResponse>(
                 admins,
                 filter.PageNum.Value,
                 totalPages
