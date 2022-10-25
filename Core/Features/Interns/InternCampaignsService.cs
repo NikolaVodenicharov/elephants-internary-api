@@ -99,7 +99,7 @@ namespace Core.Features.Interns
 
             var speciality = await GetValidSpecialityByIdAsync(specialityId);
 
-            var state = CreateState(StatusEnum.Candidate, justificaton);
+            var state = CreateState(StatusId.Candidate, justificaton);
 
             var internCampaign = new InternCampaign()
             {
@@ -122,7 +122,7 @@ namespace Core.Features.Interns
             return statusResponseCollection;
         }
 
-        private static State CreateState(StatusEnum statusId, string justification)
+        private static State CreateState(StatusId statusId, string justification)
         {
             var state = new State()
             {

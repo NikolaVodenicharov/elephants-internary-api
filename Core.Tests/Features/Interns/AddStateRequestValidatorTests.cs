@@ -21,7 +21,7 @@ namespace Core.Tests.Features.Interns
             var addInternCampaignRequest = new AddStateRequest(
                 Guid.Empty,
                 campaignId,
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justification);
 
             //Act-Assert
@@ -37,7 +37,7 @@ namespace Core.Tests.Features.Interns
             var addInternCampaignRequest = new AddStateRequest(
                 internId,
                 Guid.Empty,
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justification);
 
             //Act-Assert
@@ -55,24 +55,8 @@ namespace Core.Tests.Features.Interns
             var addInternCampaignRequest = new AddStateRequest(
                 internId,
                 campaignId,
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justificationOutOfRange);
-
-            //Act-Assert
-            addStateRequestValidator
-                .TestValidate(addInternCampaignRequest)
-                .ShouldHaveValidationErrorFor(a => a.Justification);
-        }
-
-        [Fact]
-        public void Validator_WhenJustificationIsNull_ShouldHaveError()
-        {
-            //Arrange
-            var addInternCampaignRequest = new AddStateRequest(
-                internId,
-                campaignId,
-                StatusEnum.Rejected,
-                null);
 
             //Act-Assert
             addStateRequestValidator
@@ -87,7 +71,7 @@ namespace Core.Tests.Features.Interns
             var addInternCampaignRequest = new AddStateRequest(
                 internId,
                 campaignId,
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 string.Empty);
 
             //Act-Assert

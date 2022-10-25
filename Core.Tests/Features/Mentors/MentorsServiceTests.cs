@@ -31,7 +31,6 @@ namespace Core.Tests.Features.Mentors
         private readonly Guid id = Guid.NewGuid();
         private readonly string displayName = "Display Name";
         private readonly string email = "iliyan.dimitrov@endava.com";
-        private readonly string ApplicationUrl = "ApplicationUrl";
         private readonly Guid specialityId = Guid.NewGuid();
         private readonly string specialityName = "Backend";
         private readonly Mock<IMentorsRepository> mentorsRepositoryMock;
@@ -50,19 +49,6 @@ namespace Core.Tests.Features.Mentors
         private Speciality specialityMock = null!;
         private List<Speciality> specialitiesMock = null!;
         private List<Guid> specialityIds = null!;
-
-        public static IEnumerable<object[]> invalidEmails = new List<object[]>
-        {
-            new object[] { "invalid@example.c" },
-            new object[] { "invalid@example..com" },
-            new object[] { "invalid@example.com." },
-            new object[] { "invalidexample" },
-            new object[] { "invalidexample.com" },
-            new object[] { "invalidexample.commmm" },
-            new object[] { "invalidexample.co.uk." },
-            new object[] { "invalidexample.co_uk" },
-            new object[] { "invalidexample.co_ukkkk" },
-        };
 
         public MentorsServiceTests()
         {
@@ -94,14 +80,14 @@ namespace Core.Tests.Features.Mentors
         #region CreateAsyncTests
 
         [Theory]
-        [MemberData(nameof(invalidEmails))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public async Task CreateAsync_WhenEmailIsIncorrectFormat_ShouldThrowException(string invalidEmail)
         {
             //Arrange
             var invalidCreateMentorRequest = new CreateMentorRequest(
                 invalidEmail,
                 specialityIds,
-                ApplicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             //Act
             var action = async () => await mentorsServiceMock.CreateAsync(invalidCreateMentorRequest);
@@ -302,7 +288,7 @@ namespace Core.Tests.Features.Mentors
             var response = await mentorsServiceMock.GetPaginationAsync(filter);
 
             //Assert
-            Assert.Equal(mentorList.Count(), response.Content.Count());
+            Assert.Equal(mentorList.Count, response.Content.Count());
         }
 
         [Theory]
@@ -642,7 +628,7 @@ namespace Core.Tests.Features.Mentors
             createMentorRequest = new CreateMentorRequest(
                 email,
                 specialityIds,
-                ApplicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             updateMentorRequest = new UpdateMentorRequest(id, specialityIds);
 

@@ -24,18 +24,6 @@ namespace Core.Features.Campaigns.Support
             return campaign;
         }
 
-        public static CampaignSummaryResponse ToCampaignSummary(this Campaign entity)
-        {
-            var summary = new CampaignSummaryResponse(
-                entity.Id,
-                entity.Name,
-                entity.StartDate,
-                entity.EndDate,
-                entity.IsActive);
-
-            return summary;
-        }
-
         public static Campaign ToCampaign(this UpdateCampaignRequest model)
         {
             var campaign = new Campaign()
@@ -48,6 +36,18 @@ namespace Core.Features.Campaigns.Support
             };
 
             return campaign;
+        }
+
+        public static CampaignSummaryResponse ToCampaignSummary(this Campaign entity)
+        {
+            var summary = new CampaignSummaryResponse(
+                entity.Id,
+                entity.Name,
+                entity.StartDate,
+                entity.EndDate,
+                entity.IsActive);
+
+            return summary;
         }
 
         public static IEnumerable<CampaignSummaryResponse> ToCampaignSummaries(this IEnumerable<Campaign> campaigns)

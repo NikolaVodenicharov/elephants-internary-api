@@ -21,7 +21,6 @@ namespace Core.Features.Interns
         private readonly ILogger<InternsService> internsServiceLogger;
         private readonly IInternValidator internValidator;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
-        private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
 
         public InternsService(
             IInternsRepository internsRepository,
@@ -30,8 +29,7 @@ namespace Core.Features.Interns
             ICampaignsService campaignsService,
             ILogger<InternsService> internsServiceLogger,
             IInternValidator internValidator,
-            IValidator<PaginationRequest> paginationRequestValidator,
-            IValidator<InviteInternRequest> inviteInternRequestValidator)
+            IValidator<PaginationRequest> paginationRequestValidator)
         {
             this.internsRepository = internsRepository;
             this.identityRepository = identityRepository;
@@ -40,7 +38,6 @@ namespace Core.Features.Interns
             this.internsServiceLogger = internsServiceLogger;
             this.internValidator = internValidator;
             this.paginationRequestValidator = paginationRequestValidator;
-            this.inviteInternRequestValidator = inviteInternRequestValidator;
         }
 
         public async Task<InternSummaryResponse> CreateAsync(CreateInternRequest createInternRequest)
@@ -121,7 +118,7 @@ namespace Core.Features.Interns
 
         public async Task<InternSummaryResponse> InviteAsync(InviteInternRequest inviteInternRequest)
         {
-            await inviteInternRequestValidator.ValidateAndThrowAsync(inviteInternRequest);
+            await internValidator.ValidateAndThrowAsync(inviteInternRequest);
 
             var internDetailsResponse = await internsRepository.GetDetailsByIdAsync(inviteInternRequest.Id);
 

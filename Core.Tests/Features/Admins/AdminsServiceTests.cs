@@ -65,17 +65,17 @@ namespace Core.Tests.Features.Admins
                 new PaginationRequestValidator()
             );
 
-            createAdminRequest = new CreateAdminRequest(TestHelper.EmailMock, TestHelper.ApplicationUrlMock);
+            createAdminRequest = new CreateAdminRequest(MockDataTestHelper.WorkEmailMock, MockDataTestHelper.ApplicationUrlMock);
 
             adminSummaryResponse = new AdminSummaryResponse(
                 adminId,
-                TestHelper.DisplayNameMock,
-                TestHelper.EmailMock
+                MockDataTestHelper.DisplayNameMock,
+                MockDataTestHelper.WorkEmailMock
             );
 
             identitySummaryResponse = new IdentitySummaryResponse(
-                TestHelper.EmailMock,
-                TestHelper.DisplayNameMock
+                MockDataTestHelper.WorkEmailMock,
+                MockDataTestHelper.DisplayNameMock
             );
 
             speciality = new Speciality
@@ -95,8 +95,8 @@ namespace Core.Tests.Features.Admins
             
             mentorSummaryResponse = new MentorSummaryResponse(
                 adminId,
-                TestHelper.DisplayNameMock,
-                TestHelper.EmailMock,
+                MockDataTestHelper.DisplayNameMock,
+                MockDataTestHelper.WorkEmailMock,
                 specialitySummaries
             );
 
@@ -132,11 +132,11 @@ namespace Core.Tests.Features.Admins
         }
 
         [Theory]
-        [MemberData(nameof(TestHelper.InvalidEmails), MemberType = typeof(TestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public async Task CreateAsync_WhenAllEmailIsInvalid_ShouldThrowException(string invalidEmail)
         {
             // Arrange
-            var invalidCreateAdminRequest = new CreateAdminRequest(invalidEmail, TestHelper.ApplicationUrlMock);
+            var invalidCreateAdminRequest = new CreateAdminRequest(invalidEmail, MockDataTestHelper.ApplicationUrlMock);
 
             // Act
             var action = async () => await adminsService.CreateAsync(invalidCreateAdminRequest);
@@ -164,7 +164,7 @@ namespace Core.Tests.Features.Admins
         public async Task CreateAsync_WhenApplicationIsEmpty_ShouldThrowException()
         {
             // Arrange
-            var invalidCreateAdminRequest = new CreateAdminRequest(TestHelper.EmailMock, string.Empty);
+            var invalidCreateAdminRequest = new CreateAdminRequest(MockDataTestHelper.WorkEmailMock, string.Empty);
 
             // Act
             var action = async () => await adminsService.CreateAsync(invalidCreateAdminRequest);

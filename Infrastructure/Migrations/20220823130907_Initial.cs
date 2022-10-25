@@ -8,12 +8,12 @@ namespace Infrastructure.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
+            // Initial empty migration
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            // Initial empty migration
         }
     }
 }

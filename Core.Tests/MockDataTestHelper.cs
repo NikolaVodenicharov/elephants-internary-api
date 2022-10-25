@@ -1,27 +1,18 @@
-﻿using Core.Features.Interns.Support;
+using Core.Features.Interns.Support;
+using Core.Features.LearningTopics.Support;
 using System.Collections.Generic;
-using System.Text;
 
-namespace WebAPI.Tests
+namespace Core.Tests
 {
-    internal class TestHelper
+    public static class MockDataTestHelper
     {
-        public static string GenerateString(int length)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < length; i++)
-            {
-                sb.Append('a');
-            }
-
-            return sb.ToString();
-        }
 
         public const string FirstNameMock = "John";
         public const string LastNameMock = "Doe";
         public const string DisplayNameMock = "John Doe";
-        public const string EmailMock = "John.Doe@endava.com";
+        public const string PersonalEmailMock = "John.Doe@gmail.com";
+        public const string WorkEmailMock = "John.Doe@endava.com";
+        public const string ApplicationUrlMock = "http://backofficemock";
 
         public static readonly IEnumerable<object[]> InvalidEmails = new List<object[]>
         {
@@ -59,6 +50,25 @@ namespace WebAPI.Tests
             new object[] { "Name1" },
             new object[] { " Name" },
             new object[] { "Name " },
+        };
+
+        public static readonly IEnumerable<object[]> LearningTopicValidNames = new List<object[]>
+        {
+            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
+            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
+        };
+
+        public static readonly IEnumerable<object[]> LearningTopicInvalidNames = new List<object[]>
+        {
+            new object[] { string.Empty },
+            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength - 1) },
+            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength + 1) },
+            new object[] { NameEdgeCaseTestHelper.NameWithAmpersand },
+            new object[] { NameEdgeCaseTestHelper.NameWithDash },
+            new object[] { NameEdgeCaseTestHelper.NameWithDot },
+            new object[] { NameEdgeCaseTestHelper.NameWithExclamationMark },
+            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign },
+            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
         };
     }
 }

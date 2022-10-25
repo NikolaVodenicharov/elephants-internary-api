@@ -18,7 +18,6 @@ namespace Core.Tests.Features.Campaigns
         public static IEnumerable<object[]> invalidCampaignNameData =>
             new List<object[]>
             {
-                new object[] { null },
                 new object[] { string.Empty },
                 new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMinLength - 1) },
                 new object[] { TestHelper.GenerateString(CampaignValidationConstants.NameMaxLength + 1) },

@@ -74,7 +74,7 @@ namespace Infrastructure.Features.LearningTopics
         {
             // Arrange
             var expectedLearningTopicsCount = 1;
-            var expectedSpecialitiesCount = specialities.Count();
+            var expectedSpecialitiesCount = specialities.Count;
 
             // Act
             var learningTopicResult = await learningTopicsRepository.AddAsync(learningTopic);
@@ -82,7 +82,7 @@ namespace Infrastructure.Features.LearningTopics
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());
             Assert.NotEmpty(learningTopicResult.Specialities);
-            Assert.Equal(expectedSpecialitiesCount, learningTopicResult.Specialities.Count());
+            Assert.Equal(expectedSpecialitiesCount, learningTopicResult.Specialities.Count);
             Assert.Equal(name, learningTopicResult.Name);
         }
 
@@ -91,7 +91,7 @@ namespace Infrastructure.Features.LearningTopics
         {
             // Arrange
             var expectedLearningTopicsCount = 1;
-            var expectedSpecialitiesCount  = specialities.Count();
+            var expectedSpecialitiesCount  = specialities.Count;
 
             await learningTopicsRepository.AddAsync(learningTopic);
             
@@ -104,7 +104,7 @@ namespace Infrastructure.Features.LearningTopics
 
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());
-            Assert.Equal(expectedSpecialitiesCount, learningTopicResult.Specialities.Count());
+            Assert.Equal(expectedSpecialitiesCount, learningTopicResult!.Specialities.Count);
             Assert.Equal(updatedName, learningTopicResult.Name);
         }
 
@@ -120,7 +120,7 @@ namespace Infrastructure.Features.LearningTopics
             learningTopic.Specialities.Add(additionalSpeciality);
             
             var expectedLearningTopicsCount = 1;
-            var expectedSpecialitiesCount = learningTopic.Specialities.Count();
+            var expectedSpecialitiesCount = learningTopic.Specialities.Count;
             
             // Act
             await learningTopicsRepository.SaveTrackingChangesAsync();
@@ -129,7 +129,7 @@ namespace Infrastructure.Features.LearningTopics
 
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());
-            Assert.Equal(expectedSpecialitiesCount, learningTopicResult.Specialities.Count());
+            Assert.Equal(expectedSpecialitiesCount, learningTopicResult!.Specialities.Count);
             Assert.Equal(name, learningTopicResult.Name);
         }
 
@@ -147,7 +147,7 @@ namespace Infrastructure.Features.LearningTopics
             learningTopic.Specialities.Remove(additionalSpeciality);
             
             var expectedLearningTopicsCount = 1;
-            var expectedSpecialitiesCount = learningTopic.Specialities.Count();
+            var expectedSpecialitiesCount = learningTopic.Specialities.Count;
 
             // Act
             await learningTopicsRepository.SaveTrackingChangesAsync();
@@ -156,7 +156,7 @@ namespace Infrastructure.Features.LearningTopics
 
             // Assert
             Assert.Equal(expectedLearningTopicsCount, await context.LearningTopics.CountAsync());
-            Assert.Equal(expectedSpecialitiesCount, learningTopicResult.Specialities.Count());
+            Assert.Equal(expectedSpecialitiesCount, learningTopicResult!.Specialities.Count);
             Assert.Equal(name, learningTopicResult.Name);
         }
 
@@ -173,7 +173,7 @@ namespace Infrastructure.Features.LearningTopics
             
             // Assert
             Assert.NotNull(learningTopicResult);
-            Assert.Equal(newLearningTopic.Id, learningTopicResult.Id);
+            Assert.Equal(newLearningTopic.Id, learningTopicResult!.Id);
             Assert.Equal(newLearningTopic.Name, learningTopicResult.Name);
         }
 

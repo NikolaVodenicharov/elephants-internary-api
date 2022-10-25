@@ -2,7 +2,7 @@
 {
     public class Status
     {
-        public StatusEnum StatusId { get; set; }
-        public string Name { get; set; }
+        public StatusId StatusId { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

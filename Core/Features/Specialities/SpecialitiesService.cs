@@ -29,11 +29,11 @@ namespace Core.Features.Specialities
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
-        public async Task<SpecialitySummaryResponse> CreateAsync(CreateSpecialityRequest createSpecialityRequest)
+        public async Task<SpecialitySummaryResponse> CreateAsync(CreateSpecialityRequest createSpeciality)
         {
-            await ValidateCreateSpecialityAsync(createSpecialityRequest);
+            await ValidateCreateSpecialityAsync(createSpeciality);
 
-            var speciality = createSpecialityRequest.ToSpeciality();
+            var speciality = createSpeciality.ToSpeciality();
 
             var specialitySummaryResponse = await specialitiesRepository.AddAsync(speciality);
 
@@ -42,16 +42,16 @@ namespace Core.Features.Specialities
             return specialitySummaryResponse;
         }
 
-        public async Task<SpecialitySummaryResponse> UpdateAsync(UpdateSpecialityRequest updateSpecialityRequest)
+        public async Task<SpecialitySummaryResponse> UpdateAsync(UpdateSpecialityRequest updateSpeciality)
         {
-            await ValidateUpdateSpecialityAsync(updateSpecialityRequest);
+            await ValidateUpdateSpecialityAsync(updateSpeciality);
 
-            var speciality = await specialitiesRepository.GetByIdAsync(updateSpecialityRequest.Id);
+            var speciality = await specialitiesRepository.GetByIdAsync(updateSpeciality.Id);
 
             Guard.EnsureNotNull(speciality, specialitiesServiceLogger, nameof(SpecialitiesService),
-                nameof(Speciality), updateSpecialityRequest.Id);
+                nameof(Speciality), updateSpeciality.Id);
 
-            speciality.Name = updateSpecialityRequest.Name;
+            speciality.Name = updateSpeciality.Name;
 
             await specialitiesRepository.SaveTrackingChangesAsync();
 

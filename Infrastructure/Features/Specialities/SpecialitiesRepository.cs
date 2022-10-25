@@ -42,8 +42,8 @@ namespace Infrastructure.Features.Specialities
 
         public async Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync(PaginationRequest? filter = null)
         {
-            var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
-            var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
+            var skip = filter != null ? (filter.PageNum!.Value - 1) * filter.PageSize!.Value : 0;
+            var take = filter != null ? filter.PageSize!.Value : await GetCountAsync();
 
             var specialities = await context
                 .Specialties

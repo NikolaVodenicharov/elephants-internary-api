@@ -11,19 +11,22 @@ namespace Core.Features.Interns.Support
         private readonly IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator;
         private readonly IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator;
         private readonly IValidator<AddStateRequest> addStateRequestValidator;
+        private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
 
         public InternValidator(
             IValidator<CreateInternRequest> createInternRequestValidator, 
             IValidator<UpdateInternRequest> updateInternRequestValidator,
             IValidator<AddInternCampaignRequest> addInternCampaignRequestValidator,
             IValidator<UpdateInternCampaignRequest> updateInternCampaignRequestValidator,
-            IValidator<AddStateRequest> addStateRequestValidator)
+            IValidator<AddStateRequest> addStateRequestValidator,
+            IValidator<InviteInternRequest> inviteInternRequestValidator)
         {
             this.createInternRequestValidator = createInternRequestValidator;
             this.updateInternRequestValidator = updateInternRequestValidator;
             this.addInternCampaignRequestValidator = addInternCampaignRequestValidator;
             this.updateInternCampaignRequestValidator = updateInternCampaignRequestValidator;
             this.addStateRequestValidator = addStateRequestValidator;
+            this.inviteInternRequestValidator = inviteInternRequestValidator;
         }
 
         public async Task ValidateAndThrowAsync(CreateInternRequest request)
@@ -49,6 +52,11 @@ namespace Core.Features.Interns.Support
         public async Task ValidateAndThrowAsync(AddStateRequest request)
         {
             await addStateRequestValidator.ValidateAndThrowAsync(request);
+        }
+
+        public async Task ValidateAndThrowAsync(InviteInternRequest request)
+        {
+            await inviteInternRequestValidator.ValidateAndThrowAsync(request);
         }
     }
 }

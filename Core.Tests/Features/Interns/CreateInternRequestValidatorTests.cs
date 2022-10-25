@@ -14,14 +14,14 @@ namespace Core.Tests.Features.Interns
         private readonly string justification = "Lorem ipsum.";
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenFirstNameIsInvalid_ShouldHaveError(string invalidFirstName)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
                 invalidFirstName, 
-                NameEdgeCaseTestHelper.LastNameMock, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.LastNameMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 campaignId, 
                 specialityId, 
                 justification);
@@ -33,14 +33,14 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.ValidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenFirstNameIsValid_ShouldNotHaveError(string validFirstName)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
                 validFirstName, 
-                NameEdgeCaseTestHelper.LastNameMock, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.LastNameMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 campaignId, 
                 specialityId, 
                 justification);
@@ -52,14 +52,14 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenLastNameIsInvalid_ShouldHaveError(string invalidLastName)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
+                MockDataTestHelper.FirstNameMock, 
                 invalidLastName, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 campaignId, 
                 specialityId, 
                 justification);
@@ -71,14 +71,14 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.ValidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenLastNameIsValid_ShouldNotHaveError(string validLastName)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
+                MockDataTestHelper.FirstNameMock, 
                 validLastName, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 campaignId, 
                 specialityId, 
                 justification);
@@ -90,13 +90,13 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsInvalid_ShouldHaveError(string invalidEmail)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
-                NameEdgeCaseTestHelper.LastNameMock, 
+                MockDataTestHelper.FirstNameMock, 
+                MockDataTestHelper.LastNameMock, 
                 invalidEmail, 
                 campaignId, 
                 specialityId, 
@@ -109,13 +109,13 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.ValidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsValid_ShouldNotHaveError(string validEmail)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
-                NameEdgeCaseTestHelper.LastNameMock, 
+                MockDataTestHelper.FirstNameMock, 
+                MockDataTestHelper.LastNameMock, 
                 validEmail, 
                 campaignId, 
                 specialityId, 
@@ -132,9 +132,9 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
-                NameEdgeCaseTestHelper.LastNameMock, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.FirstNameMock, 
+                MockDataTestHelper.LastNameMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 Guid.Empty, 
                 specialityId, 
                 justification);
@@ -150,9 +150,9 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
-                NameEdgeCaseTestHelper.LastNameMock, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.FirstNameMock, 
+                MockDataTestHelper.LastNameMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 campaignId, 
                 Guid.Empty, 
                 justification);
@@ -170,9 +170,9 @@ namespace Core.Tests.Features.Interns
             var justificationOutOfRange = TestHelper.GenerateString(InternValidationConstants.JustificationMaxLength + 1);
 
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock, 
-                NameEdgeCaseTestHelper.LastNameMock, 
-                NameEdgeCaseTestHelper.EmailMock, 
+                MockDataTestHelper.FirstNameMock, 
+                MockDataTestHelper.LastNameMock, 
+                MockDataTestHelper.WorkEmailMock, 
                 campaignId, 
                 specialityId, 
                 justificationOutOfRange);

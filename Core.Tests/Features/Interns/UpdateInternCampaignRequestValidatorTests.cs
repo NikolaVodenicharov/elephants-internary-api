@@ -12,7 +12,6 @@ namespace Core.Tests.Features.Interns
         private readonly Guid internId = Guid.NewGuid();
         private readonly Guid campaignId = Guid.NewGuid();
         private readonly Guid specialityId = Guid.NewGuid();
-        private readonly string justification = "Lorem ipsum.";
 
         [Fact]
         public void Validator_WhenInternIdIsEmpty_ShouldHaveError()

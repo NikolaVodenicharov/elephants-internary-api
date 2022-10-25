@@ -284,7 +284,7 @@ namespace Core.Tests.Features.Campaigns
 
             //Assert
             Assert.NotNull(campaignSummary);
-            Assert.Equal(id, campaignSummary.Id);
+            Assert.Equal(id, campaignSummary!.Id);
             Assert.Equal(campaignName, campaignSummary.Name);
             Assert.Equal(startDate, campaignSummary.StartDate);
             Assert.Equal(endDate, campaignSummary.EndDate);
@@ -335,7 +335,7 @@ namespace Core.Tests.Features.Campaigns
             var response = await campaignsServiceMock.GetAllAsync(filter);
 
             //Assert
-            Assert.Equal(campaignList.Count(), response.Content.Count());
+            Assert.Equal(campaignList.Count, response.Content.Count());
         }
 
         [Theory]

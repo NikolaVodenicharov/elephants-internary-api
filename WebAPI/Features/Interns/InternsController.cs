@@ -26,7 +26,6 @@ namespace WebAPI.Features.Interns
         private readonly ILogger<InternsController> internsControllerLogger;
         private readonly IValidator<PaginationRequest> paginationRequestValidator;
         private readonly IInternValidator internValidator;
-        private readonly IValidator<InviteInternRequest> inviteInternRequestValidator;
         private readonly InvitationUrlSettings invitationUrls;
 
         public InternsController(
@@ -35,7 +34,6 @@ namespace WebAPI.Features.Interns
             ILogger<InternsController> internsControllerLogger,
             IValidator<PaginationRequest> paginationRequestValidator,
             IInternValidator internValidator,
-            IValidator<InviteInternRequest> inviteInternRequestValidator,
             IOptions<InvitationUrlSettings> invitationUrlSettings)
         {
             this.internsService = internsService;
@@ -43,7 +41,6 @@ namespace WebAPI.Features.Interns
             this.internsControllerLogger = internsControllerLogger;
             this.paginationRequestValidator = paginationRequestValidator;
             this.internValidator = internValidator;
-            this.inviteInternRequestValidator = inviteInternRequestValidator;
             this.invitationUrls = invitationUrlSettings.Value;
         }
 
@@ -194,7 +191,7 @@ namespace WebAPI.Features.Interns
 
         private async Task InviteInternIfStatusIntern(Guid id, AddStateApiRequest addStateApiRequest)
         {
-            if (addStateApiRequest.StatusId != StatusEnum.Intern)
+            if (addStateApiRequest.StatusId != StatusId.Intern)
             {
                 return;
             }
@@ -204,7 +201,7 @@ namespace WebAPI.Features.Interns
                 addStateApiRequest.WorkEmail!,
                 invitationUrls.BackOfficeUrl);
 
-            inviteInternRequestValidator.ValidateAndThrow(inviteInternRequest);
+            await internValidator.ValidateAndThrowAsync(inviteInternRequest);
 
             await internsService.InviteAsync(inviteInternRequest);
         }

@@ -61,7 +61,8 @@ namespace WebAPI.Tests.Features.Interns
                 new UpdateInternRequestValidator(),
                 new AddInternCampaignRequestValidator(),
                 new UpdateInternCampaignRequestValidator(),
-                new AddStateRequestValidator());
+                new AddStateRequestValidator(),
+                new InviteInternRequestValidator());
 
 
             internsController = new(
@@ -70,7 +71,6 @@ namespace WebAPI.Tests.Features.Interns
                 internsControllerLoggerMock.Object,
                 new PaginationRequestValidator(),
                 internValidator,
-                new InviteInternRequestValidator(),
                 invitationUrlSettings);
 
             internSummaryResponseMock = new InternSummaryResponse(
@@ -88,7 +88,7 @@ namespace WebAPI.Tests.Features.Interns
                 new List<InternCampaignSummaryResponse>());
 
             stateResponseMock = new StateResponse(
-                StatusEnum.Rejected.ToString(),
+                StatusId.Rejected.ToString(),
                 justification,
                 DateTime.UtcNow);
         }
@@ -639,7 +639,7 @@ namespace WebAPI.Tests.Features.Interns
         {
             //Arrange
             var addStateApiRequest = new AddStateApiRequest(
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justification);
 
             //Act
@@ -654,7 +654,7 @@ namespace WebAPI.Tests.Features.Interns
         {
             //Arrange
             var addStateApiRequest = new AddStateApiRequest(
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justification);
 
             //Act
@@ -670,7 +670,7 @@ namespace WebAPI.Tests.Features.Interns
         {
             //Arrange
             var addStateApiRequest = new AddStateApiRequest(
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 invalidJustification);
 
             //Act
@@ -685,7 +685,7 @@ namespace WebAPI.Tests.Features.Interns
         {
             //Arrange
             var addStateApiRequest = new AddStateApiRequest(
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justification);
 
             var stateResponseMock2 = new StateResponse(
@@ -718,7 +718,7 @@ namespace WebAPI.Tests.Features.Interns
         {
             //Arrange
             var addStateApiRequest = new AddStateApiRequest(
-                StatusEnum.Intern,
+                StatusId.Intern,
                 justification);
 
             //Act
@@ -733,7 +733,7 @@ namespace WebAPI.Tests.Features.Interns
         {
             //Arrange
             var addStateApiRequest = new AddStateApiRequest(
-                StatusEnum.Intern,
+                StatusId.Intern,
                 justification,
                 workEmail);
 
@@ -761,8 +761,8 @@ namespace WebAPI.Tests.Features.Interns
         public async Task GetAllStatusAsync_ShouldReturnCorrectNumberOfElements()
         {
             //Arrange
-            var statusResponse1 = new StatusResponse((int)StatusEnum.Candidate, StatusEnum.Candidate.ToString());
-            var statusResponse2 = new StatusResponse((int)StatusEnum.RejectedToStart, StatusEnum.RejectedToStart.ToString());
+            var statusResponse1 = new StatusResponse((int)StatusId.Candidate, StatusId.Candidate.ToString());
+            var statusResponse2 = new StatusResponse((int)StatusId.RejectedToStart, StatusId.RejectedToStart.ToString());
 
             var statusResponseCollectionMock = new List<StatusResponse>() { statusResponse1, statusResponse2 };
 

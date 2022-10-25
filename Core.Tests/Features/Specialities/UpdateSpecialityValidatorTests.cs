@@ -26,10 +26,10 @@ namespace Core.Tests.Features.Specialities
         }
 
         [Fact]
-        public void Validator_WhenNameIsNull_ShouldHaveError()
+        public void Validator_WhenNameIsEmpty_ShouldHaveError()
         {
             //Arrange
-            var updateSpeciality = new UpdateSpecialityRequest(id, null);
+            var updateSpeciality = new UpdateSpecialityRequest(id, string.Empty);
 
             //Act-Assert
             updateSpecialityValidator

@@ -34,15 +34,15 @@ namespace Core.Features.LearningTopics
             this.paginationRequestValidator = paginationRequestValidator;
         }
 
-        public async Task<LearningTopicSummaryResponse> CreateAsync(CreateLearningTopicRequest request)
+        public async Task<LearningTopicSummaryResponse> CreateAsync(CreateLearningTopicRequest createLearningTopic)
         {
-            await learningTopicValidator.ValidateAndThrowAsync(request);
+            await learningTopicValidator.ValidateAndThrowAsync(createLearningTopic);
 
-            await ValidateDuplicateNameAsync(request.Name);
+            await ValidateDuplicateNameAsync(createLearningTopic.Name);
 
-            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds.Distinct());
+            var specialities = await ValidateAndGetSpecialitiesById(createLearningTopic.SpecialityIds.Distinct());
             
-            var learningTopic = request.ToLearningTopic();
+            var learningTopic = createLearningTopic.ToLearningTopic();
             learningTopic.Specialities = specialities;
 
             var learningTopicResponse = await learningTopicsRepository.AddAsync(learningTopic);
@@ -52,25 +52,25 @@ namespace Core.Features.LearningTopics
             return learningTopicResponse.ToLearningTopicSummary();
         }
 
-        public async Task<LearningTopicSummaryResponse> UpdateAsync(UpdateLearningTopicRequest request)
+        public async Task<LearningTopicSummaryResponse> UpdateAsync(UpdateLearningTopicRequest updateLearningTopic)
         {
-            await learningTopicValidator.ValidateAndThrowAsync(request);
+            await learningTopicValidator.ValidateAndThrowAsync(updateLearningTopic);
 
-            var existingLearningTopic = await learningTopicsRepository.GetByIdAsync(request.Id);
+            var existingLearningTopic = await learningTopicsRepository.GetByIdAsync(updateLearningTopic.Id);
 
             Guard.EnsureNotNull(existingLearningTopic, learningTopicsServiceLogger, nameof(LearningTopicsService),
-                nameof(LearningTopic), request.Id);
+                nameof(LearningTopic), updateLearningTopic.Id);
 
-            var hasNameChanged = !existingLearningTopic.Name.Equals(request.Name);
+            var hasNameChanged = !existingLearningTopic.Name.Equals(updateLearningTopic.Name);
 
             if(hasNameChanged)
             {
-                await ValidateDuplicateNameAsync(request.Name);
+                await ValidateDuplicateNameAsync(updateLearningTopic.Name);
             }
 
-            var specialities = await ValidateAndGetSpecialitiesById(request.SpecialityIds.Distinct());
+            var specialities = await ValidateAndGetSpecialitiesById(updateLearningTopic.SpecialityIds.Distinct());
 
-            existingLearningTopic.Name = request.Name;
+            existingLearningTopic.Name = updateLearningTopic.Name;
             existingLearningTopic.Specialities = specialities;
 
             await learningTopicsRepository.SaveTrackingChangesAsync();

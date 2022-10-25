@@ -8,6 +8,6 @@ namespace Core.Features.LearningTopics.Entities
         
         public string Name { get; set; } = string.Empty;
 
-        public ICollection<Speciality> Specialities { get; set; }
+        public ICollection<Speciality> Specialities { get; set; } = null!;
     }
 }

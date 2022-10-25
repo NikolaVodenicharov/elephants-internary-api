@@ -15,7 +15,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebAPI.Common;
 using WebAPI.Features.LearningTopics;
-using WebAPI.Tests.Common;
 using Xunit;
 using Core.Common.Pagination;
 
@@ -32,14 +31,14 @@ namespace WebAPI.Tests.Features.LearningTopics
         private readonly List<SpecialitySummaryResponse> specialitySummaries;
         private readonly List<Guid> specialityIds;
                  
-        public static IEnumerable<object[]> validNames = new List<object[]>
+        public static readonly IEnumerable<object[]> validNames = new List<object[]>
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
             new object[] { NameEdgeCaseTestHelper.NameWithWhiteSpace }
         };
 
-        public static IEnumerable<object[]> invalidNames = new List<object[]>
+        public static readonly IEnumerable<object[]> invalidNames = new List<object[]>
         {
             new object[] { string.Empty },
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength - 1) },
@@ -322,7 +321,7 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicsResponse = jsonResult!.Value as CoreResponse<IEnumerable<LearningTopicSummaryResponse>>;
 
-            Assert.Equal(learningTopicSummaries.Count, learningTopicsResponse!.Data.Count());
+            Assert.Equal(learningTopicSummaries.Count, learningTopicsResponse!.Data!.Count());
         }
 
         [Fact]

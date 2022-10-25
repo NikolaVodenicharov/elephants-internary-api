@@ -33,18 +33,6 @@ namespace Core.Tests.Features.LearningTopics
         private readonly Mock<ISpecialitiesRepository> specialitiesRepositoryMock;
         private readonly LearningTopicsService learningTopicsService;
 
-        public static IEnumerable<object[]> invalidNames = new List<object[]>
-        {
-            new object[] { string.Empty },
-            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength - 1) },
-            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength + 1) },
-            new object[] { NameEdgeCaseTestHelper.NameWithAmpersand },
-            new object[] { NameEdgeCaseTestHelper.NameWithDash },
-            new object[] { NameEdgeCaseTestHelper.NameWithDot },
-            new object[] { NameEdgeCaseTestHelper.NameWithExclamationMark },
-            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign }
-        };
-
         public LearningTopicsServiceTests()
         {
             var createLearningTopicValidator = new CreateLearningTopicRequestValidator();
@@ -115,7 +103,7 @@ namespace Core.Tests.Features.LearningTopics
         }
 
         [Theory]
-        [MemberData(nameof(invalidNames))]
+        [MemberData(nameof(MockDataTestHelper.LearningTopicInvalidNames), MemberType = typeof(MockDataTestHelper))]
         public async void CreateAsync_WhenNameIsInvalid_ShouldThrowException(string invalidName)
         {
             // Arrange
@@ -202,7 +190,7 @@ namespace Core.Tests.Features.LearningTopics
         }
 
         [Theory]
-        [MemberData(nameof(invalidNames))]
+        [MemberData(nameof(MockDataTestHelper.LearningTopicInvalidNames), MemberType = typeof(MockDataTestHelper))]
         public async void UpdateAsync_WhenNameIsInvalid_ShouldThrowException(string invalidName)
         {
             // Arrange

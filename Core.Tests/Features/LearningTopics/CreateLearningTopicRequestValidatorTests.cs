@@ -13,27 +13,8 @@ namespace Core.Tests.Features.LearningTopics
         private readonly string learningTopicName = "Test Learning Topic";
         private readonly List<Guid> specialityIds = new List<Guid>() { Guid.NewGuid() };
 
-        public static IEnumerable<object[]> validNames = new List<object[]>
-        {
-            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
-            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength) },
-        };
-
-        public static IEnumerable<object[]> invalidNames = new List<object[]>
-        {
-            new object[] { string.Empty },
-            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength - 1) },
-            new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMaxLength + 1) },
-            new object[] { NameEdgeCaseTestHelper.NameWithAmpersand },
-            new object[] { NameEdgeCaseTestHelper.NameWithDash },
-            new object[] { NameEdgeCaseTestHelper.NameWithDot },
-            new object[] { NameEdgeCaseTestHelper.NameWithExclamationMark },
-            new object[] { NameEdgeCaseTestHelper.NameWithNumberSign },
-            new object[] { NameEdgeCaseTestHelper.NameWithDigit }
-        };
-
         [Theory]
-        [MemberData(nameof(validNames))]
+        [MemberData(nameof(MockDataTestHelper.LearningTopicValidNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenNameIsValid_ShouldNotHaveError(string name)
         {
             var createLearningTopicRequest = new CreateLearningTopicRequest(name, specialityIds);
@@ -44,7 +25,7 @@ namespace Core.Tests.Features.LearningTopics
         }
 
         [Theory]
-        [MemberData(nameof(invalidNames))]
+        [MemberData(nameof(MockDataTestHelper.LearningTopicInvalidNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenNameIsInvalid_ShouldHaveError(string name)
         {
             var createLearningTopicRequest = new CreateLearningTopicRequest(name, specialityIds);

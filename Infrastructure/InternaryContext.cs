@@ -11,15 +11,15 @@ namespace Infrastructure
 {
     public class InternaryContext : DbContext
     {
-        public DbSet<Campaign> Campaigns { get; set; }
-        public DbSet<Speciality> Specialties { get; set; }
-        public DbSet<InternCampaign> InternCampaigns { get; set; }
-        public DbSet<State> States { get; set; }
-        public DbSet<Status> Status { get; set; }
-        public DbSet<LearningTopic> LearningTopics { get; set; }       
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<Person> Persons { get; set; }
-        public DbSet<PersonRole> PersonRoles { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; } = null!;
+        public DbSet<Speciality> Specialties { get; set; } = null!;
+        public DbSet<InternCampaign> InternCampaigns { get; set; } = null!;
+        public DbSet<State> States { get; set; } = null!;
+        public DbSet<Status> Status { get; set; } = null!;
+        public DbSet<LearningTopic> LearningTopics { get; set; } = null!;
+        public DbSet<Role> Roles { get; set; } = null!;
+        public DbSet<Person> Persons { get; set; } = null!;
+        public DbSet<PersonRole> PersonRoles { get; set; } = null!;
 
         public InternaryContext(DbContextOptions<InternaryContext> options)
             : base(options)

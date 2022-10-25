@@ -78,7 +78,7 @@ namespace Infrastructure.Tests.Features.Specialities
 
             //Assert
             Assert.NotNull(updatedSpecialty);
-            Assert.Equal(specialtyMock.Id, updatedSpecialty.Id);
+            Assert.Equal(specialtyMock.Id, updatedSpecialty!.Id);
             Assert.Equal(specialtyMock.Name, updatedSpecialty.Name);
         }
 
@@ -193,7 +193,7 @@ namespace Infrastructure.Tests.Features.Specialities
             var specialties = await specialtiesRepository.GetAllAsync(filter);
 
             //Assert
-            Assert.Equal(1, specialties.Count());
+            Assert.Single(specialties);
         }
 
         [Fact]
@@ -220,7 +220,7 @@ namespace Infrastructure.Tests.Features.Specialities
             var specialtySummary = await specialtiesRepository.GetByIdAsync(specialtyMock1.Id);
 
             //Assert
-            Assert.Equal(specialtyMock1.Id, specialtySummary.Id);
+            Assert.Equal(specialtyMock1.Id, specialtySummary!.Id);
             Assert.Equal(specialtyMock1.Name, specialtySummary.Name);
         }
 

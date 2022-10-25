@@ -34,8 +34,8 @@ namespace Infrastructure.Features.LearningTopics
 
         public async Task<IEnumerable<LearningTopic>> GetAllAsync(PaginationRequest? filter = null)
         {
-            var skip = filter != null ? (filter.PageNum.Value - 1) * filter.PageSize.Value : 0;
-            var take = filter != null ? filter.PageSize.Value : await GetCountAsync();
+            var skip = filter != null ? (filter.PageNum!.Value - 1) * filter.PageSize!.Value : 0;
+            var take = filter != null ? filter.PageSize!.Value : await GetCountAsync();
 
             var learningTopics = await context
                 .LearningTopics

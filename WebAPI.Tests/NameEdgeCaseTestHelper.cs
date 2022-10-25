@@ -1,4 +1,4 @@
-namespace WebAPI.Tests.Common
+namespace WebAPI.Tests
 {
     public sealed class NameEdgeCaseTestHelper
     {

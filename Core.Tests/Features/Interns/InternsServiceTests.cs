@@ -28,7 +28,6 @@ namespace Core.Tests.Features.Interns
         private readonly Guid campaignId = Guid.NewGuid();
         private readonly string justification = "Lorem ipsum.";
         private readonly int pageNum = 1;
-        private readonly string applicationUrl = "https://test.com";
         private readonly string workEmail = "JohnDoe@endava.com"; 
         private readonly string workEmail2 = "WorkEmailTwo@gmail.com";
         private readonly string displayName1 = "DisplayNameOne";
@@ -59,11 +58,13 @@ namespace Core.Tests.Features.Interns
             var addInternCampaignequestValidator = new AddInternCampaignRequestValidator();
             var updateInternCampaignRequestValidator = new UpdateInternCampaignRequestValidator();
             var addStateRequestValidator = new AddStateRequestValidator();
+            var inviteInternRequestValidator = new InviteInternRequestValidator();
 
             var internValidator = new InternValidator(
                 createInternRequestValidator, updateInternRequestValidator,
                 addInternCampaignequestValidator,
-                updateInternCampaignRequestValidator, addStateRequestValidator);
+                updateInternCampaignRequestValidator, addStateRequestValidator,
+                inviteInternRequestValidator);
 
             internsService = new InternsService(
                 internsRepositoryMock.Object,
@@ -72,8 +73,7 @@ namespace Core.Tests.Features.Interns
                 campaignServiceMock.Object,
                 internsServiceLogger.Object,
                 internValidator,
-                new PaginationRequestValidator(),
-                new InviteInternRequestValidator());
+                new PaginationRequestValidator());
 
             internMock = new Person()
             {
@@ -103,10 +103,10 @@ namespace Core.Tests.Features.Interns
             internDetailsResponseMock = new InternDetailsResponse(
                 internId,
                 displayName1,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
-                workEmail,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
+                MockDataTestHelper.WorkEmailMock,
                 new List<InternCampaignSummaryResponse>());
 
             identitySummaryResponseMock = new IdentitySummaryResponse(workEmail2, displayName2);
@@ -123,9 +123,9 @@ namespace Core.Tests.Features.Interns
                 .ReturnsAsync(true);
 
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 specialityId,
                 justification);
@@ -138,14 +138,14 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public async Task CreateAsync_WhenFirstNameIsInvalid_ShouldThrowException(string invalidFirstName)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
                 invalidFirstName,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 specialityId,
                 justification);
@@ -158,14 +158,14 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public async Task CreateAsync_WhenLastNameIsInvalid_ShouldThrowException(string invalidLastName)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
+                MockDataTestHelper.FirstNameMock,
                 invalidLastName,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 specialityId,
                 justification);
@@ -178,13 +178,13 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public async Task CreateAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
                 invalidEmail,
                 campaignId,
                 specialityId,
@@ -202,9 +202,9 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 Guid.Empty,
                 specialityId,
                 justification);
@@ -221,9 +221,9 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 Guid.Empty,
                 justification);
@@ -242,9 +242,9 @@ namespace Core.Tests.Features.Interns
             var justificationOutOfRange = TestHelper.GenerateString(InternValidationConstants.JustificationMaxLength + 1);
 
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 specialityId,
                 justificationOutOfRange);
@@ -261,9 +261,9 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 specialityId,
                 justification);
@@ -280,9 +280,9 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             var createInternRequest = new CreateInternRequest(
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock,
                 campaignId,
                 specialityId,
                 justification);
@@ -312,9 +312,9 @@ namespace Core.Tests.Features.Interns
             //Arrange
             var updateInternRequest = new UpdateInternRequest(
                 Guid.Empty,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             //Act
             var action = async () => await internsService.UpdateAsync(updateInternRequest);
@@ -329,9 +329,9 @@ namespace Core.Tests.Features.Interns
             //Arrange
             var updateInternRequest = new UpdateInternRequest(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             //Act
             var action = async () => await internsService.UpdateAsync(updateInternRequest);
@@ -350,9 +350,9 @@ namespace Core.Tests.Features.Interns
 
             var updateInternRequest = new UpdateInternRequest(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             //Act
             var action = async () => await internsService.UpdateAsync(updateInternRequest);
@@ -362,15 +362,15 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public async Task UpdateAsync_WhenFirstNameIsInvalid_ShouldThrowException(string invalidFirstName)
         {
             //Arrange
             var updateInternRequest = new UpdateInternRequest(
                 internId,
                 invalidFirstName,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             //Act
             var action = async () => await internsService.UpdateAsync(updateInternRequest);
@@ -380,15 +380,15 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public async Task UpdateAsync_WhenLastNameIsInvalid_ShouldThrowException(string invalidLastName)
         {
             //Arrange
             var updateInternRequest = new UpdateInternRequest(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
+                MockDataTestHelper.FirstNameMock,
                 invalidLastName,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.PersonalEmailMock);
 
             //Act
             var action = async () => await internsService.UpdateAsync(updateInternRequest);
@@ -398,14 +398,14 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public async Task UpdateAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
         {
             //Arrange
             var updateInternRequest = new UpdateInternRequest(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
                 invalidEmail);
 
             //Act
@@ -425,9 +425,9 @@ namespace Core.Tests.Features.Interns
 
             var updateInternRequest = new UpdateInternRequest(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             UpdateInternRequest passedRequest = null!;
 
@@ -456,9 +456,9 @@ namespace Core.Tests.Features.Interns
 
             var updateInternRequest = new UpdateInternRequest(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock,
-                NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.FirstNameMock,
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             internsRepositoryMock
                 .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
@@ -466,8 +466,8 @@ namespace Core.Tests.Features.Interns
 
             var updatedInternSummaryResponseMock = new InternSummaryResponse(
                 internId,
-                NameEdgeCaseTestHelper.FirstNameMock + " " + NameEdgeCaseTestHelper.LastNameMock,
-                NameEdgeCaseTestHelper.EmailMock);
+                MockDataTestHelper.FirstNameMock + " " + MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
 
             internsRepositoryMock
                 .Setup(r => r.UpdateAsync(It.IsAny<UpdateInternRequest>()))
@@ -683,14 +683,14 @@ namespace Core.Tests.Features.Interns
         #region InviteAsync
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public async Task InviteAsync_WhenEmailIsInvalid_ShouldThrowException(string invalidEmail)
         {
             //Arrange
             var inviteInternRequest = new InviteInternRequest(
                 internId,
                 invalidEmail,
-                applicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             //Act
             var action = async () => await internsService.InviteAsync(inviteInternRequest);
@@ -706,7 +706,7 @@ namespace Core.Tests.Features.Interns
             var inviteInternRequest = new InviteInternRequest(
                 Guid.NewGuid(),
                 workEmail,
-                applicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             //Act
             var action = async () => await internsService.InviteAsync(inviteInternRequest);
@@ -722,7 +722,7 @@ namespace Core.Tests.Features.Interns
             var inviteInternRequest = new InviteInternRequest(
                 internDetailsResponseMock.Id,
                 internDetailsResponseMock.WorkEmail,
-                applicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             internsRepositoryMock
                 .Setup(i => i.GetDetailsByIdAsync(It.IsAny<Guid>()))
@@ -747,7 +747,7 @@ namespace Core.Tests.Features.Interns
             var inviteInternRequest = new InviteInternRequest(
                 internDetailsResponseMock.Id,
                 "AlreadyUsed@gmail.com",
-                applicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             internsRepositoryMock
                 .Setup(i => i.GetDetailsByIdAsync(It.IsAny<Guid>()))
@@ -771,7 +771,7 @@ namespace Core.Tests.Features.Interns
             var inviteInternRequest = new InviteInternRequest(
                 internDetailsResponseMock.Id,
                 workEmail2,
-                applicationUrl);
+                MockDataTestHelper.ApplicationUrlMock);
 
             internsRepositoryMock
                 .Setup(i => i.GetDetailsByIdAsync(It.IsAny<Guid>()))

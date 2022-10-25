@@ -15,7 +15,7 @@ namespace Core.Tests.Features.Interns
         public void Validator_WhenIdIsEmpty_ShouldHaveError()
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Guid.Empty, NameEdgeCaseTestHelper.FirstNameMock, NameEdgeCaseTestHelper.LastNameMock, NameEdgeCaseTestHelper.EmailMock);
+            var updateInternRequest = new UpdateInternRequest(Guid.Empty, MockDataTestHelper.FirstNameMock, MockDataTestHelper.LastNameMock, MockDataTestHelper.PersonalEmailMock);
 
             //Act-Assert
             updateInternRequestValidator
@@ -24,11 +24,11 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenFirstNameIsInvalid_ShouldHaveError(string invalidFirstName)
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Id, invalidFirstName, NameEdgeCaseTestHelper.LastNameMock, NameEdgeCaseTestHelper.EmailMock);
+            var updateInternRequest = new UpdateInternRequest(Id, invalidFirstName, MockDataTestHelper.LastNameMock, MockDataTestHelper.PersonalEmailMock);
 
             //Act-Assert
             updateInternRequestValidator
@@ -37,11 +37,11 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.ValidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenFirstNameIsValid_ShouldNotHaveError(string validFirstName)
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Id, validFirstName, NameEdgeCaseTestHelper.LastNameMock, NameEdgeCaseTestHelper.EmailMock);
+            var updateInternRequest = new UpdateInternRequest(Id, validFirstName, MockDataTestHelper.LastNameMock, MockDataTestHelper.PersonalEmailMock);
 
             //Act-Assert
             updateInternRequestValidator
@@ -50,11 +50,11 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenLastNameIsInvalid_ShouldHaveError(string invalidLastName)
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Id, NameEdgeCaseTestHelper.FirstNameMock, invalidLastName, NameEdgeCaseTestHelper.EmailMock);
+            var updateInternRequest = new UpdateInternRequest(Id, MockDataTestHelper.FirstNameMock, invalidLastName, MockDataTestHelper.PersonalEmailMock);
 
             //Act-Assert
             updateInternRequestValidator
@@ -63,11 +63,11 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.ValidPersonNames), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidPersonNames), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenLastNameIsValid_ShouldNotHaveError(string validLastName)
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Id, NameEdgeCaseTestHelper.FirstNameMock, validLastName, NameEdgeCaseTestHelper.EmailMock);
+            var updateInternRequest = new UpdateInternRequest(Id, MockDataTestHelper.FirstNameMock, validLastName, MockDataTestHelper.PersonalEmailMock);
 
             //Act-Assert
             updateInternRequestValidator
@@ -76,11 +76,11 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.InvalidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsInvalid_ShouldHaveError(string invalidEmail)
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Id, NameEdgeCaseTestHelper.FirstNameMock, NameEdgeCaseTestHelper.LastNameMock, invalidEmail);
+            var updateInternRequest = new UpdateInternRequest(Id, MockDataTestHelper.FirstNameMock, MockDataTestHelper.LastNameMock, invalidEmail);
 
             //Act-Assert
             updateInternRequestValidator
@@ -89,11 +89,11 @@ namespace Core.Tests.Features.Interns
         }
 
         [Theory]
-        [MemberData(nameof(NameEdgeCaseTestHelper.ValidEmails), MemberType = typeof(NameEdgeCaseTestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsValid_ShouldNotHaveError(string validEmail)
         {
             //Arrange
-            var updateInternRequest = new UpdateInternRequest(Id, NameEdgeCaseTestHelper.FirstNameMock, NameEdgeCaseTestHelper.LastNameMock, validEmail);
+            var updateInternRequest = new UpdateInternRequest(Id, MockDataTestHelper.FirstNameMock, MockDataTestHelper.LastNameMock, validEmail);
 
             //Act-Assert
             updateInternRequestValidator

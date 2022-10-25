@@ -525,14 +525,14 @@ namespace Infrastructure.Tests.Features.Interns
 
             statusMock1 = new Status()
             {
-                StatusId = StatusEnum.Candidate,
-                Name = StatusEnum.Candidate.ToString()
+                StatusId = StatusId.Candidate,
+                Name = StatusId.Candidate.ToString()
             };
 
             statusMock2 = new Status()
             {
-                StatusId = StatusEnum.Rejected,
-                Name = StatusEnum.Rejected.ToString()
+                StatusId = StatusId.Rejected,
+                Name = StatusId.Rejected.ToString()
             };
 
             stateMock1 = new State()

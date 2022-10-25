@@ -16,28 +16,8 @@ namespace Core.Tests.Features.Mentors
             Guid.NewGuid()
         };
 
-        public static IEnumerable<object[]> invalidEmails = new List<object[]>
-        {
-            new object[] { "k.c.a" },
-            new object[] { ".invalid@example.c" },
-            new object[] { "invalid@example..com" },
-            new object[] { "invalid@example.com." },
-            new object[] { "invalidexample" },
-            new object[] { "invalidexample.com" },
-            new object[] { "invalidexample.co.uk." },
-            new object[] { "invalidexample.co_uk" },
-            new object[] { "invalidexample.co_ukkkk" },
-        };
-
-        public static IEnumerable<object[]> validEmails = new List<object[]>
-        {
-            new object[] { "user.example@test.com" },
-            new object[] { "first-last@example.co.uk" },
-            new object[] { "random123@example.gov.in" },
-        };
-
         [Theory]
-        [MemberData(nameof(invalidEmails))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsInvalid_ShouldHaveError(string invalidEmail)
         {
             var request = new CreateMentorRequest(invalidEmail, specialityIds, applicationUrl);
@@ -48,7 +28,7 @@ namespace Core.Tests.Features.Mentors
         }
 
         [Theory]
-        [MemberData(nameof(validEmails))]
+        [MemberData(nameof(MockDataTestHelper.ValidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsValid_ShouldNotHaveError(string validEmail)
         {
             var request = new CreateMentorRequest(validEmail, specialityIds, applicationUrl);

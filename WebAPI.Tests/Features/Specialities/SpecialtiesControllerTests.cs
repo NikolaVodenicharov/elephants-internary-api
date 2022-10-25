@@ -72,7 +72,7 @@ namespace WebAPI.Tests.Features.Specialities
 
             var specialitySummaryResult = jsonResult!.Value as CoreResponse<SpecialitySummaryResponse>;
 
-            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data.Id);
+            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data!.Id);
             Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Data.Name);
         }
 
@@ -122,7 +122,7 @@ namespace WebAPI.Tests.Features.Specialities
 
             var specialitySummaryResult = jsonResult!.Value as CoreResponse<SpecialitySummaryResponse>;
 
-            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data.Id);
+            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data!.Id);
             Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Data.Name);
         }
 
@@ -183,7 +183,7 @@ namespace WebAPI.Tests.Features.Specialities
 
             var specialitySummaryResult = jsonResult!.Value as CoreResponse<SpecialitySummaryResponse>;
 
-            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data.Id);
+            Assert.Equal(specialitySummaryMock.Id, specialitySummaryResult!.Data!.Id);
             Assert.Equal(specialitySummaryMock.Name, specialitySummaryResult.Data.Name);
         }
 
@@ -214,7 +214,7 @@ namespace WebAPI.Tests.Features.Specialities
 
             var specialitySummaryList = jsonResult!.Value as CoreResponse<IEnumerable<SpecialitySummaryResponse>>;
 
-            Assert.Equal(2, specialitySummaryList!.Data.Count());
+            Assert.Equal(2, specialitySummaryList!.Data!.Count());
         }
 
         [Fact]
@@ -237,7 +237,7 @@ namespace WebAPI.Tests.Features.Specialities
 
             var specialitySummaryList = jsonResult!.Value as CoreResponse<IEnumerable<SpecialitySummaryResponse>>;
 
-            Assert.Empty(specialitySummaryList.Data);
+            Assert.Empty(specialitySummaryList!.Data);
         }
 
         [Fact]
@@ -314,7 +314,7 @@ namespace WebAPI.Tests.Features.Specialities
 
             var actualResponse = jsonResult!.Value as CoreResponse<PaginationResponse<SpecialitySummaryResponse>>;
 
-            Assert.Equal(expectedResponse.Content.Count(), actualResponse.Data.Content.Count());
+            Assert.Equal(expectedResponse.Content.Count(), actualResponse!.Data!.Content.Count());
         }
     }
 }

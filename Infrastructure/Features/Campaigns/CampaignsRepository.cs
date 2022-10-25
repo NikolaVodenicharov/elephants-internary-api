@@ -30,7 +30,7 @@ namespace Infrastructure.Features.Campaigns
 
         public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest filter)
         {
-            var skip = (filter.PageNum.Value - 1) * filter.PageSize.Value;
+            var skip = (filter.PageNum!.Value - 1) * filter.PageSize!.Value;
 
             var campaigns = await context.Campaigns
                 .AsNoTracking()

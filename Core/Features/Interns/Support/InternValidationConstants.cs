@@ -1,6 +1,6 @@
 ﻿namespace Core.Features.Interns.Support
 {
-    public sealed class InternValidationConstants
+    public static class InternValidationConstants
     {
         public const int InternNameMinLength = 3;
         public const int InternNameMaxLength = 125;

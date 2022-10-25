@@ -1,6 +1,6 @@
 ﻿namespace Core.Features.Interns.Entities
 {
-    public enum StatusEnum
+    public enum StatusId
     {
         Candidate,
         Intern,

@@ -13,5 +13,7 @@ namespace Core.Features.Interns.Interfaces
         Task ValidateAndThrowAsync(UpdateInternCampaignRequest request);
 
         Task ValidateAndThrowAsync(AddStateRequest request);
+
+        Task ValidateAndThrowAsync(InviteInternRequest request);
     }
 }

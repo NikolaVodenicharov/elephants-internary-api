@@ -20,8 +20,6 @@ namespace Core.Tests.Features.Persons
         private readonly Mock<IAdminsRepository> adminRepositoryMock;
         private readonly PersonsService personsService;
         private readonly Guid personId = Guid.NewGuid();
-        private readonly string personEmail = "john.doe@test.com";
-        private readonly string personDisplayName = "John Doe";
 
         public PersonsServiceTests()
         {
@@ -51,7 +49,7 @@ namespace Core.Tests.Features.Persons
                 .ReturnsAsync(personWithMultipleRoles);
 
             // Act
-            var personRolesSummary = await personsService.GetUserRolesByEmailAsync(personEmail);
+            var personRolesSummary = await personsService.GetUserRolesByEmailAsync(MockDataTestHelper.WorkEmailMock);
 
             // Assert
             Assert.NotNull(personRolesSummary);
@@ -63,7 +61,7 @@ namespace Core.Tests.Features.Persons
         public async Task GetUserRolesByEmailAsync_WhenUserNotFound_ShouldReturnEmptyObject()
         {
             // Act
-            var personRolesSummary = await personsService.GetUserRolesByEmailAsync(personEmail);
+            var personRolesSummary = await personsService.GetUserRolesByEmailAsync(MockDataTestHelper.WorkEmailMock);
 
             // Assert
             Assert.Null(personRolesSummary);
@@ -83,7 +81,7 @@ namespace Core.Tests.Features.Persons
                 .ReturnsAsync(personWithNoRoles);
 
             // Act
-            var personRolesSummary = await personsService.GetUserRolesByEmailAsync(personEmail);
+            var personRolesSummary = await personsService.GetUserRolesByEmailAsync(MockDataTestHelper.WorkEmailMock);
 
             // Assert
             Assert.NotNull(personRolesSummary);
@@ -95,7 +93,9 @@ namespace Core.Tests.Features.Persons
         public async Task CreatePersonAsAdminAsync_WhenDataIsValid_ShouldReturnCorrectObject()
         {
             // Arrange
-            var createdAdmin = new AdminSummaryResponse(personId, personDisplayName, personEmail);
+            var createdAdmin = new AdminSummaryResponse(personId, 
+                MockDataTestHelper.DisplayNameMock, 
+                MockDataTestHelper.WorkEmailMock);
 
             var personWithRoles = new PersonRolesSummaryResponse(
                 personId, 
@@ -110,7 +110,9 @@ namespace Core.Tests.Features.Persons
                 .ReturnsAsync(personWithRoles);
 
             // Act
-            var personRolesSummary = await personsService.CreatePersonAsAdminAsync(personEmail, personDisplayName);
+            var personRolesSummary = await personsService.CreatePersonAsAdminAsync(
+                MockDataTestHelper.WorkEmailMock, 
+                MockDataTestHelper.DisplayNameMock);
 
             // Assert
             Assert.NotNull(personRolesSummary);
@@ -122,7 +124,9 @@ namespace Core.Tests.Features.Persons
         public async Task CreatePersonAsAdminAsync_WhenPersonNotCreated_ShouldReturnNull()
         {
             // Act
-            var personRolesSummary = await personsService.CreatePersonAsAdminAsync(personEmail, personDisplayName);
+            var personRolesSummary = await personsService.CreatePersonAsAdminAsync(
+                MockDataTestHelper.WorkEmailMock, 
+                MockDataTestHelper.DisplayNameMock);
 
             // Assert
             Assert.Null(personRolesSummary);

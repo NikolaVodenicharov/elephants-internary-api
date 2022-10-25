@@ -7,7 +7,7 @@ namespace Core.Features.Specialities.Interfaces
 {
     public interface ISpecialitiesRepository : IRepositoryBase
     {
-        Task<SpecialitySummaryResponse> AddAsync(Speciality specialty);
+        Task<SpecialitySummaryResponse> AddAsync(Speciality speciality);
 
         Task<IEnumerable<SpecialitySummaryResponse>> GetAllAsync(PaginationRequest? filter = null);
 

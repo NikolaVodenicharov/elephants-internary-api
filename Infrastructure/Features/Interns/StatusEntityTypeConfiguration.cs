@@ -14,8 +14,8 @@ namespace Infrastructure.Features.Interns
 
             builder
                 .HasData(
-                    Enum.GetValues(typeof(StatusEnum))
-                    .Cast<StatusEnum>()
+                    Enum.GetValues(typeof(StatusId))
+                    .Cast<StatusId>()
                     .Select(statusId => new Status()
                     {
                         StatusId = statusId,

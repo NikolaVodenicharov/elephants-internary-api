@@ -17,7 +17,7 @@ namespace Core.Tests.Features.Interns
             //Arrange
             var state = new State()
             {
-                StatusId = StatusEnum.Candidate,
+                StatusId = StatusId.Candidate,
                 Created = DateTime.UtcNow,
                 Justification = "Lorem ipsum."
             };
@@ -37,14 +37,14 @@ namespace Core.Tests.Features.Interns
             //Arrange
             var state1 = new State()
             {
-                StatusId = StatusEnum.Candidate,
+                StatusId = StatusId.Candidate,
                 Created = DateTime.UtcNow,
                 Justification = "Lorem ipsum."
             };
 
             var state2 = new State()
             {
-                StatusId = StatusEnum.Rejected,
+                StatusId = StatusId.Rejected,
                 Created = DateTime.UtcNow.AddDays(1),
                 Justification = "Dolor sit amet."
             };
@@ -79,7 +79,7 @@ namespace Core.Tests.Features.Interns
 
             var state = new State()
             {
-                StatusId = StatusEnum.Candidate,
+                StatusId = StatusId.Candidate,
                 Created = DateTime.UtcNow,
                 Justification = "Lorem ipsum."
             };
@@ -106,8 +106,8 @@ namespace Core.Tests.Features.Interns
             //Arrange
             var status = new Status()
             {
-                StatusId = StatusEnum.Candidate,
-                Name = StatusEnum.Candidate.ToString()
+                StatusId = StatusId.Candidate,
+                Name = StatusId.Candidate.ToString()
             };
 
             //Act

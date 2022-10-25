@@ -3,7 +3,7 @@
 namespace WebAPI.Features.Interns.ApiRequestModels
 {
     public record AddStateApiRequest(
-        StatusEnum StatusId,
+        StatusId StatusId,
         string Justification,
         string? WorkEmail = null);
 }

@@ -10,10 +10,10 @@ namespace Core.Tests.Features.Specialities
         private readonly CreateSpecialityValidator createSpecialityValidator = new();
 
         [Fact]
-        public void Validator_WhenNameIsNull_ShouldHaveError()
+        public void Validator_WhenNameIsEmpty_ShouldHaveError()
         {
             //Arrange
-            var createSpeciality = new CreateSpecialityRequest(null);
+            var createSpeciality = new CreateSpecialityRequest(string.Empty);
 
             //Act-Assert
             createSpecialityValidator

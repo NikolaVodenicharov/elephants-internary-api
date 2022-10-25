@@ -57,11 +57,13 @@ namespace Core.Tests.Features.Interns
             var addInternCampaignequestValidator = new AddInternCampaignRequestValidator();
             var updateInternCampaignRequestValidator = new UpdateInternCampaignRequestValidator();
             var addStateRequestValidator = new AddStateRequestValidator();
+            var inviteInternRequestValidator = new InviteInternRequestValidator();
 
             var internValidator = new InternValidator(
                 createInternRequestValidator, updateInternRequestValidator,
                 addInternCampaignequestValidator,
-                updateInternCampaignRequestValidator, addStateRequestValidator);
+                updateInternCampaignRequestValidator, addStateRequestValidator,
+                inviteInternRequestValidator);
 
             internCampaignsService = new InternCampaignsService(
                 internsRepositoryMock.Object,
@@ -381,7 +383,7 @@ namespace Core.Tests.Features.Interns
             //Assert
             Assert.Equal(campaignMock.Id, internCampaign.Campaign.Id);
             Assert.Equal(specialityMock.Id, internCampaign.Speciality.Id);
-            Assert.Equal(StatusEnum.Candidate, internCampaign.States.First().StatusId);
+            Assert.Equal(StatusId.Candidate, internCampaign.States.First().StatusId);
         }
 
         #endregion
@@ -395,7 +397,7 @@ namespace Core.Tests.Features.Interns
             var addStateRequest = new AddStateRequest(
                 Guid.Empty,
                 campaignId,
-                StatusEnum.Rejected,
+                StatusId.Rejected,
                 justification);
 
             //Act
@@ -412,7 +414,7 @@ namespace Core.Tests.Features.Interns
             var addStateRequest = new AddStateRequest(
                 internId,
                 Guid.Empty,
-                StatusEnum.Hired,
+                StatusId.Hired,
                 justification);
 
             //Act
@@ -430,7 +432,7 @@ namespace Core.Tests.Features.Interns
             var addStateRequest = new AddStateRequest(
                 internId,
                 campaignId,
-                StatusEnum.RejectedToStart,
+                StatusId.RejectedToStart,
                 justification);
 
             //Act
@@ -473,8 +475,8 @@ namespace Core.Tests.Features.Interns
         public async Task GetAllStatusAsync_ShouldReturnCorrectNumberOfElements()
         {
             //Arrange
-            var statusResponse1 = new StatusResponse((int)StatusEnum.Candidate, StatusEnum.Candidate.ToString());
-            var statusResponse2 = new StatusResponse((int)StatusEnum.RejectedToStart, StatusEnum.RejectedToStart.ToString());
+            var statusResponse1 = new StatusResponse((int)StatusId.Candidate, StatusId.Candidate.ToString());
+            var statusResponse2 = new StatusResponse((int)StatusId.RejectedToStart, StatusId.RejectedToStart.ToString());
 
             var statusResponseCollectionMock = new List<StatusResponse>() { statusResponse1, statusResponse2 };
 
@@ -536,14 +538,14 @@ namespace Core.Tests.Features.Interns
             addStateRequestMock = new AddStateRequest(
                 internId,
                 campaignId,
-                StatusEnum.Candidate,
+                StatusId.Candidate,
                 justification);
 
             stateMock = new State()
             {
                 Justification = justification,
                 Created = DateTime.UtcNow,
-                StatusId = StatusEnum.Rejected,
+                StatusId = StatusId.Rejected,
                 InternId = internId,
                 CampaignId = campaignId
             };

@@ -11,7 +11,7 @@ namespace Core.Tests.Features.Admins
         private readonly string applicationUrl = "ApplicationUrl";
 
         [Theory]
-        [MemberData(nameof(TestHelper.ValidEmails), MemberType = typeof(TestHelper))]
+        [MemberData(nameof(MockDataTestHelper.ValidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsValid_ShouldNotHaveError(string validEmail)
         {
             var createAdminRequest = new CreateAdminRequest(validEmail, applicationUrl);
@@ -22,7 +22,7 @@ namespace Core.Tests.Features.Admins
         }
 
         [Theory]
-        [MemberData(nameof(TestHelper.InvalidEmails), MemberType = typeof(TestHelper))]
+        [MemberData(nameof(MockDataTestHelper.InvalidEmails), MemberType = typeof(MockDataTestHelper))]
         public void Validator_WhenEmailIsInvalid_ShouldHaveError(string invalidEmail)
         {
             var createAdminRequest = new CreateAdminRequest(invalidEmail, applicationUrl);
@@ -35,7 +35,7 @@ namespace Core.Tests.Features.Admins
         [Fact]
         public void Validator_WhenUrlIsEmpty_ShouldHaveError()
         {
-            var createAdminRequest = new CreateAdminRequest(TestHelper.EmailMock, string.Empty);
+            var createAdminRequest = new CreateAdminRequest(MockDataTestHelper.WorkEmailMock, string.Empty);
 
             createAdminValidator
                 .TestValidate(createAdminRequest)

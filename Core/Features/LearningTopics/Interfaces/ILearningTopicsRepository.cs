@@ -7,7 +7,7 @@ namespace Core.Features.LearningTopics.Interfaces
     {
         Task<LearningTopic> AddAsync(LearningTopic learningTopic);
 
-        Task<LearningTopic?> GetByIdAsync(Guid Id);
+        Task<LearningTopic?> GetByIdAsync(Guid id);
 
         Task<IEnumerable<LearningTopic>> GetAllAsync(PaginationRequest? filter = null);
 

@@ -13,7 +13,7 @@ namespace Core.Tests.Features.Campaigns
         [InlineData(1)]
         [InlineData(5)]
         [InlineData(10)]
-        public async Task Validator_WhenPageNumIsGreaterThanZero_ShouldNotHaveError(int validPageNum)
+        public void Validator_WhenPageNumIsGreaterThanZero_ShouldNotHaveError(int validPageNum)
         {
             var filter = new PaginationRequest(validPageNum, 5);
 
@@ -25,7 +25,7 @@ namespace Core.Tests.Features.Campaigns
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
-        public async Task Validator_WhenPageNumIsLessThanOne_ShouldHaveError(int invalidPageNum)
+        public void Validator_WhenPageNumIsLessThanOne_ShouldHaveError(int invalidPageNum)
         {
             var filter = new PaginationRequest(invalidPageNum, 5);
 
@@ -35,7 +35,7 @@ namespace Core.Tests.Features.Campaigns
         }
 
         [Fact]
-        public async Task Validator_WhenPageNumIsNull_ShouldHaveError()
+        public void Validator_WhenPageNumIsNull_ShouldHaveError()
         {
             var filter = new PaginationRequest(null, 1);
 
@@ -48,7 +48,7 @@ namespace Core.Tests.Features.Campaigns
         [InlineData(1)]
         [InlineData(5)]
         [InlineData(10)]
-        public async Task Validator_WhenPageSizeIsGreaterThanZero_ShouldNotHaveError(int validPageSize)
+        public void Validator_WhenPageSizeIsGreaterThanZero_ShouldNotHaveError(int validPageSize)
         {
             var filter = new PaginationRequest(1, validPageSize);
 
@@ -60,7 +60,7 @@ namespace Core.Tests.Features.Campaigns
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
-        public async Task Validator_WhenPageSizeIsLessThanOne_ShouldHaveError(int invalidPageSize)
+        public void Validator_WhenPageSizeIsLessThanOne_ShouldHaveError(int invalidPageSize)
         {
             var filter = new PaginationRequest(1, invalidPageSize);
 
@@ -70,7 +70,7 @@ namespace Core.Tests.Features.Campaigns
         }
 
         [Fact]
-        public async Task Validator_WhenPageSizeIsNull_ShouldHaveError()
+        public void Validator_WhenPageSizeIsNull_ShouldHaveError()
         {
             var filter = new PaginationRequest(1, null);
 
