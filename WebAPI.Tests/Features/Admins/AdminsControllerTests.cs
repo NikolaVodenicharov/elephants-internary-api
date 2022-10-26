@@ -34,6 +34,18 @@ namespace WebAPI.Tests.Features.Admins
         private readonly int pageNum = 1;
         private readonly int pageSize = 10;
         private readonly int defaultTotalPages = 1;
+        private readonly PaginationRequest validPaginationRequest;
+
+        public static IEnumerable<object[]> InvalidPaginationRequests =>
+            new List<object[]>
+            {
+                new object[] { new PaginationRequest(null, 1) },
+                new object[] { new PaginationRequest(1, null) },
+                new object[] { new PaginationRequest(1, -1) },
+                new object[] { new PaginationRequest(0, 1) },
+                new object[] { new PaginationRequest(-1, -1) },
+
+            };
 
         public AdminsControllerTests()
         {
@@ -79,6 +91,8 @@ namespace WebAPI.Tests.Features.Admins
                 TestHelper.EmailMock,
                 specialitySummaries
             );
+
+            validPaginationRequest = new PaginationRequest(pageNum, pageSize);
         }
 
         #region CreateAsyncTests
@@ -189,7 +203,7 @@ namespace WebAPI.Tests.Features.Admins
                 .ReturnsAsync(adminsPaginationResponse);
 
             // Act
-            var actionResult = await adminsController.GetAllAsync(pageNum, pageSize);
+            var actionResult = await adminsController.GetAllAsync(validPaginationRequest);
 
             // Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -215,7 +229,7 @@ namespace WebAPI.Tests.Features.Admins
                 .ReturnsAsync(emptyPaginationResponse);
 
             // Act
-            var actionResult = await adminsController.GetAllAsync(pageNum, pageSize);
+            var actionResult = await adminsController.GetAllAsync(validPaginationRequest);
 
             // Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -230,15 +244,11 @@ namespace WebAPI.Tests.Features.Admins
         }
         
         [Theory]
-        [InlineData(1, 0)]
-        [InlineData(1, -1)]
-        [InlineData(5, 0)]
-        [InlineData(5, -1)]
-        [InlineData(-1, -1)]
-        public async Task GetAllAsync_WhenFilterIsInvalid_ShouldThrowException(int invalidPageNum, int invalidPageSize)
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllAsync_WhenFilterIsInvalid_ShouldThrowException(PaginationRequest paginationRequest)
         {
             // Act
-            var action = async () => await adminsController.GetAllAsync(invalidPageNum, invalidPageSize);
+            var action = async () => await adminsController.GetAllAsync(paginationRequest);
 
             // Assert
             await Assert.ThrowsAsync<ValidationException>(action);

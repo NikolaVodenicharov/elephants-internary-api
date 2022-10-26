@@ -30,7 +30,21 @@ namespace WebAPI.Tests.Features.LearningTopics
 
         private readonly List<SpecialitySummaryResponse> specialitySummaries;
         private readonly List<Guid> specialityIds;
-                 
+
+        private readonly PaginationRequest validPaginationRequest;
+        private readonly PaginationRequest emptyPaginationRequest;
+
+        public static IEnumerable<object[]> InvalidPaginationRequests =>
+            new List<object[]>
+            {
+                new object[] { new PaginationRequest(null, 1) },
+                new object[] { new PaginationRequest(1, null) },
+                new object[] { new PaginationRequest(1, -1) },
+                new object[] { new PaginationRequest(0, 1) },
+                new object[] { new PaginationRequest(-1, -1) },
+
+            };
+
         public static readonly IEnumerable<object[]> validNames = new List<object[]>
         {
             new object[] { TestHelper.GenerateString(LearniningTopicValidationConstants.NameMinLength) },
@@ -80,6 +94,9 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             specialityIds = new List<Guid>() { speciality.Id };
             specialitySummaries = new List<SpecialitySummaryResponse>() { specialitySummary };
+
+            validPaginationRequest = new PaginationRequest(1, 10);
+            emptyPaginationRequest = new PaginationRequest(null, null);
         }
 
         [Fact]
@@ -310,7 +327,7 @@ namespace WebAPI.Tests.Features.LearningTopics
                 .ReturnsAsync(learningTopicSummaries);
             
             // Act
-            var actionResult = await learningTopicsController.GetAllAsync();
+            var actionResult = await learningTopicsController.GetAllAsync(emptyPaginationRequest);
 
             // Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -333,7 +350,7 @@ namespace WebAPI.Tests.Features.LearningTopics
                 .ReturnsAsync(new List<LearningTopicSummaryResponse>());
 
             // Act
-            var actionResult = await learningTopicsController.GetAllAsync();
+            var actionResult = await learningTopicsController.GetAllAsync(emptyPaginationRequest);
 
             // Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -347,45 +364,13 @@ namespace WebAPI.Tests.Features.LearningTopics
             Assert.Empty(learingTopicsResponse!.Data);
         }
 
-        [Fact]
-        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
-        {
-            //Arrange
-            var invalidPageNum = -1;
-            var validPageSize = 10;
 
-            //Act
-            var action = async () => await learningTopicsController.GetAllAsync(invalidPageNum, validPageSize);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenOnlyPageNumIsSet_ShouldThrowException()
+        [Theory]
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllAsync_WhenPageParametersAreInvalid_ShouldThrowException(PaginationRequest paginationRequest)
         {
             //Act
-            var action = async () => await learningTopicsController.GetAllAsync(1);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenOnlyPageSizeIsSet_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await learningTopicsController.GetAllAsync(pageSize: 10);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await learningTopicsController.GetAllAsync(1, -1);
+            var action = async () => await learningTopicsController.GetAllAsync(paginationRequest);
 
             //Arrange
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -400,17 +385,15 @@ namespace WebAPI.Tests.Features.LearningTopics
 
             var learningTopicSummaries = new List<LearningTopicSummaryResponse>() { learningTopicSummary, additionalLearningTopicSummary };
 
-            var pageNum = 1;
-            var pageSize = 10;
-
-            var expectedResponse = new PaginationResponse<LearningTopicSummaryResponse>(learningTopicSummaries, pageNum, 1);
+            var expectedResponse = new PaginationResponse<LearningTopicSummaryResponse>(learningTopicSummaries, 
+                validPaginationRequest!.PageNum!.Value, 1);
 
             learningTopicsService
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(expectedResponse);
 
             //Act
-            var actionResult = await learningTopicsController.GetAllAsync(pageNum, pageSize);
+            var actionResult = await learningTopicsController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);

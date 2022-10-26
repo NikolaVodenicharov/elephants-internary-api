@@ -74,18 +74,16 @@ namespace WebAPI.Features.Specialities
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<SpecialitySummaryResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<PaginationResponse<SpecialitySummaryResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
+        public async Task<IActionResult> GetAllAsync([FromQuery] PaginationRequest filter)
         {
             specialitiesControllerLogger.LogInformationMethod(nameof(SpecialitiesController), nameof(GetAllAsync));
 
-            if (pageNum == null && pageSize == null)
+            if (filter.PageNum == null && filter.PageSize == null)
             {
                 var specialitySummaries = await specialitiesService.GetAllAsync();
 
                 return CoreResult.Success(specialitySummaries);
             }
-
-            var filter = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 

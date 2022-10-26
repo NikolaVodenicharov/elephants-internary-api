@@ -16,13 +16,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebAPI.Common;
 using WebAPI.Features.Mentors;
-using WebAPI.Features.Mentors.Support;
 using Xunit;
-using Core.Features.Persons.ResponseModels;
 using WebAPI.Common.SettingsModels;
 using WebAPI.Features.Mentors.ApiRequestModels;
 using System.Linq;
-using Core.Features.Specialities.Interfaces;
 using Core.Features.Campaigns.ResponseModels;
 
 namespace WebAPI.Tests.Features.Mentors
@@ -33,9 +30,7 @@ namespace WebAPI.Tests.Features.Mentors
         private readonly string displayName = "Display name";
         private readonly string email = "first.last@example.bg";
         private readonly int validPageNum = 1;
-        private readonly int invalidPageNum = -1;
         private readonly int validPageSize = 10;
-        private readonly int invalidPageSize = 0;
         private readonly Mock<IMentorsService> mentorsServiceMock;
         private CreateMentorApiRequest createMentorApiRequest = null!;
         private SpecialitySummaryResponse specialitySummaryResponse = null!;
@@ -48,6 +43,19 @@ namespace WebAPI.Tests.Features.Mentors
         private MentorPaginationResponse mentorPaginationResponse = null!;
         private MentorDetailsResponse mentorDetailsResponse = null!;
         private IEnumerable<MentorPaginationResponse> mentorPaginationResponses = null!;
+        private readonly PaginationRequest validPaginationRequest;
+        private readonly PaginationRequest emptyPaginationRequest;
+
+        public static IEnumerable<object[]> InvalidPaginationRequests =>
+            new List<object[]>
+            {
+                new object[] { new PaginationRequest(null, 1) },
+                new object[] { new PaginationRequest(1, null) },
+                new object[] { new PaginationRequest(1, -1) },
+                new object[] { new PaginationRequest(0, 1) },
+                new object[] { new PaginationRequest(-1, -1) },
+
+            };
 
         private readonly MentorsController mentorsController;
 
@@ -77,6 +85,9 @@ namespace WebAPI.Tests.Features.Mentors
                 mentorValidator,
                 paginationRequestValidator,
                 invitationUrlSettings);
+
+            validPaginationRequest = new PaginationRequest(validPageNum, validPageSize);
+            emptyPaginationRequest = new PaginationRequest(null, null);
 
             InitiazlizeMockModels();
         }
@@ -265,21 +276,12 @@ namespace WebAPI.Tests.Features.Mentors
             Assert.Equal(mentorDetailsResponse.Campaigns, actualResponse.Data.Campaigns);
         }
 
-        [Fact]
-        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        [Theory]
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllAsync_WhenPageParametersAreInvalid_ShouldThrowException(PaginationRequest paginationRequest)
         {
             //Act
-            var action = async () => await mentorsController.GetAllAsync(invalidPageNum, validPageSize);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await mentorsController.GetAllAsync(validPageNum, invalidPageSize);
+            var action = async () => await mentorsController.GetAllAsync(paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -296,7 +298,7 @@ namespace WebAPI.Tests.Features.Mentors
                 .ReturnsAsync(expectedPaginationResponse);
 
             //Act
-            var actionResult = await mentorsController.GetAllAsync(validPageNum, validPageSize);
+            var actionResult = await mentorsController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -323,7 +325,7 @@ namespace WebAPI.Tests.Features.Mentors
                 .ReturnsAsync(paginationResponseMock);
 
             //Act
-            var actionResult = await mentorsController.GetAllAsync(validPageNum, validPageSize);
+            var actionResult = await mentorsController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -337,25 +339,6 @@ namespace WebAPI.Tests.Features.Mentors
             Assert.Empty(paginationResponse!.Data!.Content);
         }
 
-        [Fact]
-        public async Task GetAllAsync_WhenOnlyPageNumIsSet_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await mentorsController.GetAllAsync(1);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenOnlyPageSizeIsSet_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await mentorsController.GetAllAsync(pageSize: 1);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
 
         [Fact]
         public async Task GetAllAsync_WhenPageParametersNotSetAndEmpty_ShouldReturnEmptyCollection()
@@ -366,7 +349,7 @@ namespace WebAPI.Tests.Features.Mentors
                 .ReturnsAsync(new List<MentorPaginationResponse>());
 
             //Act
-            var actionResult = await mentorsController.GetAllAsync();
+            var actionResult = await mentorsController.GetAllAsync(emptyPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -389,7 +372,7 @@ namespace WebAPI.Tests.Features.Mentors
                 .ReturnsAsync(mentorPaginationResponses);
 
             //Act
-            var actionResult = await mentorsController.GetAllAsync();
+            var actionResult = await mentorsController.GetAllAsync(emptyPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);

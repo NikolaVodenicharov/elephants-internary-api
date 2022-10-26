@@ -96,22 +96,20 @@ namespace WebAPI.Features.Interns
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<InternListingResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<PaginationResponse<InternListingResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
+        public async Task<IActionResult> GetAllAsync([FromQuery] PaginationRequest filter)
         {
             internsControllerLogger.LogInformationMethod(nameof(InternsController), nameof(GetAllAsync));
 
-            if (pageNum == null && pageSize == null)
+            if (filter.PageNum == null && filter.PageSize == null)
             {
                 var internListingResponses = await internsService.GetAllAsync();
 
                 return CoreResult.Success(internListingResponses);
             }
+            
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            var paginationRequest = new PaginationRequest(pageNum, pageSize);
-
-            await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
-
-            var paginationResponse = await internsService.GetPaginationAsync(paginationRequest);
+            var paginationResponse = await internsService.GetPaginationAsync(filter);
 
             return CoreResult.Success(paginationResponse);
         }

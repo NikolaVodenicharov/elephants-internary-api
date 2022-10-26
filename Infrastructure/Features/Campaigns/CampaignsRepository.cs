@@ -28,9 +28,19 @@ namespace Infrastructure.Features.Campaigns
             return await context.Campaigns.AnyAsync(campaign => campaign.Name.Equals(name));
         }
 
-        public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest filter)
+        public async Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest? filter = null)
         {
-            var skip = (filter.PageNum!.Value - 1) * filter.PageSize!.Value;
+            int skip = 0, take = 0;
+
+            if (filter != null)
+            {
+                skip = (filter.PageNum!.Value - 1) * filter.PageSize!.Value;
+                take = filter.PageSize!.Value;
+            }
+            else
+            {
+                take = await GetCountAsync();
+            }
 
             var campaigns = await context.Campaigns
                 .AsNoTracking()
@@ -38,7 +48,7 @@ namespace Infrastructure.Features.Campaigns
                 .ThenBy(c => c.EndDate)
                 .ThenBy(c => c.Id)
                 .Skip(skip)
-                .Take(filter.PageSize.Value)
+                .Take(take)
                 .ToListAsync();
 
             return campaigns;

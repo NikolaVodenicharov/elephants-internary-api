@@ -12,7 +12,9 @@ namespace Core.Features.Campaigns.Interfaces
 
         Task<CampaignSummaryResponse?> GetByIdAsync(Guid campaignId);
 
-        Task<PaginationResponse<CampaignSummaryResponse>> GetAllAsync(PaginationRequest filter);
+        Task<PaginationResponse<CampaignSummaryResponse>> GetPaginationAsync(PaginationRequest filter);
+
+        Task<IEnumerable<CampaignSummaryResponse>> GetAllAsync();
 
         Task<int> GetCountAsync();
     }

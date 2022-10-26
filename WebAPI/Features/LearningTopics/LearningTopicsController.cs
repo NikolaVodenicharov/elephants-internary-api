@@ -86,19 +86,17 @@ namespace WebAPI.Features.LearningTopics
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<LearningTopicSummaryResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<PaginationResponse<LearningTopicSummaryResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
+        public async Task<IActionResult> GetAllAsync([FromQuery] PaginationRequest filter)
         {
             learningTopicsControllerLogger.LogInformationMethod(nameof(LearningTopicsController), nameof(GetAllAsync));
 
-            if (pageNum == null && pageSize == null)
+            if (filter.PageNum == null && filter.PageSize == null)
             {     
                 var learningTopicSummaries = await learningTopicsService.GetAllAsync();
 
                 return CoreResult.Success(learningTopicSummaries);
             }
-
-            var filter = new PaginationRequest(pageNum, pageSize);
-
+            
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
             var paginationResponse = await learningTopicsService.GetPaginationAsync(filter);

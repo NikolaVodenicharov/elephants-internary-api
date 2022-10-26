@@ -32,9 +32,7 @@ namespace WebAPI.Tests.Features.Campaigns
         private readonly DateTime campaignEndDate = DateTime.Today.AddDays(30);
         private readonly bool campaignIsActive = true;
         private readonly int validPageNum = 1;
-        private readonly int invalidPageNum = -1;
         private readonly int validPageSize = 10;
-        private readonly int invalidPageSize = 0;
         private CreateCampaignRequest createCampaignRequest = null!;
         private UpdateCampaignRequest updateCampaignRequest = null!;
         private CampaignSummaryResponse campaignSummaryResponse = null!;
@@ -43,6 +41,19 @@ namespace WebAPI.Tests.Features.Campaigns
         private readonly Mock<IMentorsService> mentorsServiceMock;
         private readonly Mock<IInternsService> internsServiceMock;
         private readonly CampaignsController campaignsController;
+        private readonly PaginationRequest validPaginationRequest;
+        private readonly PaginationRequest emptyPaginationRequest;
+
+        public static IEnumerable<object[]> InvalidPaginationRequests =>
+            new List<object[]>
+            {
+                new object[] { new PaginationRequest(null, 1) },
+                new object[] { new PaginationRequest(1, null) },
+                new object[] { new PaginationRequest(1, -1) },
+                new object[] { new PaginationRequest(0, 1) },
+                new object[] { new PaginationRequest(-1, -1) },
+                
+            };
 
         public static IEnumerable<object[]> InvalidNames =>
             new List<object[]>
@@ -82,6 +93,9 @@ namespace WebAPI.Tests.Features.Campaigns
                     campaignValidator,
                     loggerMock.Object
                 );
+
+            validPaginationRequest = new PaginationRequest(validPageNum, validPageSize);
+            emptyPaginationRequest = new PaginationRequest(null, null);
 
             InitializeMockModels();
         }
@@ -309,7 +323,7 @@ namespace WebAPI.Tests.Features.Campaigns
         #region GetAllAsyncTests
 
         [Fact]
-        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        public async Task GetAllAsync_WhenNotEmptyAndPageParametersSet_ShouldReturnCorrectCountElements()
         {
             //Arrange
             var campaignSummary2 = new CampaignSummaryResponse(Guid.NewGuid(), "Campaign 2", 
@@ -320,15 +334,11 @@ namespace WebAPI.Tests.Features.Campaigns
             var expectedResponse = new PaginationResponse<CampaignSummaryResponse>(campaignList, validPageNum, 1);
 
             campaignsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(campaignList.Count);
-
-            campaignsServiceMock
-                .Setup(x => x.GetAllAsync(It.IsAny<PaginationRequest>()))
+                .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(expectedResponse);
 
             //Act
-            var actionResult = await campaignsController.GetAllAsync(validPageNum, validPageSize);
+            var actionResult = await campaignsController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -343,7 +353,7 @@ namespace WebAPI.Tests.Features.Campaigns
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenEmptyAndPageParametersSet_ShouldReturnEmptyCollection()
         {
             //Arrange
             var filter = new PaginationRequest(validPageNum, validPageSize);
@@ -352,11 +362,11 @@ namespace WebAPI.Tests.Features.Campaigns
                 new List<CampaignSummaryResponse>(), validPageNum, 1);
 
             campaignsServiceMock
-                .Setup(x => x.GetAllAsync(filter))
+                .Setup(x => x.GetPaginationAsync(filter))
                 .ReturnsAsync(emptyPaginationResponse);
 
             //Act
-            var actionResult = await campaignsController.GetAllAsync(validPageNum, validPageSize);
+            var actionResult = await campaignsController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -370,33 +380,68 @@ namespace WebAPI.Tests.Features.Campaigns
             Assert.Empty(actualResponse!.Data!.Content);
         }
 
-        [Fact]
-        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        [Theory]
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllAsync_WhenPageParametersAreInvalid_ShouldThrowException(PaginationRequest paginationRequest)
         {
-            //Arrange
-            campaignsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(15);
-
             //Act
-            var action = async () => await campaignsController.GetAllAsync(invalidPageNum, validPageSize);
+            var action = async () => await campaignsController.GetAllAsync(paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
+        public async Task GetAllAsync_WhenNoPageParametersSetAndEmpty_ShouldReturnEmptyCollection()
         {
+            //Arrange
+            var emptyList = new List<CampaignSummaryResponse>();
+
             campaignsServiceMock
-                .Setup(x => x.GetCountAsync())
-                .ReturnsAsync(10);
+                .Setup(x => x.GetAllAsync())
+                .ReturnsAsync(emptyList);
 
             //Act
-            var action = async () => await campaignsController.GetAllAsync(validPageNum, invalidPageSize);
+            var actionResult = await campaignsController.GetAllAsync(emptyPaginationRequest);
 
             //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var actualResponse = jsonResult!.Value as CoreResponse<IEnumerable<CampaignSummaryResponse>>;
+
+            Assert.Empty(actualResponse!.Data);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNoPageParametersSetAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var campaignSummary2 = new CampaignSummaryResponse(Guid.NewGuid(), "Campaign 2",
+                DateTime.Today.AddDays(40), DateTime.Today.AddDays(71), true);
+
+            var campaignList = new List<CampaignSummaryResponse>() { campaignSummaryResponse, campaignSummary2 };
+
+            campaignsServiceMock
+                .Setup(x => x.GetAllAsync())
+                .ReturnsAsync(campaignList);
+
+            //Act
+            var actionResult = await campaignsController.GetAllAsync(emptyPaginationRequest);
+
+            //Assert
+            Assert.IsType<JsonResult>(actionResult);
+
+            var jsonResult = actionResult as JsonResult;
+
+            Assert.NotNull(jsonResult);
+
+            var actualResponse = jsonResult!.Value as CoreResponse<IEnumerable<CampaignSummaryResponse>>;
+
+            Assert.Equal(campaignList.Count, actualResponse!.Data!.Count());
         }
 
         #endregion
@@ -427,7 +472,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(expectedResponse);
 
             //Act
-            var actionResult = await campaignsController.GetMentorsByCampaignIdAsync(id, validPageNum, validPageSize);
+            var actionResult = await campaignsController.GetMentorsByCampaignIdAsync(id, validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -457,7 +502,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(emptyResponse);
 
             //Act
-            var actionResult = await campaignsController.GetMentorsByCampaignIdAsync(Guid.NewGuid(), validPageNum, validPageSize);
+            var actionResult = await campaignsController.GetMentorsByCampaignIdAsync(Guid.NewGuid(), validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -471,8 +516,9 @@ namespace WebAPI.Tests.Features.Campaigns
             Assert.Empty(actualResponse!.Data!.Content);
         }
 
-        [Fact]
-        public async Task GetMentorsByCampaignIdAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        [Theory]
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetMentorsByCampaignIdAsync_WhenPageNumIsLessThanOne_ShouldThrowException(PaginationRequest paginationRequest)
         {
             //Arrange
             mentorsServiceMock
@@ -480,22 +526,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(2);
 
             //Act
-            var action = async () => await campaignsController.GetMentorsByCampaignIdAsync(id, invalidPageNum, validPageSize);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetMentorsByCampaignIdAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
-        {
-            //Arrange
-            mentorsServiceMock
-                .Setup(x => x.GetCountByCampaignIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(15);
-
-            //Act
-            var action = async () => await campaignsController.GetMentorsByCampaignIdAsync(id, validPageNum, invalidPageSize);
+            var action = async () => await campaignsController.GetMentorsByCampaignIdAsync(id, paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -506,14 +537,11 @@ namespace WebAPI.Tests.Features.Campaigns
         #region GetAllInternsByCampaignIdAsync
 
         [Theory]
-        [InlineData(0, 0)]
-        [InlineData(0, 1)]
-        [InlineData(1, 0)]
-        [InlineData(-1, -1)]
-        public async Task GetAllInternsByCampaignIdAsync_WhenInvalidPage_ShouldThrowException(int pageNum, int pageSize)
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllInternsByCampaignIdAsync_WhenInvalidPage_ShouldThrowException(PaginationRequest paginationRequest)
         {
             //Act
-            var action = async () => await campaignsController.GetInternsByCampaignAsync(id, pageNum, pageSize);
+            var action = async () => await campaignsController.GetInternsByCampaignAsync(id, paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -533,7 +561,7 @@ namespace WebAPI.Tests.Features.Campaigns
                 .ReturnsAsync(internsByCampaignPaginationResponseMock);
 
             //Act
-            var actionResult = await campaignsController.GetInternsByCampaignAsync(id, 1, 10);
+            var actionResult = await campaignsController.GetInternsByCampaignAsync(id, validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);

@@ -13,7 +13,7 @@ namespace Core.Features.Campaigns.Interfaces
 
         Task<Campaign?> GetByIdAsync(Guid campaignId);
 
-        Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest filter);
+        Task<IEnumerable<Campaign>> GetAllAsync(PaginationRequest? filter = null);
 
         Task<int> GetCountAsync();
     }

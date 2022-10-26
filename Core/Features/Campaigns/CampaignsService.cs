@@ -96,7 +96,7 @@ namespace Core.Features.Campaigns
             return existingCampaign.ToCampaignSummary();
         }
 
-        public async Task<PaginationResponse<CampaignSummaryResponse>> GetAllAsync(PaginationRequest filter)
+        public async Task<PaginationResponse<CampaignSummaryResponse>> GetPaginationAsync(PaginationRequest filter)
         {
             await paginationFilterRequestValidator.ValidateAndThrowAsync(filter);
 
@@ -120,9 +120,18 @@ namespace Core.Features.Campaigns
             var paginationResponse = new PaginationResponse<CampaignSummaryResponse>(
                 campaigns.ToCampaignSummaries(), filter.PageNum.Value, totalPages);
 
-            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(GetAllAsync), true);
+            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(GetPaginationAsync), true);
 
             return paginationResponse;
+        }
+
+        public async Task<IEnumerable<CampaignSummaryResponse>> GetAllAsync()
+        {
+            var campaigns = await campaignsRepository.GetAllAsync();
+
+            campaignsServiceLogger.LogInformationMethod(nameof(CampaignsService), nameof(GetAllAsync), true);
+
+            return campaigns.ToCampaignSummaries();
         }
 
         public async Task<CampaignSummaryResponse?> GetByIdAsync(Guid campaignId)

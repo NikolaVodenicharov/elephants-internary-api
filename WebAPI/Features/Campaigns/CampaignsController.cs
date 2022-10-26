@@ -96,16 +96,20 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<CampaignSummaryResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum,
-            [Required][FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllAsync([FromQuery] PaginationRequest filter)
         {
             campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetAllAsync));
 
-            var filter = new PaginationRequest(pageNum, pageSize);
+            if (filter.PageNum == null && filter.PageSize == null)
+            {
+                var campaigns = await campaignsService.GetAllAsync();
+
+                return CoreResult.Success(campaigns);
+            }
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            var paginationReponse = await campaignsService.GetAllAsync(filter);
+            var paginationReponse = await campaignsService.GetPaginationAsync(filter);
 
             return CoreResult.Success(paginationReponse);
         }
@@ -114,14 +118,11 @@ namespace WebAPI.Features.Campaigns
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<MentorPaginationResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.NotFound, Type = typeof(CoreResponse<Object>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetMentorsByCampaignIdAsync(Guid id, [Required][FromQuery] int pageNum,
-            [Required][FromQuery] int pageSize)
+        public async Task<IActionResult> GetMentorsByCampaignIdAsync(Guid id, [FromQuery] PaginationRequest filter)
         {
             campaignsControllerLogger.LogInformationMethod(nameof(CampaignsController), nameof(GetMentorsByCampaignIdAsync), nameof(Campaign), id);
 
             await campaignsService.GetByIdAsync(id);
-
-            var filter = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
@@ -133,7 +134,7 @@ namespace WebAPI.Features.Campaigns
         [HttpGet("{id}/interns")]
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<InternSummaryResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetInternsByCampaignAsync(Guid id, [FromQuery] int pageNum, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetInternsByCampaignAsync(Guid id, [FromQuery] PaginationRequest filter)
         {
             campaignsControllerLogger.LogInformationMethod(
                 nameof(CampaignsController), 
@@ -141,11 +142,9 @@ namespace WebAPI.Features.Campaigns
                 nameof(Campaign), 
                 id);
 
-            var paginationRequest = new PaginationRequest(pageNum, pageSize);
+            await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
-            await paginationRequestValidator.ValidateAndThrowAsync(paginationRequest);
-
-            var InternSummaryResponseCollection = await internService.GetAllByCampaignIdAsync(paginationRequest, id);
+            var InternSummaryResponseCollection = await internService.GetAllByCampaignIdAsync(filter, id);
 
             return CoreResult.Success(InternSummaryResponseCollection);
         }

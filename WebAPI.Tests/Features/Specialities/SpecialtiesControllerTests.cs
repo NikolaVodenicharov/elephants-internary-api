@@ -24,6 +24,19 @@ namespace WebAPI.Tests.Features.Specialities
         private readonly Guid id = Guid.NewGuid();
         private readonly Mock<ISpecialitiesService> specialtiesServiceMock;
         private readonly SpecialitiesController specialtiesController;
+        private readonly PaginationRequest validPaginationRequest;
+        private readonly PaginationRequest emptyPaginationRequest;
+
+        public static IEnumerable<object[]> InvalidPaginationRequests =>
+            new List<object[]>
+            {
+                new object[] { new PaginationRequest(null, 1) },
+                new object[] { new PaginationRequest(1, null) },
+                new object[] { new PaginationRequest(1, -1) },
+                new object[] { new PaginationRequest(0, 1) },
+                new object[] { new PaginationRequest(-1, -1) },
+
+            };
 
         public SpecialtiesControllerTests()
         {
@@ -42,6 +55,9 @@ namespace WebAPI.Tests.Features.Specialities
                 loggerMock.Object,
                 specialityValidator,
                 paginationRequestValidator);
+
+            validPaginationRequest = new PaginationRequest(1, 10);
+            emptyPaginationRequest = new PaginationRequest(null, null);
         }
 
         [Theory]
@@ -203,7 +219,7 @@ namespace WebAPI.Tests.Features.Specialities
                 .ReturnsAsync(specialitySummaryListMock);
 
             //Act
-            var actionResult = await specialtiesController.GetAllAsync();
+            var actionResult = await specialtiesController.GetAllAsync(emptyPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -226,7 +242,7 @@ namespace WebAPI.Tests.Features.Specialities
                 .ReturnsAsync(new List<SpecialitySummaryResponse>());
 
             //Act
-            var actionResult = await specialtiesController.GetAllAsync();
+            var actionResult = await specialtiesController.GetAllAsync(emptyPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -240,47 +256,14 @@ namespace WebAPI.Tests.Features.Specialities
             Assert.Empty(specialitySummaryList!.Data);
         }
 
-        [Fact]
-        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException()
+        [Theory]
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllAsync_WhenPageParametersAreInvalid_ShouldThrowException(PaginationRequest paginationRequest)
         {
-            //Arrange
-            var invalidPageNum = -1;
-            var validPageSize = 10;
-
             //Act
-            var action = async () => await specialtiesController.GetAllAsync(invalidPageNum, validPageSize);
+            var action = async () => await specialtiesController.GetAllAsync(paginationRequest);
 
             //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenOnlyPageNumIsSet_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await specialtiesController.GetAllAsync(1);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenOnlyPageSizeIsSet_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await specialtiesController.GetAllAsync(pageSize: 10);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException()
-        {
-            //Act
-            var action = async () => await specialtiesController.GetAllAsync(1, -1);
-
-            //Arrange
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
@@ -293,17 +276,15 @@ namespace WebAPI.Tests.Features.Specialities
 
             var specialityList = new List<SpecialitySummaryResponse>() { summary1, summary2 };
 
-            var pageNum = 1;
-            var pageSize = 10;
-
-            var expectedResponse = new PaginationResponse<SpecialitySummaryResponse>(specialityList, pageNum, 1);
+            var expectedResponse = new PaginationResponse<SpecialitySummaryResponse>(specialityList, 
+                validPaginationRequest!.PageNum!.Value, 1);
 
             specialtiesServiceMock
                 .Setup(x => x.GetPaginationAsync(It.IsAny<PaginationRequest>()))
                 .ReturnsAsync(expectedResponse);
 
             //Act
-            var actionResult = await specialtiesController.GetAllAsync(pageNum, pageSize);
+            var actionResult = await specialtiesController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);

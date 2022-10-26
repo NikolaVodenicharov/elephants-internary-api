@@ -40,6 +40,19 @@ namespace WebAPI.Tests.Features.Interns
         private readonly StateResponse stateResponseMock;
         private readonly int pageNum = 1;
         private readonly int pageSize = 10;
+        private readonly PaginationRequest validPaginationRequest;
+        private readonly PaginationRequest emptyPaginationRequest;
+
+        public static IEnumerable<object[]> InvalidPaginationRequests =>
+            new List<object[]>
+            {
+                new object[] { new PaginationRequest(null, 1) },
+                new object[] { new PaginationRequest(1, null) },
+                new object[] { new PaginationRequest(1, -1) },
+                new object[] { new PaginationRequest(0, 1) },
+                new object[] { new PaginationRequest(-1, -1) },
+
+            };
 
         public InternsControllerTests()
         {
@@ -91,6 +104,9 @@ namespace WebAPI.Tests.Features.Interns
                 StatusId.Rejected.ToString(),
                 justification,
                 DateTime.UtcNow);
+
+            validPaginationRequest = new PaginationRequest(pageNum, pageSize);
+            emptyPaginationRequest = new PaginationRequest(null, null);
         }
 
         public static IEnumerable<object[]> AddStateInvalidJustification =>
@@ -376,28 +392,16 @@ namespace WebAPI.Tests.Features.Interns
         #region GetAllAsync
 
         [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        public async Task GetAllAsync_WhenPageNumIsLessThanMinimum_ShouldThrowExceptionAsync(int invalidPageNum)
+        [MemberData(nameof(InvalidPaginationRequests))]
+        public async Task GetAllAsync_WhenPageParametersAreInvalid_ShouldThrowExceptionAsync(PaginationRequest paginationRequest)
         {
             //Act
-            var action = async () => await internsController.GetAllAsync(invalidPageNum, pageSize);
+            var action = async () => await internsController.GetAllAsync(paginationRequest);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanMinimum_ShouldThrowExceptionAsync(int invalidPageSize)
-        {
-            //Act
-            var action = async () => await internsController.GetAllAsync(pageNum, invalidPageSize);
-
-            //Assert
-            await Assert.ThrowsAsync<ValidationException>(action);
-        }
+ 
 
         [Fact]
         public async Task GetAllAsync_WhenDataIsValid_ShouldReturnCorrectData()
@@ -415,7 +419,7 @@ namespace WebAPI.Tests.Features.Interns
                 .ReturnsAsync(paginationResponseMock);
 
             //Act
-            var actionResult = await internsController.GetAllAsync(pageNum, pageSize);
+            var actionResult = await internsController.GetAllAsync(validPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);
@@ -448,7 +452,7 @@ namespace WebAPI.Tests.Features.Interns
                 .ReturnsAsync(internListingResponsesMock);
 
             //Act
-            var actionResult = await internsController.GetAllAsync();
+            var actionResult = await internsController.GetAllAsync(emptyPaginationRequest);
 
             //Assert
             Assert.IsType<JsonResult>(actionResult);

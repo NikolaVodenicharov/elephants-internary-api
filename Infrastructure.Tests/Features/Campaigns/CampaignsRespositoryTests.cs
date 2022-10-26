@@ -6,6 +6,7 @@ using Core.Features.Campaigns.ResponseModels;
 using Infrastructure.Features.Campaigns;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -92,7 +93,7 @@ namespace Infrastructure.Tests.Features.Campaigns
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        public async Task GetAllAsync_WhenFilterNotNullAndEmpty_ShouldReturnEmptyCollection()
         {
             //Arrange
             var filter = new PaginationRequest(1, 10);
@@ -102,6 +103,64 @@ namespace Infrastructure.Tests.Features.Campaigns
 
             //Assert
             Assert.Empty(campaigns);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenFilterNotNullAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var campaign2 = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Campaign {DateTime.Now.Millisecond}",
+                StartDate = DateTime.Today.AddDays(1),
+                EndDate = DateTime.Today.AddDays(10),
+                IsActive = true
+            };
+
+            await campaignsRepository.AddAsync(campaign);
+            await campaignsRepository.AddAsync(campaign2);
+
+            var filter = new PaginationRequest(1, 10);
+
+            //Act
+            var response = await campaignsRepository.GetAllAsync(filter);
+
+            //Assert
+            Assert.Equal(2, response.Count());
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenFilterNullAndEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var campaigns = await campaignsRepository.GetAllAsync();
+
+            //Assert
+            Assert.Empty(campaigns);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenFilterNullAndNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var campaign2 = new Campaign()
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Campaign {DateTime.Now.Millisecond}",
+                StartDate = DateTime.Today.AddDays(1),
+                EndDate = DateTime.Today.AddDays(10),
+                IsActive = true
+            };
+
+            await campaignsRepository.AddAsync(campaign);
+            await campaignsRepository.AddAsync(campaign2);
+
+            //Act
+            var campaigns = await campaignsRepository.GetAllAsync();
+
+            //Assert
+            Assert.Equal(2, campaigns.Count());
         }
 
         [Fact]

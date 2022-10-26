@@ -96,18 +96,16 @@ namespace WebAPI.Features.Mentors
         [ProducesResponseType(typeof(CoreResponse<PaginationResponse<MentorPaginationResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<IEnumerable<MentorPaginationResponse>>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(CoreResponse<Object>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetAllAsync(int? pageNum = null, int? pageSize = null)
+        public async Task<IActionResult> GetAllAsync([FromQuery] PaginationRequest filter)
         {
             mentorsControllerLogger.LogInformationMethod(nameof(MentorsController), nameof(GetAllAsync));
 
-            if (pageNum == null && pageSize == null)
+            if (filter.PageNum == null && filter.PageSize == null)
             {
                 var mentors = await mentorsService.GetAllAsync();
 
                 return CoreResult.Success(mentors);
             }
-
-            var filter = new PaginationRequest(pageNum, pageSize);
 
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 

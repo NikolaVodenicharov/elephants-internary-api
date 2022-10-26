@@ -74,13 +74,10 @@ namespace WebAPI.Features.Admins
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(CoreResponse<PaginationResponse<AdminListingResponse>>))]
         [ProducesResponseType((int)HttpStatusCode.BadRequest, Type = typeof(CoreResponse<Object>))]
-        public async Task<IActionResult> GetAllAsync([Required][FromQuery] int pageNum,
-            [Required][FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllAsync([FromQuery]PaginationRequest filter)
         {
             adminsControllerLogger.LogInformationMethod(nameof(AdminsController), nameof(GetAllAsync));
             
-            var filter = new PaginationRequest(pageNum, pageSize);
-
             await paginationRequestValidator.ValidateAndThrowAsync(filter);
 
             var admins = await adminsService.GetAllAsync(filter);

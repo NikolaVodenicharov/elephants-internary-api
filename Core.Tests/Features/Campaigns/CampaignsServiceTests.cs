@@ -21,12 +21,12 @@ namespace Core.Tests.Features.Campaigns
     {
         private readonly Guid id = Guid.NewGuid();
         private readonly string campaignName = "CampaignTestName";
-        private DateTime startDate = DateTime.UtcNow.AddDays(5);
-        private DateTime endDate = DateTime.UtcNow.AddDays(50);
-        private bool isActive = true;
-        private Mock<ICampaignsRepository> campaignsRepositoryMock;
-        private CampaignsService campaignsServiceMock;
-        private Campaign returnCampaign;
+        private readonly DateTime startDate = DateTime.UtcNow.AddDays(5);
+        private readonly DateTime endDate = DateTime.UtcNow.AddDays(50);
+        private readonly bool isActive = true;
+        private readonly Mock<ICampaignsRepository> campaignsRepositoryMock;
+        private readonly CampaignsService campaignsServiceMock;
+        private readonly Campaign returnCampaign;
         public static IEnumerable<object[]> endDateTestData =>
             new List<object[]>
             {
@@ -306,14 +306,14 @@ namespace Core.Tests.Features.Campaigns
 
         #endregion
 
-        #region GetAllAsyncTests
+        #region GetPaginationAsyncTests
 
         [Theory]
         [InlineData(1, 5)]
         [InlineData(3, 5)]
         [InlineData(2, 10)]
         [InlineData(1, 100)]
-        public async Task GetAllAsync_WhenFilterIsCorrect_ShouldGetData(int pageNum, int pageSize)
+        public async Task GetPaginationAsync_WhenFilterIsCorrect_ShouldGetData(int pageNum, int pageSize)
         {
             //Arrange
             var campaignList = new List<Campaign>()
@@ -332,7 +332,7 @@ namespace Core.Tests.Features.Campaigns
                 .ReturnsAsync(15);
 
             //Act
-            var response = await campaignsServiceMock.GetAllAsync(filter);
+            var response = await campaignsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             Assert.Equal(campaignList.Count, response.Content.Count());
@@ -341,13 +341,13 @@ namespace Core.Tests.Features.Campaigns
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
-        public async Task GetAllAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
+        public async Task GetPaginationAsync_WhenPageNumIsLessThanOne_ShouldThrowException(int pageNum)
         {
             //Arrange
             var filter = new PaginationRequest(pageNum, 10);
 
             //Act
-            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+            var action = async () => await campaignsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
@@ -356,20 +356,20 @@ namespace Core.Tests.Features.Campaigns
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public async Task GetAllAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
+        public async Task GetPaginationAsync_WhenPageSizeIsLessThanOne_ShouldThrowException(int pageSize)
         {
             //Arrange
             var filter = new PaginationRequest(1, pageSize);
 
             //Act
-            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+            var action = async () => await campaignsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             await Assert.ThrowsAsync<ValidationException>(action);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
+        public async Task GetPaginationAsync_WhenPageNumIsBiggerThanTotalPages_ShouldThrowException()
         {
             //Arrange
             var pageNum = 10;
@@ -392,14 +392,14 @@ namespace Core.Tests.Features.Campaigns
                 .ReturnsAsync(count);
 
             //Act
-            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+            var action = async () => await campaignsServiceMock.GetPaginationAsync(filter);
 
             //Assert
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenEmptyAndPageNumMoreThanOne_ShouldThrowException()
+        public async Task GetPaginationAsync_WhenEmptyAndPageNumMoreThanOne_ShouldThrowException()
         {
             //Arrange
             var filter = new PaginationRequest(2, 5);
@@ -409,14 +409,14 @@ namespace Core.Tests.Features.Campaigns
                 .ReturnsAsync(0);
 
             //Act
-            var action = async () => await campaignsServiceMock.GetAllAsync(filter);
+            var action = async () => await campaignsServiceMock.GetPaginationAsync(filter);
 
             //Arrange
             await Assert.ThrowsAsync<CoreException>(action);
         }
 
         [Fact]
-        public async Task GetAllAsync_WhenNoCampaignsAndPageNumIsOne_ShouldReturnEmptyCollection()
+        public async Task GetPaginationAsync_WhenNoCampaignsAndPageNumIsOne_ShouldReturnEmptyCollection()
         {
             //Arrange
             var filter = new PaginationRequest(1, 5);
@@ -426,10 +426,41 @@ namespace Core.Tests.Features.Campaigns
                 .ReturnsAsync(0);
 
             //Act
-            var response = await campaignsServiceMock.GetAllAsync(filter);
+            var response = await campaignsServiceMock.GetPaginationAsync(filter);
 
             //Arrange
             Assert.Empty(response.Content);
+        }
+
+        #endregion
+
+        #region GetAllAsyncTests
+
+        [Fact]
+        public async Task GetAllAsync_WhenEmpty_ShouldReturnEmptyCollection()
+        {
+            //Act
+            var campaigns = await campaignsServiceMock.GetAllAsync();
+
+            //Assert
+            Assert.Empty(campaigns);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_WhenNotEmpty_ShouldReturnCorrectCountElements()
+        {
+            //Arrange
+            var campaignList = new List<Campaign>() { returnCampaign };
+
+            campaignsRepositoryMock
+                .Setup(x => x.GetAllAsync(null))
+                .ReturnsAsync(campaignList);
+
+            //Act
+            var response = await campaignsServiceMock.GetAllAsync();
+
+            //Assert
+            Assert.Equal(campaignList.Count, response.Count());
         }
 
         #endregion
