@@ -17,6 +17,9 @@ namespace Core.Features.Interns.Support
                 .NotEmpty()
                 .MinimumLength(InternValidationConstants.JustificationMinLength)
                 .MaximumLength(InternValidationConstants.JustificationMaxLength);
+
+            RuleFor(a => a.StatusId)
+                .IsInEnum();
         }
     }
 }

@@ -47,6 +47,22 @@ namespace Core.Tests.Features.Interns
         }
 
         [Fact]
+        public void Validator_WhenStatusIdIsInvalid_ShouldHaveError()
+        {
+            //Arrange
+            var addInternCampaignRequest = new AddStateRequest(
+                internId,
+                campaignId,
+                (StatusId)(-1),
+                justification);
+
+            //Act-Assert
+            addStateRequestValidator
+                .TestValidate(addInternCampaignRequest)
+                .ShouldHaveValidationErrorFor(a => a.StatusId);
+        }
+
+        [Fact]
         public void Validator_WhenJustificationLengthIsOutOfRange_ShouldHaveError()
         {
             //Arrange
