@@ -197,11 +197,16 @@ namespace Core.Features.Interns
         {
             await internValidator.ValidateAndThrowAsync(updateInternRequest);
 
-            var internSummaryResponse = await internsRepository.GetByIdAsync(updateInternRequest.Id);
+            var internDetailsResponse = await internsRepository.GetDetailsByIdAsync(updateInternRequest.Id);
 
-            Guard.EnsureNotNull(internSummaryResponse, internsServiceLogger, nameof(InternsService), nameof(Person), updateInternRequest.Id);
+            Guard.EnsureNotNull(internDetailsResponse, internsServiceLogger, nameof(InternsService), nameof(Person), updateInternRequest.Id);
 
-            await ValidateNoEmailDuplicationAsync(updateInternRequest.Email);
+            var isEmailChanged = internDetailsResponse.PersonalEmail != updateInternRequest.Email;
+
+            if (isEmailChanged)
+            {
+                await ValidateNoEmailDuplicationAsync(updateInternRequest.Email);
+            }    
         }
 
         private void PaginationResponseValidation<T> (PaginationResponse<T> internPaginationResponse)

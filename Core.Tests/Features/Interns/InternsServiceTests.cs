@@ -420,8 +420,8 @@ namespace Core.Tests.Features.Interns
         {
             //Arrange
             internsRepositoryMock
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(internSummaryResponseMock);
+                .Setup(r => r.GetDetailsByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(internDetailsResponseMock);
 
             var updateInternRequest = new UpdateInternRequest(
                 internId,
@@ -453,7 +453,6 @@ namespace Core.Tests.Features.Interns
         public async Task UpdateAsync_WhenRequestModelIsValid_ShouldReturnCorrectObject()
         {
             //Arrange
-
             var updateInternRequest = new UpdateInternRequest(
                 internId,
                 MockDataTestHelper.FirstNameMock,
@@ -461,8 +460,8 @@ namespace Core.Tests.Features.Interns
                 MockDataTestHelper.PersonalEmailMock);
 
             internsRepositoryMock
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(internSummaryResponseMock);
+                .Setup(r => r.GetDetailsByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(internDetailsResponseMock);
 
             var updatedInternSummaryResponseMock = new InternSummaryResponse(
                 internId,
@@ -479,6 +478,40 @@ namespace Core.Tests.Features.Interns
             //Assert
             Assert.Equal(updateInternRequest.Id, internSummaryResponse.Id);
             Assert.Equal(updateInternRequest.Email, internSummaryResponse.Email);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WhenOnlyNameIsChanged_ShouldUpdateName()
+        {
+            //Arrange
+            internsRepositoryMock
+                .Setup(r => r.GetDetailsByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(internDetailsResponseMock);
+
+            var updateInternRequest = new UpdateInternRequest(
+                internId,
+                "Robert",
+                MockDataTestHelper.LastNameMock,
+                MockDataTestHelper.PersonalEmailMock);
+
+            UpdateInternRequest passedRequest = null!;
+
+            var updatedInternSumamryResponseMock = new InternSummaryResponse(
+                updateInternRequest.Id,
+                updateInternRequest.FirstName + " " + updateInternRequest.LastName,
+                updateInternRequest.Email);
+
+            internsRepositoryMock
+                .Setup(r => r.UpdateAsync(It.IsAny<UpdateInternRequest>()))
+                .Callback((UpdateInternRequest request) => passedRequest = request)
+                .ReturnsAsync(updatedInternSumamryResponseMock);
+
+            //Act
+            var updatedInternSumamryResponse = await internsService.UpdateAsync(updateInternRequest);
+
+            //Assert
+            Assert.Equal(updateInternRequest, passedRequest);
+            Assert.Equal(updatedInternSumamryResponseMock, updatedInternSumamryResponse);
         }
 
         #endregion
